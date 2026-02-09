@@ -184,9 +184,11 @@ class OrderGenerator:
                 'N': 11.50,  # Beneficio Objetivo (era O)
                 'O': 27.00,  # Proveedor (era P)
                 'P': 11.00,  # Pedido Corregido Stock (FASE 2) (era Q)
-                'Q': 11.00,  # Ventas Reales (FASE 2) (era R)
-                'R': 11.00,  # Tendencia Consumo (FASE 2) (era S)
-                'S': 11.00   # Pedido Final (FASE 2) (era T)
+                'Q': 14.00,  # Ventas Objetivo Semana Pasada (NUEVO)
+                'R': 11.00,  # Ventas Reales (FASE 2) (era R)
+                'S': 11.00,  # Stock Real (NUEVO)
+                'T': 11.00,  # Tendencia Consumo (FASE 2) (era S)
+                'U': 11.00   # Pedido Final (FASE 2) (era T)
             }
             
             COLUMN_HEADERS = [
@@ -206,9 +208,11 @@ class OrderGenerator:
                 'Beneficio Objetivo',   # N (era O)
                 'Proveedor',            # O (era P)
                 'Pedido Corregido Stock',# P (FASE 2 - Corrección 1) (era Q)
-                'Ventas Reales',        # Q (FASE 2 - Datos) (era R)
-                'Tendencia Consumo',    # R (FASE 2 - Corrección 2) (era S)
-                'Pedido Final'          # S (FASE 2 - Resultado) (era T)
+                'Ventas Obj. Semana Pasada',# Q (FASE 2 - Histórico) (NUEVO)
+                'Ventas Reales',        # R (FASE 2 - Datos) (era R)
+                'Stock Real',           # S (FASE 2 - Datos) (NUEVO)
+                'Tendencia Consumo',    # T (FASE 2 - Corrección 2) (era S)
+                'Pedido Final'          # U (FASE 2 - Resultado) (era T)
             ]
             
             COLUMN_MAPPING = {
@@ -228,7 +232,9 @@ class OrderGenerator:
                 'Beneficio_Objetivo': 'Beneficio Objetivo',
                 'Proveedor': 'Proveedor',
                 'Pedido_Corregido_Stock': 'Pedido Corregido Stock',
+                'Ventas_Objetivo_Semana_Pasada': 'Ventas Obj. Semana Pasada',
                 'Ventas_Reales': 'Ventas Reales',
+                'Stock_Real': 'Stock Real',
                 'Tendencia_Consumo': 'Tendencia Consumo',
                 'Pedido_Final': 'Pedido Final'
             }
@@ -260,7 +266,10 @@ class OrderGenerator:
                         
                     elif header_name in ['Unidades Calculadas', 'Stock Mínimo Objetivo',
                                          'Diferencia Stock', 
-                                         'Pedido Corregido Stock', 'Ventas Reales', 
+                                         'Pedido Corregido Stock', 
+                                         'Ventas Obj. Semana Pasada',
+                                         'Ventas Reales', 
+                                         'Stock Real',
                                          'Tendencia Consumo', 'Pedido Final']:
                         if isinstance(value, (int, float)):
                             cell.number_format = '#,##0'

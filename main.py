@@ -757,7 +757,7 @@ def procesar_pedido_semana(
             # ============================================================================
             # FUSIÓN DE DATOS PARA CÁLCULO DE TENDENCIA
             # ============================================================================
-            # Añadir columnas: Ventas_Objetivo_Semana_Pasada, Ventas_Reales, Stock_Real
+            # Añadir columnas: Unidades_Calculadas_Semana_Pasada, Ventas_Reales, Stock_Real
             pedidos = fusionar_datos_tendencia(
                 pedidos,
                 df_ventas_reales,

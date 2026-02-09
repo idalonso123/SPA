@@ -633,8 +633,8 @@ def encontrar_archivo_semana_anterior(directorio_base: str, semana_actual: int) 
     if semana_anterior < 1:
         semana_anterior = 52  # Asumimos que el año anterior tenía 52 semanas
     
-    # Patrón de búsqueda para archivos de la semana anterior
-    patron_busqueda = f"Pedido_Semana_{semana_anterior}_*.xlsx"
+    # Patrón de búsqueda para archivos de la semana anterior (formato de 2 dígitos: 07, 08, etc.)
+    patron_busqueda = f"Pedido_Semana_{semana_anterior:02d}_*.xlsx"
     ruta_patron = os.path.join(directorio_base, patron_busqueda)
     
     # Buscar archivos que coincidan con el patrón
@@ -725,58 +725,61 @@ def normalizar_datos_historicos(df_pedido_anterior: pd.DataFrame) -> pd.DataFram
     Normaliza el DataFrame del pedido de la semana anterior para obtener
     solo las columnas necesarias para el cálculo de tendencia.
     
+    Ahora usa 'Unidades_Finales' (Unidades Calculadas) en lugar de 'Ventas_Objetivo'
+    para mostrar las unidades objetivo de la semana anterior.
+    
     Args:
         df_pedido_anterior (pd.DataFrame): DataFrame del archivo Pedido_Semana_*.xlsx
     
     Returns:
-        pd.DataFrame: DataFrame normalizado con clave de artículo y Ventas_Objetivo
+        pd.DataFrame: DataFrame normalizado con clave de artículo y Unidades_Calculadas_Semana_Pasada
     """
     if df_pedido_anterior is None or len(df_pedido_anterior) == 0:
         return pd.DataFrame()
     
-    # Crear clave de artículo si no existe
-    if 'Codigo_Articulo' in df_pedido_anterior.columns:
+    # Usar encontrar_columna para buscar la columna de código (puede ser 'Codigo_Articulo' o 'Código artículo')
+    col_codigo = encontrar_columna(list(df_pedido_anterior.columns), 'codigoarticulo')
+    
+    if col_codigo:
         df = df_pedido_anterior.copy()
         
+        # Buscar columnas de talla y color
+        col_talla = encontrar_columna(list(df.columns), 'talla')
+        col_color = encontrar_columna(list(df.columns), 'color')
+        
         # Crear clave compuesta si las columnas existen
-        if 'Talla' in df.columns and 'Color' in df.columns:
-            df['Clave_Articulo'] = (df['Codigo_Articulo'].astype(str) + '|' + 
-                                   df['Talla'].astype(str) + '|' + 
-                                   df['Color'].astype(str))
+        # Convertir a string y eliminar decimales si viene de formato numérico
+        df[col_codigo] = df[col_codigo].astype(str).str.replace(r'\.0$', '', regex=True)
+        if col_talla and col_color:
+            df['Clave_Articulo'] = (df[col_codigo] + '|' + 
+                                   df[col_talla].astype(str) + '|' + 
+                                   df[col_color].astype(str))
         else:
-            df['Clave_Articulo'] = df['Codigo_Articulo'].astype(str)
+            df['Clave_Articulo'] = df[col_codigo]
         
-        # Seleccionar solo las columnas necesarias
-        columnas_necesarias = ['Clave_Articulo']
-        
-        # Buscar columna de ventas objetivo (puede tener variaciones de nombre)
-        col_encontrada = encontrar_columna(list(df.columns), 'ventasobjetivo')
-        if col_encontrada:
-            columnas_necesarias.append(col_encontrada)
-            df_resultado = df[columnas_necesarias].copy()
-            df_resultado.rename(columns={col_encontrada: 'Ventas_Objetivo_Semana_Pasada'}, inplace=True)
+        # NUEVO: Buscar primero 'Unidades_Finales' (Unidades Calculadas) - prioridad absoluta
+        # Esto es lo que el usuario quiere: las unidades calculadas de la semana anterior
+        if 'Unidades_Finales' in df.columns:
+            df_resultado = df[['Clave_Articulo', 'Unidades_Finales']].copy()
+            df_resultado.rename(columns={'Unidades_Finales': 'Unidades_Calculadas_Semana_Pasada'}, inplace=True)
+            logger.info("Usando 'Unidades_Finales' para unidades calculadas de semana anterior")
         else:
-            # Si no hay columna de ventas objetivo, usar Ventas_Preliminares o similar
-            for col in df.columns:
-                if 'ventas' in normalizar_texto(col) and 'objetivo' in normalizar_texto(col):
-                    columnas_necesarias.append(col)
-                    df_resultado = df[columnas_necesarias].copy()
-                    df_resultado.rename(columns={col: 'Ventas_Objetivo_Semana_Pasada'}, inplace=True)
-                    break
+            # Si no existe Unidades_Finales, buscar variaciones de nombre
+            col_unidades_calc = encontrar_columna(list(df.columns), 'unidadescalculadas')
+            if col_unidades_calc:
+                df_resultado = df[['Clave_Articulo', col_unidades_calc]].copy()
+                df_resultado.rename(columns={col_unidades_calc: 'Unidades_Calculadas_Semana_Pasada'}, inplace=True)
+                logger.info(f"Usando '{col_unidades_calc}' para unidades calculadas de semana anterior")
             else:
-                # Usar la columna de unidades finales si existe
-                if 'Unidades_Finales' in df.columns:
-                    df_resultado = df[['Clave_Articulo', 'Unidades_Finales']].copy()
-                    df_resultado.rename(columns={'Unidades_Finales': 'Ventas_Objetivo_Semana_Pasada'}, inplace=True)
-                else:
-                    logger.warning("No se encontró columna de ventas objetivo en el archivo de la semana anterior")
-                    return pd.DataFrame()
+                logger.warning("No se encontró columna 'Unidades_Finales' ni 'Unidades Calculadas' en el archivo de la semana anterior")
+                return pd.DataFrame()
         
         # Eliminar duplicados (quedarse con el último registro de cada artículo)
         df_resultado.drop_duplicates(subset=['Clave_Articulo'], keep='last', inplace=True)
         
         return df_resultado
     
+    logger.warning("No se encontró columna de código de artículo en el archivo de la semana anterior")
     return pd.DataFrame()
 
 
@@ -787,14 +790,17 @@ def fusionar_datos_tendencia(
     df_ventas_objetivo_anterior: Optional[pd.DataFrame]
 ) -> pd.DataFrame:
     """
-    Fusiona los datos históricos (ventas objetivo semana anterior, ventas reales,
+    Fusiona los datos históricos (unidades calculadas semana anterior, ventas reales,
     stock actual) con el DataFrame de pedidos actual para calcular la tendencia.
+    
+    Nota: Ahora usa 'Unidades_Calculadas_Semana_Pasada' en lugar de 'Ventas_Objetivo_Semana_Pasada'
+    para mostrar las unidades calculadas de la semana anterior.
     
     Args:
         pedidos_df (pd.DataFrame): DataFrame con los pedidos calculados
         df_ventas_reales (Optional[pd.DataFrame]): Ventas reales del ERP
         df_stock_actual (Optional[pd.DataFrame]): Stock actual del ERP
-        df_ventas_objetivo_anterior (Optional[pd.DataFrame]): Ventas objetivo de la semana anterior
+        df_ventas_objetivo_anterior (Optional[pd.DataFrame]): Unidades calculadas de la semana anterior
     
     Returns:
         pd.DataFrame: DataFrame con las nuevas columnas fusionadas
@@ -805,7 +811,7 @@ def fusionar_datos_tendencia(
     df_resultado = pedidos_df.copy()
     
     # Inicializar nuevas columnas con valores por defecto
-    df_resultado['Ventas_Objetivo_Semana_Pasada'] = 0.0
+    df_resultado['Unidades_Calculadas_Semana_Pasada'] = 0
     df_resultado['Ventas_Reales'] = 0
     df_resultado['Stock_Real'] = 0
     
@@ -818,15 +824,29 @@ def fusionar_datos_tendencia(
                 df_resultado['Color'].astype(str)
             )
     
-    # Fusionar ventas objetivo de la semana anterior
+    # Fusionar unidades calculadas de la semana anterior
     if df_ventas_objetivo_anterior is not None and len(df_ventas_objetivo_anterior) > 0:
+        # Seleccionar solo las columnas necesarias y eliminar la columna original para evitar conflictos
+        df_anterior = df_ventas_objetivo_anterior[['Clave_Articulo', 'Unidades_Calculadas_Semana_Pasada']].copy()
+        df_anterior = df_anterior.rename(columns={'Unidades_Calculadas_Semana_Pasada': 'Unidades_Pasada_Merge'})
+        
+        # Eliminar la columna original de df_resultado antes del merge para evitar conflictos
+        if 'Unidades_Calculadas_Semana_Pasada' in df_resultado.columns:
+            df_resultado = df_resultado.drop(columns=['Unidades_Calculadas_Semana_Pasada'])
+        
         df_resultado = df_resultado.merge(
-            df_ventas_objetivo_anterior,
+            df_anterior,
             on='Clave_Articulo',
             how='left'
         )
-        # Llenar NaN con 0
-        df_resultado['Ventas_Objetivo_Semana_Pasada'] = df_resultado['Ventas_Objetivo_Semana_Pasada'].fillna(0)
+        # Renombrar la columna de vuelta y llenar NaN con 0, convertir a entero
+        if 'Unidades_Pasada_Merge' in df_resultado.columns:
+            df_resultado = df_resultado.rename(columns={'Unidades_Pasada_Merge': 'Unidades_Calculadas_Semana_Pasada'})
+            df_resultado['Unidades_Calculadas_Semana_Pasada'] = pd.to_numeric(
+                df_resultado['Unidades_Calculadas_Semana_Pasada'], errors='coerce'
+            ).fillna(0).astype(int)
+        else:
+            df_resultado['Unidades_Calculadas_Semana_Pasada'] = 0
     
     # Fusionar ventas reales
     if df_ventas_reales is not None and len(df_ventas_reales) > 0:
@@ -898,8 +918,8 @@ def fusionar_datos_tendencia(
                 df_resultado.drop(columns=['Stock_Real_Tmp'], inplace=True)
     
     logger.info(f"Datos de tendencia fusionados: {len(df_resultado)} registros")
-    logger.info(f"  - Ventas_Objetivo_Semana_Pasada: {df_resultado['Ventas_Objetivo_Semana_Pasada'].sum():.2f}")
+    logger.info(f"  - Unidades_Calculadas_Semana_Pasada: {df_resultado['Unidades_Calculadas_Semana_Pasada'].sum()}")
     logger.info(f"  - Ventas_Reales: {df_resultado['Ventas_Reales'].sum()}")
     logger.info(f"  - Stock_Real: {df_resultado['Stock_Real'].sum()}")
-    
+
     return df_resultado

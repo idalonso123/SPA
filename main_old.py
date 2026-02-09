@@ -26,6 +26,13 @@ from src.scheduler_service import SchedulerService, EstadoEjecucion
 
 from src.correction_data_loader import CorrectionDataLoader
 from src.correction_engine import CorrectionEngine, crear_correction_engine
+from src.correction_data_loader import (
+    encontrar_archivo_semana_anterior,
+    leer_archivo_ventas_reales,
+    leer_archivo_stock_actual,
+    normalizar_datos_historicos,
+    fusionar_datos_tendencia
+)
 
 from src.email_service import EmailService, crear_email_service
 
@@ -667,6 +674,33 @@ def procesar_pedido_semana(
     
     archivos_generados = []
     
+    # ============================================================================
+    # CARGA DE DATOS PARA CÁLCULO DE TENDENCIA DE VENTAS
+    # ============================================================================
+    # Estos datos se usan para calcular la tendencia comparando ventas reales con objetivo
+    
+    # Determinar directorios
+    dir_base = os.path.dirname(os.path.abspath(__file__))
+    dir_entrada = os.path.join(dir_base, config.get('rutas', {}).get('directorio_entrada', 'data/input'))
+    dir_salida = os.path.join(dir_base, config.get('rutas', {}).get('directorio_salida', 'data/output'))
+    
+    # Cargar archivo de ventas reales (SPA_ventas_reales.xlsx) - Puede no existir
+    df_ventas_reales, ventas_reales_existe = leer_archivo_ventas_reales(dir_entrada)
+    
+    # Cargar archivo de stock actual (SPA_stock_actual.xlsx)
+    df_stock_actual = leer_archivo_stock_actual(dir_entrada)
+    
+    # Buscar archivo de pedido de la semana anterior
+    archivo_semana_anterior = encontrar_archivo_semana_anterior(dir_salida, semana)
+    df_ventas_objetivo_anterior = None
+    if archivo_semana_anterior:
+        try:
+            df_pedido_anterior = pd.read_excel(archivo_semana_anterior)
+            df_ventas_objetivo_anterior = normalizar_datos_historicos(df_pedido_anterior)
+            logger.info(f"Cargados datos de la semana anterior: {len(df_ventas_objetivo_anterior)} registros")
+        except Exception as e:
+            logger.warning(f"No se pudo leer el archivo de la semana anterior: {str(e)}")
+    
     for seccion in secciones:
         logger.info(f"\n{'=' * 50}")
         logger.info(f"SECCION: {seccion.upper()}")
@@ -718,6 +752,17 @@ def procesar_pedido_semana(
             
             pedidos, nuevo_stock, ajustes = forecast_engine.aplicar_stock_minimo(
                 pedidos, semana, stock_acumulado
+            )
+            
+            # ============================================================================
+            # FUSIÓN DE DATOS PARA CÁLCULO DE TENDENCIA
+            # ============================================================================
+            # Añadir columnas: Ventas_Objetivo_Semana_Pasada, Ventas_Reales, Stock_Real
+            pedidos = fusionar_datos_tendencia(
+                pedidos,
+                df_ventas_reales,
+                df_stock_actual,
+                df_ventas_objetivo_anterior
             )
             
             stock_acumulado.update(nuevo_stock)

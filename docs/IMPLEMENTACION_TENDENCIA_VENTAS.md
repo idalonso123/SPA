@@ -32,12 +32,12 @@ Lee el archivo `SPA_stock_actual.xlsx` del ERP.
 #### `normalizar_datos_historicos(df_pedido_anterior)`
 Normaliza el DataFrame del pedido de la semana anterior para extraer solo las columnas necesarias para el cálculo de tendencia.
 
-**Retorna:** DataFrame con columnas `Clave_Articulo` y `Ventas_Objetivo_Semana_Pasada`.
+**Retorna:** DataFrame con columnas `Clave_Articulo` y `Unidades_Calculadas_Semana_Pasada`.
 
 #### `fusionar_datos_tendencia(pedidos_df, df_ventas_reales, df_stock_actual, df_ventas_objetivo_anterior)`
 Fusiona los datos históricos con el DataFrame de pedidos actual, añadiendo las 3 nuevas columnas:
 
-- `Ventas_Objetivo_Semana_Pasada`: Ventas objetivo de la semana anterior (del archivo Pedido_Semana)
+- `Unidades_Calculadas_Semana_Pasada`: Unidades Calculadas de la semana anterior (del archivo Pedido_Semana)
 - `Ventas_Reales`: Ventas reales de la semana actual (del archivo SPA_ventas_reales)
 - `Stock_Real`: Stock actual (del archivo SPA_stock_actual)
 
@@ -63,7 +63,7 @@ Antes de procesar las secciones, el sistema ahora:
 2. Lee el archivo `SPA_ventas_reales.xlsx` (con advertencia si no existe)
 3. Lee el archivo `SPA_stock_actual.xlsx`
 4. Busca y lee el archivo de pedido de la semana anterior
-5. Normaliza los datos históricos para obtener `Ventas_Objetivo_Semana_Pasada`
+5. Normaliza los datos históricos para obtener `Unidades_Calculadas_Semana_Pasada`
 
 #### Fusión de datos (después de `aplicar_stock_minimo`)
 Después de calcular el pedido y aplicar el stock mínimo, se llama a `fusionar_datos_tendencia()` para añadir las 3 nuevas columnas al DataFrame.
@@ -78,7 +78,7 @@ Se actualizó la generación del archivo Excel para incluir las nuevas columnas:
 ```python
 COLUMN_WIDTHS = {
     ...
-    'Q': 14.00,  # Ventas Obj. Semana Pasada (NUEVO)
+    'Q': 14.00,  # uds. Objetivo semana pasada (NUEVO)
     'R': 11.00,  # Ventas Reales
     'S': 11.00,  # Stock Real (NUEVO)
     ...
@@ -90,7 +90,7 @@ COLUMN_WIDTHS = {
 COLUMN_HEADERS = [
     ...
     'Pedido Corregido Stock',    # P
-    'Ventas Obj. Semana Pasada', # Q (NUEVO)
+    'uds. Objetivo semana pasada', # Q (NUEVO)
     'Ventas Reales',             # R
     'Stock Real',                # S (NUEVO)
     'Tendencia Consumo',         # T
@@ -102,7 +102,7 @@ COLUMN_HEADERS = [
 ```python
 COLUMN_MAPPING = {
     ...
-    'Ventas_Objetivo_Semana_Pasada': 'Ventas Obj. Semana Pasada',
+    'Unidades_Calculadas_Semana_Pasada': 'uds. Objetivo semana pasada',
     'Ventas_Reales': 'Ventas Reales',
     'Stock_Real': 'Stock Real',
     ...
@@ -151,8 +151,8 @@ Se incluyeron las nuevas columnas en el formato numérico entero.
 
 El archivo Excel generado incluirá las siguientes columnas de tendencia:
 
-| Código | Artículo | Talla | Color | ... | Pedido Corregido Stock | Ventas Obj. Semana Pasada | Ventas Reales | Stock Real | Tendencia Consumo | Pedido Final |
-|--------|----------|-------|-------|-----|------------------------|---------------------------|---------------|------------|-------------------|--------------|
+| Código | Artículo | Talla | Color | ... | Pedido Corregido Stock | uds. Objetivo semana pasada | Ventas Reales | Stock Real | Tendencia Consumo | Pedido Final |
+|--------|----------|-------|-------|-----|------------------------|----------------------------|---------------|------------|-------------------|--------------|
 | ART001 | Producto A | U | UNICA | ... | 26 | 20 | 25 | 1 | 0 | 38 |
 | ART002 | Producto B | U | UNICA | ... | 33 | 26 | 20 | 6 | 0 | 33 |
 

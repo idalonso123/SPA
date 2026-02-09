@@ -603,3 +603,303 @@ if __name__ == "__main__":
     
     loader = CorrectionDataLoader(config_ejemplo)
     print("CorrectionDataLoader inicializado y listo para usar.")
+
+
+# ============================================================================
+# FUNCIONES PARA CÁLCULO DE TENDENCIA DE VENTAS
+# ============================================================================
+
+def encontrar_archivo_semana_anterior(directorio_base: str, semana_actual: int) -> Optional[str]:
+    """
+    Busca el archivo de pedido de la semana anterior basándose en la semana actual.
+    
+    El sistema genera archivos con el patrón: Pedido_Semana_NN_DDMMAAAA.xlsx
+    Esta función busca el archivo correspondiente a la semana anterior (semana_actual - 1).
+    
+    Args:
+        directorio_base (str): Directorio donde buscar los archivos de pedido
+        semana_actual (int): Número de la semana actual (1-52)
+    
+    Returns:
+        Optional[str]: Ruta completa del archivo encontrado, o None si no existe
+    
+    Ejemplo:
+        Si semana_actual = 9, buscará archivos que coincidan con: Pedido_Semana_8_*.xlsx
+    """
+    # Calcular semana anterior
+    semana_anterior = semana_actual - 1
+    
+    # Manejo especial para semana 1 (buscar última semana del año anterior)
+    if semana_anterior < 1:
+        semana_anterior = 52  # Asumimos que el año anterior tenía 52 semanas
+    
+    # Patrón de búsqueda para archivos de la semana anterior
+    patron_busqueda = f"Pedido_Semana_{semana_anterior}_*.xlsx"
+    ruta_patron = os.path.join(directorio_base, patron_busqueda)
+    
+    # Buscar archivos que coincidan con el patrón
+    archivos_encontrados = glob.glob(ruta_patron)
+    
+    if archivos_encontrados:
+        # Si hay múltiples archivos, seleccionar el más reciente por fecha de modificación
+        archivo_mas_reciente = max(archivos_encontrados, key=os.path.getmtime)
+        logger.info(f"Archivo de semana anterior encontrado: {os.path.basename(archivo_mas_reciente)}")
+        return archivo_mas_reciente
+    
+    logger.warning(f"No se encontró archivo de pedido para la semana {semana_anterior}")
+    logger.info(f"  Patrón buscado: {patron_busqueda}")
+    logger.info(f"  Directorio: {directorio_base}")
+    return None
+
+
+def leer_archivo_ventas_reales(directorio_entrada: str) -> Tuple[Optional[pd.DataFrame], bool]:
+    """
+    Lee el archivo de ventas reales del ERP (SPA_ventas_reales.xlsx).
+    
+    Este archivo tiene un nombre fijo porque el ERP no permite nombres dinámicos
+    con la semana actual. Si el archivo no existe, genera una advertencia pero
+    no interrumpe el proceso.
+    
+    Args:
+        directorio_entrada (str): Directorio donde se encuentra el archivo
+    
+    Returns:
+        Tuple[Optional[pd.DataFrame], bool]: 
+            - DataFrame con las ventas reales o None si hay error
+            - Boolean indicando si el archivo existía
+    
+    Nota:
+        El archivo no encontrado genera una ADVERTENCIA (no un error), ya que
+        el sistema debe continuar generando los pedidos incluso sin este dato.
+        Esta advertencia será utilizada posteriormente para el sistema de notificaciones por email.
+    """
+    nombre_archivo = "SPA_ventas_reales.xlsx"
+    ruta_archivo = os.path.join(directorio_entrada, nombre_archivo)
+    
+    if not os.path.exists(ruta_archivo):
+        logger.warning(f"ADVERTENCIA: No se encontró el archivo de ventas reales")
+        logger.warning(f"  Archivo: {nombre_archivo}")
+        logger.warning(f"  Directorio: {directorio_entrada}")
+        logger.warning("  El sistema continuará generando pedidos sin el dato de ventas reales.")
+        logger.warning("  NOTA: Esta advertencia será enviada por email en una futura actualización.")
+        return None, False
+    
+    try:
+        df = pd.read_excel(ruta_archivo)
+        logger.info(f"Archivo de ventas reales cargado: {len(df)} registros")
+        return df, True
+    except Exception as e:
+        logger.error(f"Error al leer el archivo de ventas reales: {str(e)}")
+        logger.warning(f"ADVERTENCIA: Error al leer {nombre_archivo}. El sistema continuará sin datos de ventas reales.")
+        return None, False
+
+
+def leer_archivo_stock_actual(directorio_entrada: str) -> Optional[pd.DataFrame]:
+    """
+    Lee el archivo de stock actual del ERP (SPA_stock_actual.xlsx).
+    
+    Args:
+        directorio_entrada (str): Directorio donde se encuentra el archivo
+    
+    Returns:
+        Optional[pd.DataFrame]: DataFrame con el stock actual o None si hay error
+    """
+    nombre_archivo = "SPA_stock_actual.xlsx"
+    ruta_archivo = os.path.join(directorio_entrada, nombre_archivo)
+    
+    if not os.path.exists(ruta_archivo):
+        logger.warning(f"No se encontró el archivo de stock actual: {nombre_archivo}")
+        return None
+    
+    try:
+        df = pd.read_excel(ruta_archivo)
+        logger.info(f"Archivo de stock actual cargado: {len(df)} registros")
+        return df
+    except Exception as e:
+        logger.error(f"Error al leer el archivo de stock actual: {str(e)}")
+        return None
+
+
+def normalizar_datos_historicos(df_pedido_anterior: pd.DataFrame) -> pd.DataFrame:
+    """
+    Normaliza el DataFrame del pedido de la semana anterior para obtener
+    solo las columnas necesarias para el cálculo de tendencia.
+    
+    Args:
+        df_pedido_anterior (pd.DataFrame): DataFrame del archivo Pedido_Semana_*.xlsx
+    
+    Returns:
+        pd.DataFrame: DataFrame normalizado con clave de artículo y Ventas_Objetivo
+    """
+    if df_pedido_anterior is None or len(df_pedido_anterior) == 0:
+        return pd.DataFrame()
+    
+    # Crear clave de artículo si no existe
+    if 'Codigo_Articulo' in df_pedido_anterior.columns:
+        df = df_pedido_anterior.copy()
+        
+        # Crear clave compuesta si las columnas existen
+        if 'Talla' in df.columns and 'Color' in df.columns:
+            df['Clave_Articulo'] = (df['Codigo_Articulo'].astype(str) + '|' + 
+                                   df['Talla'].astype(str) + '|' + 
+                                   df['Color'].astype(str))
+        else:
+            df['Clave_Articulo'] = df['Codigo_Articulo'].astype(str)
+        
+        # Seleccionar solo las columnas necesarias
+        columnas_necesarias = ['Clave_Articulo']
+        
+        # Buscar columna de ventas objetivo (puede tener variaciones de nombre)
+        col_encontrada = encontrar_columna(list(df.columns), 'ventasobjetivo')
+        if col_encontrada:
+            columnas_necesarias.append(col_encontrada)
+            df_resultado = df[columnas_necesarias].copy()
+            df_resultado.rename(columns={col_encontrada: 'Ventas_Objetivo_Semana_Pasada'}, inplace=True)
+        else:
+            # Si no hay columna de ventas objetivo, usar Ventas_Preliminares o similar
+            for col in df.columns:
+                if 'ventas' in normalizar_texto(col) and 'objetivo' in normalizar_texto(col):
+                    columnas_necesarias.append(col)
+                    df_resultado = df[columnas_necesarias].copy()
+                    df_resultado.rename(columns={col: 'Ventas_Objetivo_Semana_Pasada'}, inplace=True)
+                    break
+            else:
+                # Usar la columna de unidades finales si existe
+                if 'Unidades_Finales' in df.columns:
+                    df_resultado = df[['Clave_Articulo', 'Unidades_Finales']].copy()
+                    df_resultado.rename(columns={'Unidades_Finales': 'Ventas_Objetivo_Semana_Pasada'}, inplace=True)
+                else:
+                    logger.warning("No se encontró columna de ventas objetivo en el archivo de la semana anterior")
+                    return pd.DataFrame()
+        
+        # Eliminar duplicados (quedarse con el último registro de cada artículo)
+        df_resultado.drop_duplicates(subset=['Clave_Articulo'], keep='last', inplace=True)
+        
+        return df_resultado
+    
+    return pd.DataFrame()
+
+
+def fusionar_datos_tendencia(
+    pedidos_df: pd.DataFrame,
+    df_ventas_reales: Optional[pd.DataFrame],
+    df_stock_actual: Optional[pd.DataFrame],
+    df_ventas_objetivo_anterior: Optional[pd.DataFrame]
+) -> pd.DataFrame:
+    """
+    Fusiona los datos históricos (ventas objetivo semana anterior, ventas reales,
+    stock actual) con el DataFrame de pedidos actual para calcular la tendencia.
+    
+    Args:
+        pedidos_df (pd.DataFrame): DataFrame con los pedidos calculados
+        df_ventas_reales (Optional[pd.DataFrame]): Ventas reales del ERP
+        df_stock_actual (Optional[pd.DataFrame]): Stock actual del ERP
+        df_ventas_objetivo_anterior (Optional[pd.DataFrame]): Ventas objetivo de la semana anterior
+    
+    Returns:
+        pd.DataFrame: DataFrame con las nuevas columnas fusionadas
+    """
+    if pedidos_df is None or len(pedidos_df) == 0:
+        return pedidos_df
+    
+    df_resultado = pedidos_df.copy()
+    
+    # Inicializar nuevas columnas con valores por defecto
+    df_resultado['Ventas_Objetivo_Semana_Pasada'] = 0.0
+    df_resultado['Ventas_Reales'] = 0
+    df_resultado['Stock_Real'] = 0
+    
+    # Crear clave de artículo en el DataFrame de pedidos si no existe
+    if 'Clave_Articulo' not in df_resultado.columns:
+        if 'Codigo_Articulo' in df_resultado.columns:
+            df_resultado['Clave_Articulo'] = (
+                df_resultado['Codigo_Articulo'].astype(str) + '|' +
+                df_resultado['Talla'].astype(str) + '|' +
+                df_resultado['Color'].astype(str)
+            )
+    
+    # Fusionar ventas objetivo de la semana anterior
+    if df_ventas_objetivo_anterior is not None and len(df_ventas_objetivo_anterior) > 0:
+        df_resultado = df_resultado.merge(
+            df_ventas_objetivo_anterior,
+            on='Clave_Articulo',
+            how='left'
+        )
+        # Llenar NaN con 0
+        df_resultado['Ventas_Objetivo_Semana_Pasada'] = df_resultado['Ventas_Objetivo_Semana_Pasada'].fillna(0)
+    
+    # Fusionar ventas reales
+    if df_ventas_reales is not None and len(df_ventas_reales) > 0:
+        # Normalizar el DataFrame de ventas reales
+        df_ventas = df_ventas_reales.copy()
+        
+        # Crear clave de artículo
+        if 'Codigo_Articulo' in df_ventas.columns:
+            if 'Talla' in df_ventas.columns and 'Color' in df_ventas.columns:
+                df_ventas['Clave_Articulo'] = (
+                    df_ventas['Codigo_Articulo'].astype(str) + '|' +
+                    df_ventas['Talla'].astype(str) + '|' +
+                    df_ventas['Color'].astype(str)
+                )
+            else:
+                df_ventas['Clave_Articulo'] = df_ventas['Codigo_Articulo'].astype(str)
+            
+            # Buscar columna de unidades vendidas
+            col_unidades = encontrar_columna(list(df_ventas.columns), 'unidadesvendidas')
+            if col_unidades is None:
+                col_unidades = encontrar_columna(list(df_ventas.columns), 'ventas')
+            if col_unidades is None:
+                col_unidades = encontrar_columna(list(df_ventas.columns), 'unidades')
+            
+            if col_unidades:
+                df_ventas = df_ventas[['Clave_Articulo', col_unidades]].copy()
+                df_ventas.rename(columns={col_unidades: 'Ventas_Reales_Tmp'}, inplace=True)
+                df_ventas['Ventas_Reales_Tmp'] = pd.to_numeric(df_ventas['Ventas_Reales_Tmp'], errors='coerce').fillna(0)
+                
+                df_resultado = df_resultado.merge(
+                    df_ventas[['Clave_Articulo', 'Ventas_Reales_Tmp']],
+                    on='Clave_Articulo',
+                    how='left'
+                )
+                df_resultado['Ventas_Reales'] = df_resultado['Ventas_Reales_Tmp'].fillna(0).astype(int)
+                df_resultado.drop(columns=['Ventas_Reales_Tmp'], inplace=True)
+    
+    # Fusionar stock actual
+    if df_stock_actual is not None and len(df_stock_actual) > 0:
+        df_stock = df_stock_actual.copy()
+        
+        # Crear clave de artículo
+        if 'Codigo_Articulo' in df_stock.columns:
+            if 'Talla' in df_stock.columns and 'Color' in df_stock.columns:
+                df_stock['Clave_Articulo'] = (
+                    df_stock['Codigo_Articulo'].astype(str) + '|' +
+                    df_stock['Talla'].astype(str) + '|' +
+                    df_stock['Color'].astype(str)
+                )
+            else:
+                df_stock['Clave_Articulo'] = df_stock['Codigo_Articulo'].astype(str)
+            
+            # Buscar columna de stock
+            col_stock = encontrar_columna(list(df_stock.columns), 'stock')
+            if col_stock is None:
+                col_stock = encontrar_columna(list(df_stock.columns), 'stockfisico')
+            
+            if col_stock:
+                df_stock = df_stock[['Clave_Articulo', col_stock]].copy()
+                df_stock.rename(columns={col_stock: 'Stock_Real_Tmp'}, inplace=True)
+                df_stock['Stock_Real_Tmp'] = pd.to_numeric(df_stock['Stock_Real_Tmp'], errors='coerce').fillna(0).astype(int)
+                
+                df_resultado = df_resultado.merge(
+                    df_stock[['Clave_Articulo', 'Stock_Real_Tmp']],
+                    on='Clave_Articulo',
+                    how='left'
+                )
+                df_resultado['Stock_Real'] = df_resultado['Stock_Real_Tmp'].fillna(0).astype(int)
+                df_resultado.drop(columns=['Stock_Real_Tmp'], inplace=True)
+    
+    logger.info(f"Datos de tendencia fusionados: {len(df_resultado)} registros")
+    logger.info(f"  - Ventas_Objetivo_Semana_Pasada: {df_resultado['Ventas_Objetivo_Semana_Pasada'].sum():.2f}")
+    logger.info(f"  - Ventas_Reales: {df_resultado['Ventas_Reales'].sum()}")
+    logger.info(f"  - Stock_Real: {df_resultado['Stock_Real'].sum()}")
+    
+    return df_resultado
