@@ -690,17 +690,6 @@ def procesar_pedido_semana(
     # Cargar archivo de stock actual (SPA_stock_actual.xlsx)
     df_stock_actual = leer_archivo_stock_actual(dir_entrada)
     
-    # Buscar archivo de pedido de la semana anterior
-    archivo_semana_anterior = encontrar_archivo_semana_anterior(dir_salida, semana)
-    df_ventas_objetivo_anterior = None
-    if archivo_semana_anterior:
-        try:
-            df_pedido_anterior = pd.read_excel(archivo_semana_anterior)
-            df_ventas_objetivo_anterior = normalizar_datos_historicos(df_pedido_anterior)
-            logger.info(f"Cargados datos de la semana anterior: {len(df_ventas_objetivo_anterior)} registros")
-        except Exception as e:
-            logger.warning(f"No se pudo leer el archivo de la semana anterior: {str(e)}")
-    
     for seccion in secciones:
         logger.info(f"\n{'=' * 50}")
         logger.info(f"SECCION: {seccion.upper()}")
@@ -758,6 +747,17 @@ def procesar_pedido_semana(
             # FUSIÓN DE DATOS PARA CÁLCULO DE TENDENCIA
             # ============================================================================
             # Añadir columnas: Unidades_Calculadas_Semana_Pasada, Ventas_Reales, Stock_Real
+            # Buscar archivo de pedido de la semana anterior para esta sección
+            archivo_semana_anterior = encontrar_archivo_semana_anterior(dir_salida, semana, seccion)
+            df_ventas_objetivo_anterior = None
+            if archivo_semana_anterior:
+                try:
+                    df_pedido_anterior = pd.read_excel(archivo_semana_anterior)
+                    df_ventas_objetivo_anterior = normalizar_datos_historicos(df_pedido_anterior)
+                    logger.info(f"Cargados datos de la semana anterior ({seccion}): {len(df_ventas_objetivo_anterior)} registros")
+                except Exception as e:
+                    logger.warning(f"No se pudo leer el archivo de la semana anterior para '{seccion}': {str(e)}")
+            
             pedidos = fusionar_datos_tendencia(
                 pedidos,
                 df_ventas_reales,

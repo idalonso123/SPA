@@ -609,7 +609,7 @@ if __name__ == "__main__":
 # FUNCIONES PARA CÁLCULO DE TENDENCIA DE VENTAS
 # ============================================================================
 
-def encontrar_archivo_semana_anterior(directorio_base: str, semana_actual: int) -> Optional[str]:
+def encontrar_archivo_semana_anterior(directorio_base: str, semana_actual: int, seccion: Optional[str] = None) -> Optional[str]:
     """
     Busca el archivo de pedido de la semana anterior basándose en la semana actual.
     
@@ -619,12 +619,14 @@ def encontrar_archivo_semana_anterior(directorio_base: str, semana_actual: int) 
     Args:
         directorio_base (str): Directorio donde buscar los archivos de pedido
         semana_actual (int): Número de la semana actual (1-52)
+        seccion (Optional[str]): Nombre de la sección para filtrar (ej: 'interior', 'vivero')
+                                 Si es None, busca cualquier archivo de la semana anterior
     
     Returns:
         Optional[str]: Ruta completa del archivo encontrado, o None si no existe
     
     Ejemplo:
-        Si semana_actual = 9, buscará archivos que coincidan con: Pedido_Semana_8_*.xlsx
+        Si semana_actual = 9 y seccion = 'interior', buscará: Pedido_Semana_8_*_interior.xlsx
     """
     # Calcular semana anterior
     semana_anterior = semana_actual - 1
@@ -634,7 +636,13 @@ def encontrar_archivo_semana_anterior(directorio_base: str, semana_actual: int) 
         semana_anterior = 52  # Asumimos que el año anterior tenía 52 semanas
     
     # Patrón de búsqueda para archivos de la semana anterior (formato de 2 dígitos: 07, 08, etc.)
-    patron_busqueda = f"Pedido_Semana_{semana_anterior:02d}_*.xlsx"
+    if seccion:
+        # Filtrar por sección: Pedido_Semana_08_*_interior.xlsx
+        patron_busqueda = f"Pedido_Semana_{semana_anterior:02d}_*_{seccion}.xlsx"
+    else:
+        # Buscar cualquier archivo de la semana anterior
+        patron_busqueda = f"Pedido_Semana_{semana_anterior:02d}_*.xlsx"
+    
     ruta_patron = os.path.join(directorio_base, patron_busqueda)
     
     # Buscar archivos que coincidan con el patrón
@@ -646,7 +654,11 @@ def encontrar_archivo_semana_anterior(directorio_base: str, semana_actual: int) 
         logger.info(f"Archivo de semana anterior encontrado: {os.path.basename(archivo_mas_reciente)}")
         return archivo_mas_reciente
     
-    logger.warning(f"No se encontró archivo de pedido para la semana {semana_anterior}")
+    if seccion:
+        logger.warning(f"No se encontró archivo de pedido para la semana {semana_anterior} sección '{seccion}'")
+    else:
+        logger.warning(f"No se encontró archivo de pedido para la semana {semana_anterior}")
+    
     logger.info(f"  Patrón buscado: {patron_busqueda}")
     logger.info(f"  Directorio: {directorio_base}")
     return None
