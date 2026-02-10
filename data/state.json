@@ -3,7 +3,7 @@
         "version": "2.0.0",
         "fecha_creacion": "2026-01-31T00:00:00",
         "ultima_actualizacion": null,
-        "ultima_ejecucion_exitosa": "2026-02-09T23:16:53.931820",
+        "ultima_ejecucion_exitosa": "2026-02-10T02:18:37.270074",
         "ultima_semana_procesada": 6,
         "año_en_curso": 2026
     },
@@ -4215,6 +4215,33 @@
             "importe": 16391.48,
             "exitosa": true,
             "notas": "Procesadas 11 secciones"
+        },
+        {
+            "semana": 6,
+            "fecha_ejecucion": "2026-02-10T01:45:08.345221",
+            "archivo_generado": ".\\./data/output\\Resumen_Pedidos_CONSOLIDADO_10022026.xlsx",
+            "num_articulos": 0,
+            "importe": 0.0,
+            "exitosa": true,
+            "notas": "Procesadas 11 secciones"
+        },
+        {
+            "semana": 6,
+            "fecha_ejecucion": "2026-02-10T02:06:47.338158",
+            "archivo_generado": ".\\./data/output\\Resumen_Pedidos_CONSOLIDADO_10022026.xlsx",
+            "num_articulos": 0,
+            "importe": 0.0,
+            "exitosa": true,
+            "notas": "Procesadas 11 secciones"
+        },
+        {
+            "semana": 6,
+            "fecha_ejecucion": "2026-02-10T02:18:37.270026",
+            "archivo_generado": ".\\./data/output\\Pedido_Semana_06_10022026_maf.xlsx",
+            "num_articulos": 686,
+            "importe": 16391.48,
+            "exitosa": true,
+            "notas": "Procesadas 11 secciones"
         }
     ],
     "pedidos_generados": [
@@ -4505,12 +4532,30 @@
             "archivo": ".\\./data/output\\Pedido_Semana_06_09022026_maf.xlsx",
             "fecha": "2026-02-09",
             "importe": 16391.48
+        },
+        {
+            "semana": 6,
+            "archivo": ".\\./data/output\\Resumen_Pedidos_CONSOLIDADO_10022026.xlsx",
+            "fecha": "2026-02-10",
+            "importe": 0.0
+        },
+        {
+            "semana": 6,
+            "archivo": ".\\./data/output\\Resumen_Pedidos_CONSOLIDADO_10022026.xlsx",
+            "fecha": "2026-02-10",
+            "importe": 0.0
+        },
+        {
+            "semana": 6,
+            "archivo": ".\\./data/output\\Pedido_Semana_06_10022026_maf.xlsx",
+            "fecha": "2026-02-10",
+            "importe": 16391.48
         }
     ],
     "metricas": {
-        "total_ejecuciones": 48,
-        "total_articulos_procesados": 53482,
-        "total_importe_pedidos": 1616912.4900000002,
+        "total_ejecuciones": 51,
+        "total_articulos_procesados": 54168,
+        "total_importe_pedidos": 1633303.9700000002,
         "ultima_semana_procesada_exitosamente": 6
     },
     "errores_pendientes": [],
