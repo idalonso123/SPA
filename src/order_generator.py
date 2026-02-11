@@ -169,55 +169,33 @@ class OrderGenerator:
             ws = wb.active
             ws.title = f"Semana_{semana}"
             
-            # Definir anchuras de columna
-            COLUMN_WIDTHS = {
-                'A': 11.25,  # Código artículo
-                'B': 50.00,  # Nombre Artículo
-                'C': 8.50,   # Talla
-                'D': 6.50,   # Color
-                'E': 11.00,  # Sección
-                'F': 11.00,  # Unidades Calculadas
-                'G': 11.50,  # PVP
-                'H': 11.50,  # Coste Pedido
-                'I': 10.00,  # Categoría
-                'J': 15.00,  # Acción Aplicada
-                'K': 12.50,  # Stock Mínimo Objetivo
-                'L': 10.50,  # Diferencia Stock (era M)
-                'M': 9.70,   # Ventas Objetivo (era N)
-                'N': 11.50,  # Beneficio Objetivo (era O)
-                'O': 27.00,  # Proveedor (era P)
-                'P': 11.00,  # Pedido Corregido Stock (FASE 2) (era Q)
-                'Q': 14.00,  # uds. Objetivo semana pasada (NUEVO)
-                'R': 16.00,  # Uds. Vtas. reales semana pasada (NUEVO)
-                'S': 11.00,  # Stock Real (NUEVO)
-                'T': 11.00,  # Tendencia Consumo (FASE 2) (era S)
-                'U': 11.00   # Pedido Final (FASE 2) (era T)
-            }
-            
+            # Definir orden de columnas con Stock Real entre Proveedor y Pedido Corregido Stock
+            # Formato: Nombre en primera línea, fórmula en segunda línea
             COLUMN_HEADERS = [
-                'Código artículo',      # A
-                'Nombre Artículo',      # B
-                'Talla',                # C
-                'Color',                # D
-                'Sección',              # E
-                'Unidades Calculadas',  # F
-                'PVP',                  # G
-                'Coste Pedido',         # H
-                'Categoría',            # I
-                'Acción Aplicada',      # J
-                'Stock Mínimo Objetivo',# K
-                'Diferencia Stock',     # L (era M)
-                'Ventas Objetivo',      # M (era N)
-                'Beneficio Objetivo',   # N (era O)
-                'Proveedor',            # O (era P)
-                'Pedido Corregido Stock',# P (FASE 2 - Corrección 1) (era Q)
-                'uds. Objetivo semana pasada',# Q (FASE 2 - Histórico) (NUEVO)
-                'Uds. Vtas. reales semana pasada',  # R (FASE 2 - Datos de ventas reales de semana anterior)
-                'Stock Real',           # S (FASE 2 - Datos) (NUEVO)
-                'Tendencia Consumo',    # T (FASE 2 - Corrección 2) (era S)
-                'Pedido Final'          # U (FASE 2 - Resultado) (era T)
+                'Código artículo',      # A - 1
+                'Nombre Artículo',      # B - 2
+                'Talla',                # C - 3
+                'Color',                # D - 4
+                'Sección',              # E - 5
+                'Unidades Calculadas',  # F - 6
+                'PVP',                  # G - 7
+                'Coste Pedido',         # H - 8
+                'Categoría',            # I - 9
+                'Acción Aplicada',      # J - 10
+                'Stock Mínimo Objetivo',# K - 11
+                'Diferencia Stock',     # L - 12
+                'Ventas Objetivo',      # M - 13
+                'Beneficio Objetivo',   # N - 14
+                'Proveedor',            # O - 15
+                'Stock Real',           # P - 16
+                'Pedido Corregido Stock\n17=6+11-16',# Q - 17
+                'uds. Objetivo semana pasada',# R - 18
+                'Uds. Vtas. reales semana pasada',  # S - 19
+                'Tendencia Consumo\n20=19-18',     # T - 20
+                'Pedido Final\n21=6+11-16+20'          # U - 21
             ]
             
+            # Mapeo de nombres de columnas del DataFrame a nombres en Excel
             COLUMN_MAPPING = {
                 'Codigo_Articulo': 'Código artículo',
                 'Nombre_Articulo': 'Nombre Artículo',
@@ -234,17 +212,50 @@ class OrderGenerator:
                 'Ventas_Objetivo': 'Ventas Objetivo',
                 'Beneficio_Objetivo': 'Beneficio Objetivo',
                 'Proveedor': 'Proveedor',
-                'Pedido_Corregido_Stock': 'Pedido Corregido Stock',
+                'Stock_Real': 'Stock Real',
+                'Pedido_Corregido_Stock': 'Pedido Corregido Stock\n17=6+11-16',
                 'Unidades_Calculadas_Semana_Pasada': 'uds. Objetivo semana pasada',
                 'Ventas_Reales': 'Uds. Vtas. reales semana pasada',
-                'Stock_Real': 'Stock Real',
-                'Tendencia_Consumo': 'Tendencia Consumo',
-                'Pedido_Final': 'Pedido Final'
+                'Tendencia_Consumo': 'Tendencia Consumo\n20=19-18',
+                'Pedido_Final': 'Pedido Final\n21=6+11-16+20'
             }
             
-            # Escribir cabeceras
+            # Definir anchuras de columna
+            COLUMN_WIDTHS = {
+                'A': 11.25,  # Código artículo
+                'B': 50.00,  # Nombre Artículo
+                'C': 8.50,   # Talla
+                'D': 6.50,   # Color
+                'E': 11.00,  # Sección
+                'F': 11.00,  # Unidades Calculadas
+                'G': 11.50,  # PVP
+                'H': 11.50,  # Coste Pedido
+                'I': 10.00,  # Categoría
+                'J': 15.00,  # Acción Aplicada
+                'K': 12.50,  # Stock Mínimo Objetivo
+                'L': 10.50,  # Diferencia Stock
+                'M': 9.70,   # Ventas Objetivo
+                'N': 11.50,  # Beneficio Objetivo
+                'O': 27.00,  # Proveedor
+                'P': 11.00,  # Stock Real (MOVED here)
+                'Q': 18.00,  # Pedido Corregido Stock (with formula)
+                'R': 14.00,  # uds. Objetivo semana pasada
+                'S': 16.00,  # Uds. Vtas. reales semana pasada
+                'T': 18.00,  # Tendencia Consumo (with formula)
+                'U': 22.00   # Pedido Final (with formula)
+            }
+            
+            # Fila 1: Números de columna (índice)
+            for col_idx in range(1, len(COLUMN_HEADERS) + 1):
+                cell = ws.cell(row=1, column=col_idx, value=col_idx)
+                cell.fill = self.HEADER_FILL
+                cell.font = self.HEADER_FONT
+                cell.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+                cell.border = self.THIN_BLACK_BORDER
+            
+            # Fila 2: Cabeceras
             for col_idx, header in enumerate(COLUMN_HEADERS, 1):
-                cell = ws.cell(row=1, column=col_idx, value=header)
+                cell = ws.cell(row=2, column=col_idx, value=header)
                 cell.fill = self.HEADER_FILL
                 cell.font = self.HEADER_FONT
                 cell.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
@@ -254,8 +265,8 @@ class OrderGenerator:
             pedidos_renamed = pedidos_filtrados.rename(columns=COLUMN_MAPPING)
             pedidos_renamed = pedidos_renamed[COLUMN_HEADERS]
             
-            # Escribir datos
-            for r_idx, row in enumerate(dataframe_to_rows(pedidos_renamed, index=False, header=False), 2):
+            # Escribir datos (empezar en fila 3, ya que fila 1=números, fila 2=cabeceras)
+            for r_idx, row in enumerate(dataframe_to_rows(pedidos_renamed, index=False, header=False), 3):
                 for c_idx, value in enumerate(row, 1):
                     cell = ws.cell(row=r_idx, column=c_idx, value=value)
                     cell.border = self.THIN_BLACK_BORDER
@@ -269,11 +280,11 @@ class OrderGenerator:
                         
                     elif header_name in ['Unidades Calculadas', 'Stock Mínimo Objetivo',
                                          'Diferencia Stock', 
-                                         'Pedido Corregido Stock', 
+                                         'Pedido Corregido Stock\n17=6+11-16', 
                                          'Ventas Obj. Semana Pasada',
                                          'Ventas Reales', 
                                          'Stock Real',
-                                         'Tendencia Consumo', 'Pedido Final']:
+                                         'Tendencia Consumo\n20=19-18', 'Pedido Final\n21=6+11-16+20']:
                         if isinstance(value, (int, float)):
                             cell.number_format = '#,##0'
                     
@@ -284,8 +295,8 @@ class OrderGenerator:
             for col_letter, width in COLUMN_WIDTHS.items():
                 ws.column_dimensions[col_letter].width = width
             
-            # Añadir métricas de resumen
-            summary_row = len(pedidos_filtrados) + 3
+            # Añadir métricas de resumen (los datos empiezan en fila 3, después de 2 filas de cabecera)
+            summary_row = len(pedidos_filtrados) + 4
             
             # Fusionar celdas para el título
             ws.merge_cells(f'B{summary_row}:C{summary_row}')
