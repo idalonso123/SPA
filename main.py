@@ -29,6 +29,7 @@ from src.correction_engine import CorrectionEngine, crear_correction_engine
 from src.correction_data_loader import (
     encontrar_archivo_semana_anterior,
     leer_archivo_ventas_reales,
+    leer_archivo_ventas_semana,
     leer_archivo_stock_actual,
     normalizar_datos_historicos,
     fusionar_datos_tendencia
@@ -684,8 +685,8 @@ def procesar_pedido_semana(
     dir_entrada = os.path.join(dir_base, config.get('rutas', {}).get('directorio_entrada', 'data/input'))
     dir_salida = os.path.join(dir_base, config.get('rutas', {}).get('directorio_salida', 'data/output'))
     
-    # Cargar archivo de ventas reales (SPA_ventas_reales.xlsx) - Puede no existir
-    df_ventas_reales, ventas_reales_existe = leer_archivo_ventas_reales(dir_entrada)
+    # Cargar archivo de ventas de semana (SPA_ventas_semana.xlsx) - Contiene las ventas reales de la semana anterior
+    df_ventas_reales, ventas_reales_existe = leer_archivo_ventas_semana(dir_entrada)
     
     # Cargar archivo de stock actual (SPA_stock_actual.xlsx)
     df_stock_actual = leer_archivo_stock_actual(dir_entrada)

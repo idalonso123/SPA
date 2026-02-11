@@ -185,7 +185,7 @@ class OrderGenerator:
                 'O': 27.00,  # Proveedor (era P)
                 'P': 11.00,  # Pedido Corregido Stock (FASE 2) (era Q)
                 'Q': 14.00,  # uds. Objetivo semana pasada (NUEVO)
-                'R': 11.00,  # Ventas Reales (FASE 2) (era R)
+                'R': 16.00,  # Uds. Vtas. reales semana pasada (NUEVO)
                 'S': 11.00,  # Stock Real (NUEVO)
                 'T': 11.00,  # Tendencia Consumo (FASE 2) (era S)
                 'U': 11.00   # Pedido Final (FASE 2) (era T)
@@ -209,7 +209,7 @@ class OrderGenerator:
                 'Proveedor',            # O (era P)
                 'Pedido Corregido Stock',# P (FASE 2 - Corrección 1) (era Q)
                 'uds. Objetivo semana pasada',# Q (FASE 2 - Histórico) (NUEVO)
-                'Ventas Reales',        # R (FASE 2 - Datos) (era R)
+                'Uds. Vtas. reales semana pasada',  # R (FASE 2 - Datos de ventas reales de semana anterior)
                 'Stock Real',           # S (FASE 2 - Datos) (NUEVO)
                 'Tendencia Consumo',    # T (FASE 2 - Corrección 2) (era S)
                 'Pedido Final'          # U (FASE 2 - Resultado) (era T)
@@ -233,7 +233,7 @@ class OrderGenerator:
                 'Proveedor': 'Proveedor',
                 'Pedido_Corregido_Stock': 'Pedido Corregido Stock',
                 'Unidades_Calculadas_Semana_Pasada': 'uds. Objetivo semana pasada',
-                'Ventas_Reales': 'Ventas Reales',
+                'Ventas_Reales': 'Uds. Vtas. reales semana pasada',
                 'Stock_Real': 'Stock Real',
                 'Tendencia_Consumo': 'Tendencia Consumo',
                 'Pedido_Final': 'Pedido Final'

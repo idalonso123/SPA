@@ -706,6 +706,54 @@ def leer_archivo_ventas_reales(directorio_entrada: str) -> Tuple[Optional[pd.Dat
         return None, False
 
 
+def leer_archivo_ventas_semana(directorio_entrada: str) -> Tuple[Optional[pd.DataFrame], bool]:
+    """
+    Lee el archivo de ventas de la semana del ERP (SPA_ventas_semana.xlsx).
+    
+    Este archivo contiene las ventas reales de la semana anterior, incluyendo:
+    - Artículo: Código del artículo
+    - Nombre artículo: Descripción del artículo
+    - Talla: Talla del artículo
+    - Color: Color del artículo
+    - Unidades: Unidades vendidas (este es el dato que se transferirá)
+    
+    La relación con los artículos del pedido se hace mediante:
+    - Artículo (SPA_ventas_semana) = Código artículo (pedido)
+    - Talla
+    - Color
+    
+    Args:
+        directorio_entrada (str): Directorio donde se encuentra el archivo
+    
+    Returns:
+        Tuple[Optional[pd.DataFrame], bool]: 
+            - DataFrame con las ventas de la semana o None si hay error
+            - Boolean indicando si el archivo existía
+    
+    Nota:
+        El archivo no encontrado genera una ADVERTENCIA (no un error), ya que
+        el sistema debe continuar generando los pedidos incluso sin este dato.
+    """
+    nombre_archivo = "SPA_ventas_semana.xlsx"
+    ruta_archivo = os.path.join(directorio_entrada, nombre_archivo)
+    
+    if not os.path.exists(ruta_archivo):
+        logger.warning(f"ADVERTENCIA: No se encontró el archivo de ventas de semana")
+        logger.warning(f"  Archivo: {nombre_archivo}")
+        logger.warning(f"  Directorio: {directorio_entrada}")
+        logger.warning("  El sistema continuará generando pedidos sin el dato de ventas reales de la semana.")
+        return None, False
+    
+    try:
+        df = pd.read_excel(ruta_archivo)
+        logger.info(f"Archivo de ventas de semana cargado: {len(df)} registros")
+        return df, True
+    except Exception as e:
+        logger.error(f"Error al leer el archivo de ventas de semana: {str(e)}")
+        logger.warning(f"ADVERTENCIA: Error al leer {nombre_archivo}. El sistema continuará sin datos de ventas de semana.")
+        return None, False
+
+
 def leer_archivo_stock_actual(directorio_entrada: str) -> Optional[pd.DataFrame]:
     """
     Lee el archivo de stock actual del ERP (SPA_stock_actual.xlsx).
@@ -829,11 +877,18 @@ def fusionar_datos_tendencia(
     
     # Crear clave de artículo en el DataFrame de pedidos si no existe
     if 'Clave_Articulo' not in df_resultado.columns:
+        # Determinar qué columna de código usar
+        col_codigo = None
         if 'Codigo_Articulo' in df_resultado.columns:
+            col_codigo = 'Codigo_Articulo'
+        elif 'Código artículo' in df_resultado.columns:
+            col_codigo = 'Código artículo'
+        
+        if col_codigo:
             df_resultado['Clave_Articulo'] = (
-                df_resultado['Codigo_Articulo'].astype(str) + '|' +
-                df_resultado['Talla'].astype(str) + '|' +
-                df_resultado['Color'].astype(str)
+                df_resultado[col_codigo].astype(str).str.replace(r'\.0$', '', regex=True).str.strip() + '|' +
+                df_resultado['Talla'].astype(str).str.strip() + '|' +
+                df_resultado['Color'].astype(str).str.strip()
             )
     
     # Fusionar unidades calculadas de la semana anterior
@@ -860,33 +915,66 @@ def fusionar_datos_tendencia(
         else:
             df_resultado['Unidades_Calculadas_Semana_Pasada'] = 0
     
-    # Fusionar ventas reales
+    # Fusionar ventas reales de SPA_ventas_semana.xlsx
+    # Relación: Artículo (SPA_ventas_semana) = Código artículo (pedido), Talla, Color
     if df_ventas_reales is not None and len(df_ventas_reales) > 0:
-        # Normalizar el DataFrame de ventas reales
+        # Normalizar el DataFrame de ventas de semana
         df_ventas = df_ventas_reales.copy()
         
-        # Crear clave de artículo
-        if 'Codigo_Articulo' in df_ventas.columns:
-            if 'Talla' in df_ventas.columns and 'Color' in df_ventas.columns:
-                df_ventas['Clave_Articulo'] = (
-                    df_ventas['Codigo_Articulo'].astype(str) + '|' +
-                    df_ventas['Talla'].astype(str) + '|' +
-                    df_ventas['Color'].astype(str)
-                )
+        # Buscar columna de artículo (puede llamarse 'Artículo' o variaciones)
+        col_articulo = encontrar_columna(list(df_ventas.columns), 'articulo')
+        if col_articulo is None:
+            logger.warning("No se encontró columna 'Artículo' en SPA_ventas_semana.xlsx")
+        else:
+            # Buscar columnas de talla y color
+            col_talla = encontrar_columna(list(df_ventas.columns), 'talla')
+            col_color = encontrar_columna(list(df_ventas.columns), 'color')
+            
+            if col_talla and col_color:
+                # Filtrar filas con valores válidos (no NaN ni vacíos) en las columnas clave
+                df_ventas = df_ventas[
+                    df_ventas[col_articulo].notna() & 
+                    (df_ventas[col_articulo].astype(str).str.strip() != '') &
+                    df_ventas[col_talla].notna() & 
+                    (df_ventas[col_talla].astype(str).str.strip() != '') &
+                    df_ventas[col_color].notna() & 
+                    (df_ventas[col_color].astype(str).str.strip() != '')
+                ].copy()
+                
+                if len(df_ventas) == 0:
+                    logger.warning("No hay registros válidos con artículo, talla y color en SPA_ventas_semana.xlsx")
+                else:
+                    # Normalizar códigos de artículo (eliminar decimales si los hay)
+                    df_ventas[col_articulo] = df_ventas[col_articulo].astype(str).str.replace(r'\.0$', '', regex=True).str.strip()
+                    df_ventas[col_talla] = df_ventas[col_talla].astype(str).str.strip()
+                    df_ventas[col_color] = df_ventas[col_color].astype(str).str.strip()
+                    
+                    # Crear clave de artículo compuesta: Artículo|Talla|Color
+                    df_ventas['Clave_Articulo'] = (
+                        df_ventas[col_articulo] + '|' +
+                        df_ventas[col_talla] + '|' +
+                        df_ventas[col_color]
+                    )
             else:
-                df_ventas['Clave_Articulo'] = df_ventas['Codigo_Articulo'].astype(str)
+                # Si no hay talla/color, usar solo el código de artículo
+                df_ventas = df_ventas[
+                    df_ventas[col_articulo].notna() & 
+                    (df_ventas[col_articulo].astype(str).str.strip() != '')
+                ].copy()
+                
+                df_ventas[col_articulo] = df_ventas[col_articulo].astype(str).str.replace(r'\.0$', '', regex=True).str.strip()
+                df_ventas['Clave_Articulo'] = df_ventas[col_articulo]
             
-            # Buscar columna de unidades vendidas
-            col_unidades = encontrar_columna(list(df_ventas.columns), 'unidadesvendidas')
-            if col_unidades is None:
-                col_unidades = encontrar_columna(list(df_ventas.columns), 'ventas')
-            if col_unidades is None:
-                col_unidades = encontrar_columna(list(df_ventas.columns), 'unidades')
+            # Buscar columna de unidades
+            col_unidades = encontrar_columna(list(df_ventas.columns), 'unidades')
             
-            if col_unidades:
+            if col_unidades and 'Clave_Articulo' in df_ventas.columns and len(df_ventas) > 0:
                 df_ventas = df_ventas[['Clave_Articulo', col_unidades]].copy()
                 df_ventas.rename(columns={col_unidades: 'Ventas_Reales_Tmp'}, inplace=True)
                 df_ventas['Ventas_Reales_Tmp'] = pd.to_numeric(df_ventas['Ventas_Reales_Tmp'], errors='coerce').fillna(0)
+                
+                # Eliminar duplicados, quedándose con la suma de unidades por clave
+                df_ventas = df_ventas.groupby('Clave_Articulo')['Ventas_Reales_Tmp'].sum().reset_index()
                 
                 df_resultado = df_resultado.merge(
                     df_ventas[['Clave_Articulo', 'Ventas_Reales_Tmp']],
@@ -895,6 +983,7 @@ def fusionar_datos_tendencia(
                 )
                 df_resultado['Ventas_Reales'] = df_resultado['Ventas_Reales_Tmp'].fillna(0).astype(int)
                 df_resultado.drop(columns=['Ventas_Reales_Tmp'], inplace=True)
+                logger.info(f"Fusionados datos de ventas de semana: {len(df_ventas)} registros")
     
     # Fusionar stock actual
     if df_stock_actual is not None and len(df_stock_actual) > 0:
