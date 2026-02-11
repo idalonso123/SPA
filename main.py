@@ -740,12 +740,8 @@ def procesar_pedido_semana(
                 logger.warning(f"No se generaron pedidos para '{seccion}'")
                 continue
             
-            pedidos, nuevo_stock, ajustes = forecast_engine.aplicar_stock_minimo(
-                pedidos, semana, stock_acumulado
-            )
-            
             # ============================================================================
-            # FUSIÓN DE DATOS PARA CÁLCULO DE TENDENCIA
+            # FUSIÓN DE DATOS PARA CÁLCULO DE TENDENCIA (ANTES DE APLICAR STOCK MÍNIMO)
             # ============================================================================
             # Añadir columnas: Unidades_Calculadas_Semana_Pasada, Ventas_Reales, Stock_Real
             # Buscar archivo de pedido de la semana anterior para esta sección
@@ -764,6 +760,30 @@ def procesar_pedido_semana(
                 df_ventas_reales,
                 df_stock_actual,
                 df_ventas_objetivo_anterior
+            )
+            
+            # ============================================================================
+            # EXTRAER DICCIONARIOS PARA APLICAR STOCK MÍNIMO
+            # ============================================================================
+            # Crear diccionarios de stock real y ventas a partir de los datos fusionados
+            stock_real_dict = {}
+            ventas_reales_dict = {}
+            ventas_objetivo_dict = {}
+
+            for idx, row in pedidos.iterrows():
+                # Normalizar Codigo_Articulo igual que en fusionar_datos_tendencia
+                codigo_raw = row.get('Codigo_Articulo', '')
+                codigo = str(codigo_raw).replace('.0', '', 1).strip() if pd.notna(codigo_raw) else ''
+                clave = f"{codigo}|{row.get('Talla', '')}|{row.get('Color', '')}"
+                stock_real_dict[clave] = row.get('Stock_Real', 0)
+                ventas_reales_dict[clave] = row.get('Ventas_Reales', 0)
+                ventas_objetivo_dict[clave] = row.get('Unidades_Calculadas_Semana_Pasada', 0)
+            
+            # ============================================================================
+            # APLICAR STOCK MÍNIMO Y CALCULAR PEDIDO FINAL
+            # ============================================================================
+            pedidos, nuevo_stock, ajustes = forecast_engine.aplicar_stock_minimo(
+                pedidos, semana, stock_acumulado, stock_real_dict, ventas_reales_dict, ventas_objetivo_dict
             )
             
             stock_acumulado.update(nuevo_stock)

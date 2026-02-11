@@ -137,14 +137,17 @@ class OrderGenerator:
             logger.warning(f"No hay pedidos para generar en semana {semana}")
             return None
         
-        # Filtrar artículos con Pedido_Corregido_Stock > 0
-        pedidos_filtrados = pedidos_df[pedidos_df['Pedido_Corregido_Stock'] > 0].copy()
-        
-        logger.debug(f"[DEBUG] Tras filtrar Pedido_Corregido_Stock > 0: {len(pedidos_filtrados)} registros")
-        
+        # Filtrar artículos con Unidades_Finales > 0 (artículos calculados por el forecast)
+        # Nota: Cambiado de Pedido_Corregido_Stock > 0 a Unidades_Finales > 0 para preservar
+        # artículos con datos válidos (incluyendo Stock Real) aunque Pedido_Corregido_Stock sea 0
+        # debido a sobrestock (Stock_Real > Unidades_Finales + Stock_Minimo)
+        pedidos_filtrados = pedidos_df[pedidos_df['Unidades_Finales'] > 0].copy()
+
+        logger.debug(f"[DEBUG] Tras filtrar Unidades_Finales > 0: {len(pedidos_filtrados)} registros")
+
         if len(pedidos_filtrados) == 0:
-            logger.warning(f"Tras filtrar, no hay artículos con pedido > 0 para semana {semana}")
-            logger.warning(f"[DEBUG] Posible causa: Todos los artículos tienen Pedido_Corregido_Stock = 0")
+            logger.warning(f"Tras filtrar, no hay artículos con Unidades_Finales > 0 para semana {semana}")
+            logger.warning(f"[DEBUG] Posible causa: Todos los artículos tienen Unidades_Finales = 0")
             return None
         
         # Ordenar por proveedor y código

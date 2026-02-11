@@ -163,17 +163,17 @@
     },
     
     "secciones_activas": [
+        "interior",
         "maf",
         "deco_interior",
+        "deco_exterior",
         "semillas",
         "mascotas_vivo",
         "mascotas_manufacturado",
-        "interior",
         "fitos",
         "vivero",
         "utiles_jardin",
-        "tierras_aridos",
-        "deco_exterior"
+        "tierras_aridos"
     ],
     
     "horario_ejecucion": {

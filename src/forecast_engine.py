@@ -387,7 +387,7 @@ class ForecastEngine:
                               ventas_objetivo_dict: Dict[str, float] = None) -> Tuple[pd.DataFrame, Dict[str, int], Dict[str, int]]:
         """
         Aplica el cálculo de stock mínimo dinámico POR ARTÍCULO.
-        
+
         Args:
             pedidos_df (pd.DataFrame): DataFrame con los pedidos calculados
             semana (int): Número de semana actual
@@ -395,15 +395,15 @@ class ForecastEngine:
             stock_real_dict (Dict[str, int]): Stock real actual por artículo (para corrección FASE 2)
             ventas_reales_dict (Dict[str, int]): Ventas reales de la semana anterior
             ventas_objetivo_dict (Dict[str, float]): Ventas objetivo de la semana anterior
-        
+
         Returns:
             Tuple: (pedidos_actualizados, nuevo_stock_acumulado, ajustes_articulo)
         """
         if len(pedidos_df) == 0:
             return pedidos_df, {}, {}
-        
+
         stock_minimo_porcentaje = self.parametros.get('stock_minimo_porcentaje', 0.30)
-        
+
         # Inicializar diccionarios si no se proporcionan
         if stock_real_dict is None:
             stock_real_dict = {}
@@ -411,10 +411,10 @@ class ForecastEngine:
             ventas_reales_dict = {}
         if ventas_objetivo_dict is None:
             ventas_objetivo_dict = {}
-        
+
         nuevo_stock_acumulado = {}
         ajustes_articulo = {}
-        
+
         for idx, row in pedidos_df.iterrows():
             codigo = row['Codigo_Articulo']
             talla = row['Talla']
@@ -431,26 +431,37 @@ class ForecastEngine:
             # ================================================================
             # FASE 2 - CORRECCIÓN 1: Corrección por Desviación de Stock
             # Objetivo: Mantener siempre el stock mínimo configurado
-            # Fórmula: Pedido_Corregido_Stock = max(0, Unidades_Finales + (Stock_Mínimo - Stock_Real))
+            # Fórmula: Pedido_Corregido_Stock = max(0, Unidades_Finales + Stock_Mínimo_Objetivo - Stock_Real)
+            # Si Stock_Real > (Unidades_Finales + Stock_Mínimo_Objetivo), el resultado es 0
             # ================================================================
             stock_real = stock_real_dict.get(clave_articulo, 0)
-            pedido_corregido_stock = max(0, row['Unidades_Finales'] + (stock_minimo - stock_real))
+            pedido_corregido_stock = max(0, row['Unidades_Finales'] + stock_minimo - stock_real)
             
             # ================================================================
             # FASE 2 - CORRECCIÓN 2: Corrección por Tendencia de Ventas
             # Objetivo: Detectar si hay una tendencia de aumento de ventas
-            # Lógica: Si se consumió parte del stock mínimo (ventas > objetivo),
-            #         incrementar el pedido预防 futuras tendencias al alza
-            # Fórmula: Tendencia_Consumo = max(0, Ventas_Reales - Ventas_Objetivo)
+            # Fórmula: Tendencia_Consumo = max(0, Uds._Vtas._reales_semana_pasada - uds._Objetivo_semana_pasada)
+            # Si Uds._Vtas._reales < uds._Objetivo, el resultado es 0
             # ================================================================
             ventas_reales = ventas_reales_dict.get(clave_articulo, 0)
             ventas_objetivo = ventas_objetivo_dict.get(clave_articulo, 0)
             
-            # Calcular cuánto se consumió del stock mínimo (ventas por encima del objetivo)
+            # Calcular tendencia de consumo: ventas reales - objetivo
             tendencia_consumo = max(0, ventas_reales - ventas_objetivo)
-            
-            # Pedido final = Corrección Stock + Corrección Tendencia
-            pedido_final = pedido_corregido_stock + tendencia_consumo
+
+            # ================================================================
+            # FASE 2 - CORRECCIÓN 3: Cálculo del Pedido Final
+            # Fórmula correcta solicitada por el usuario: 
+            # Pedido_Final = max(0, Unidades_Finales + Stock_Mínimo_Objetivo - Stock_Real + Tendencia_Consumo)
+            #
+            # NOTA: Importante usar Unidades_Finales directamente, NO Pedido_Corregido_Stock
+            # porque Pedido_Corregido_Stock ya aplica max(0, ...) que trunca a 0
+            # y perderíamos la tendencia de consumo en casos de sobrestock.
+            # Ejemplo: Si Stock_Real > (Unidades_Finales + Stock_Minimo), el pedido base seria 0,
+            # pero la Tendencia_Consumo positiva deberia sumarsela al calculo original antes del max(0,...)
+            # Nunca puede ser menor que 0
+            # ================================================================
+            pedido_final = max(0, row['Unidades_Finales'] + stock_minimo - stock_real + tendencia_consumo)
             # ================================================================
             
             pedidos_df.at[idx, 'Stock_Minimo_Objetivo'] = stock_minimo

@@ -756,7 +756,10 @@ def leer_archivo_ventas_semana(directorio_entrada: str) -> Tuple[Optional[pd.Dat
 
 def leer_archivo_stock_actual(directorio_entrada: str) -> Optional[pd.DataFrame]:
     """
-    Lee el archivo de stock actual del ERP (SPA_stock_actual.xlsx).
+    Lee el archivo de stock actual del ERP (SPA_stock_actual.xlsx o SPA_stock_actual*.xlsx).
+    
+    Busca primero SPA_stock_actual.xlsx, y si no existe, busca cualquier archivo
+    que coincida con el patrón SPA_stock_actual*.xlsx.
     
     Args:
         directorio_entrada (str): Directorio donde se encuentra el archivo
@@ -764,20 +767,36 @@ def leer_archivo_stock_actual(directorio_entrada: str) -> Optional[pd.DataFrame]
     Returns:
         Optional[pd.DataFrame]: DataFrame con el stock actual o None si hay error
     """
-    nombre_archivo = "SPA_stock_actual.xlsx"
-    ruta_archivo = os.path.join(directorio_entrada, nombre_archivo)
+    # Primero intentar con el nombre exacto
+    nombre_exacto = "SPA_stock_actual.xlsx"
+    ruta_exacta = os.path.join(directorio_entrada, nombre_exacto)
     
-    if not os.path.exists(ruta_archivo):
-        logger.warning(f"No se encontró el archivo de stock actual: {nombre_archivo}")
-        return None
+    if os.path.exists(ruta_exacta):
+        try:
+            df = pd.read_excel(ruta_exacta)
+            logger.info(f"Archivo de stock actual cargado: {len(df)} registros")
+            return df
+        except Exception as e:
+            logger.error(f"Error al leer el archivo de stock actual: {str(e)}")
+            return None
     
-    try:
-        df = pd.read_excel(ruta_archivo)
-        logger.info(f"Archivo de stock actual cargado: {len(df)} registros")
-        return df
-    except Exception as e:
-        logger.error(f"Error al leer el archivo de stock actual: {str(e)}")
-        return None
+    # Si no existe, buscar con patrón SPA_stock_actual*.xlsx
+    patron = os.path.join(directorio_entrada, "SPA_stock_actual*.xlsx")
+    archivos_encontrados = glob.glob(patron)
+    
+    if archivos_encontrados:
+        # Usar el primer archivo encontrado
+        ruta_archivo = archivos_encontrados[0]
+        try:
+            df = pd.read_excel(ruta_archivo)
+            logger.info(f"Archivo de stock actual encontrado y cargado: {os.path.basename(ruta_archivo)} ({len(df)} registros)")
+            return df
+        except Exception as e:
+            logger.error(f"Error al leer el archivo de stock actual: {str(e)}")
+            return None
+    
+    logger.warning(f"No se encontró ningún archivo de stock actual (buscado: SPA_stock_actual*.xlsx)")
+    return None
 
 
 def normalizar_datos_historicos(df_pedido_anterior: pd.DataFrame) -> pd.DataFrame:
@@ -809,11 +828,12 @@ def normalizar_datos_historicos(df_pedido_anterior: pd.DataFrame) -> pd.DataFram
         
         # Crear clave compuesta si las columnas existen
         # Convertir a string y eliminar decimales si viene de formato numérico
-        df[col_codigo] = df[col_codigo].astype(str).str.replace(r'\.0$', '', regex=True)
+        # IMPORTANTE: Aplicar str.strip() para eliminar espacios en blanco
+        df[col_codigo] = df[col_codigo].astype(str).str.replace(r'\.0$', '', regex=True).str.strip()
         if col_talla and col_color:
             df['Clave_Articulo'] = (df[col_codigo] + '|' + 
-                                   df[col_talla].astype(str) + '|' + 
-                                   df[col_color].astype(str))
+                                   df[col_talla].astype(str).str.strip() + '|' + 
+                                   df[col_color].astype(str).str.strip())
         else:
             df['Clave_Articulo'] = df[col_codigo]
         
@@ -893,27 +913,41 @@ def fusionar_datos_tendencia(
     
     # Fusionar unidades calculadas de la semana anterior
     if df_ventas_objetivo_anterior is not None and len(df_ventas_objetivo_anterior) > 0:
-        # Seleccionar solo las columnas necesarias y eliminar la columna original para evitar conflictos
+        logger.info(f"Fusionando datos de semana anterior: {len(df_ventas_objetivo_anterior)} registros")
+        
+        # Seleccionar solo las columnas necesarias
         df_anterior = df_ventas_objetivo_anterior[['Clave_Articulo', 'Unidades_Calculadas_Semana_Pasada']].copy()
-        df_anterior = df_anterior.rename(columns={'Unidades_Calculadas_Semana_Pasada': 'Unidades_Pasada_Merge'})
         
-        # Eliminar la columna original de df_resultado antes del merge para evitar conflictos
-        if 'Unidades_Calculadas_Semana_Pasada' in df_resultado.columns:
-            df_resultado = df_resultado.drop(columns=['Unidades_Calculadas_Semana_Pasada'])
+        # Verificar claves
+        logger.debug(f"Claves únicas en df_anterior: {df_anterior['Clave_Articulo'].nunique()}")
+        logger.debug(f"Ejemplos de claves en df_anterior: {df_anterior['Clave_Articulo'].head(5).tolist()}")
         
+        # Verificar si hay claves duplicadas y agrupar
+        df_anterior = df_anterior.groupby('Clave_Articulo')['Unidades_Calculadas_Semana_Pasada'].sum().reset_index()
+        
+        # Hacer merge SIN eliminar la columna original primero - usar suffixes para evitar conflictos
         df_resultado = df_resultado.merge(
             df_anterior,
             on='Clave_Articulo',
-            how='left'
+            how='left',
+            suffixes=('', '_anterior')
         )
-        # Renombrar la columna de vuelta y llenar NaN con 0, convertir a entero
-        if 'Unidades_Pasada_Merge' in df_resultado.columns:
-            df_resultado = df_resultado.rename(columns={'Unidades_Pasada_Merge': 'Unidades_Calculadas_Semana_Pasada'})
-            df_resultado['Unidades_Calculadas_Semana_Pasada'] = pd.to_numeric(
-                df_resultado['Unidades_Calculadas_Semana_Pasada'], errors='coerce'
-            ).fillna(0).astype(int)
-        else:
-            df_resultado['Unidades_Calculadas_Semana_Pasada'] = 0
+        
+        # Combinar: usar valores del merge si existen, sino mantener los originales
+        if 'Unidades_Calculadas_Semana_Pasada_anterior' in df_resultado.columns:
+            # Primero llenar NaN con los valores nuevos del merge
+            mask = df_resultado['Unidades_Calculadas_Semana_Pasada_anterior'].notna() & (df_resultado['Unidades_Calculadas_Semana_Pasada_anterior'] != 0)
+            df_resultado.loc[mask, 'Unidades_Calculadas_Semana_Pasada'] = df_resultado.loc[mask, 'Unidades_Calculadas_Semana_Pasada_anterior']
+            
+            # Eliminar columna temporal
+            df_resultado = df_resultado.drop(columns=['Unidades_Calculadas_Semana_Pasada_anterior'])
+        
+        # Convertir a numérico
+        df_resultado['Unidades_Calculadas_Semana_Pasada'] = pd.to_numeric(
+            df_resultado['Unidades_Calculadas_Semana_Pasada'], errors='coerce'
+        ).fillna(0).astype(int)
+        
+        logger.info(f"Datos de semana anterior fusionados: {len(df_anterior)} registros, suma={df_resultado['Unidades_Calculadas_Semana_Pasada'].sum()}")
     
     # Fusionar ventas reales de SPA_ventas_semana.xlsx
     # Relación: Artículo (SPA_ventas_semana) = Código artículo (pedido), Talla, Color
@@ -985,30 +1019,62 @@ def fusionar_datos_tendencia(
                 df_resultado.drop(columns=['Ventas_Reales_Tmp'], inplace=True)
                 logger.info(f"Fusionados datos de ventas de semana: {len(df_ventas)} registros")
     
-    # Fusionar stock actual
+    # Fusionar stock actual desde SPA_stock_actual*.xlsx
+    # La relación se hace mediante: Artículo (stock) = Código artículo (pedido), Talla, Color
     if df_stock_actual is not None and len(df_stock_actual) > 0:
         df_stock = df_stock_actual.copy()
         
-        # Crear clave de artículo
-        if 'Codigo_Articulo' in df_stock.columns:
-            if 'Talla' in df_stock.columns and 'Color' in df_stock.columns:
+        # Buscar columna de artículo (puede llamarse 'Artículo' o variaciones)
+        col_articulo = encontrar_columna(list(df_stock.columns), 'articulo')
+        if col_articulo is None:
+            logger.warning("No se encontró columna 'Artículo' en el archivo de stock")
+        else:
+            # Buscar columnas de talla y color
+            col_talla = encontrar_columna(list(df_stock.columns), 'talla')
+            col_color = encontrar_columna(list(df_stock.columns), 'color')
+            
+            # Normalizar códigos de artículo (eliminar decimales si los hay)
+            df_stock[col_articulo] = df_stock[col_articulo].astype(str).str.replace(r'\.0$', '', regex=True).str.strip()
+            
+            if col_talla and col_color:
+                # Filtrar filas con valores válidos (no NaN ni vacíos) en las columnas clave
+                df_stock = df_stock[
+                    df_stock[col_articulo].notna() & 
+                    (df_stock[col_articulo].astype(str).str.strip() != '') &
+                    df_stock[col_talla].notna() & 
+                    (df_stock[col_talla].astype(str).str.strip() != '') &
+                    df_stock[col_color].notna() & 
+                    (df_stock[col_color].astype(str).str.strip() != '')
+                ].copy()
+                
+                # Normalizar talla y color
+                df_stock[col_talla] = df_stock[col_talla].astype(str).str.strip()
+                df_stock[col_color] = df_stock[col_color].astype(str).str.strip()
+                
+                # Crear clave de artículo compuesta: Artículo|Talla|Color
                 df_stock['Clave_Articulo'] = (
-                    df_stock['Codigo_Articulo'].astype(str) + '|' +
-                    df_stock['Talla'].astype(str) + '|' +
-                    df_stock['Color'].astype(str)
+                    df_stock[col_articulo] + '|' +
+                    df_stock[col_talla] + '|' +
+                    df_stock[col_color]
                 )
             else:
-                df_stock['Clave_Articulo'] = df_stock['Codigo_Articulo'].astype(str)
+                # Si no hay talla/color, usar solo el código de artículo
+                df_stock = df_stock[
+                    df_stock[col_articulo].notna() & 
+                    (df_stock[col_articulo].astype(str).str.strip() != '')
+                ].copy()
+                df_stock['Clave_Articulo'] = df_stock[col_articulo]
             
-            # Buscar columna de stock
-            col_stock = encontrar_columna(list(df_stock.columns), 'stock')
-            if col_stock is None:
-                col_stock = encontrar_columna(list(df_stock.columns), 'stockfisico')
+            # Buscar columna de unidades (stock)
+            col_unidades = encontrar_columna(list(df_stock.columns), 'unidades')
             
-            if col_stock:
-                df_stock = df_stock[['Clave_Articulo', col_stock]].copy()
-                df_stock.rename(columns={col_stock: 'Stock_Real_Tmp'}, inplace=True)
+            if col_unidades and 'Clave_Articulo' in df_stock.columns and len(df_stock) > 0:
+                df_stock = df_stock[['Clave_Articulo', col_unidades]].copy()
+                df_stock.rename(columns={col_unidades: 'Stock_Real_Tmp'}, inplace=True)
                 df_stock['Stock_Real_Tmp'] = pd.to_numeric(df_stock['Stock_Real_Tmp'], errors='coerce').fillna(0).astype(int)
+                
+                # Eliminar duplicados, quedándose con la suma de unidades por clave
+                df_stock = df_stock.groupby('Clave_Articulo')['Stock_Real_Tmp'].sum().reset_index()
                 
                 df_resultado = df_resultado.merge(
                     df_stock[['Clave_Articulo', 'Stock_Real_Tmp']],
@@ -1017,6 +1083,7 @@ def fusionar_datos_tendencia(
                 )
                 df_resultado['Stock_Real'] = df_resultado['Stock_Real_Tmp'].fillna(0).astype(int)
                 df_resultado.drop(columns=['Stock_Real_Tmp'], inplace=True)
+                logger.info(f"Fusionados datos de stock actual: {len(df_stock)} registros")
     
     logger.info(f"Datos de tendencia fusionados: {len(df_resultado)} registros")
     logger.info(f"  - Unidades_Calculadas_Semana_Pasada: {df_resultado['Unidades_Calculadas_Semana_Pasada'].sum()}")

@@ -654,15 +654,35 @@ class CorrectionEngine:
         
         # ================================================================
         # AGREGAR Tendencia_Consumo preservada al Pedido_Final
-        # El Pedido_Final final debe incluir tanto:
-        # - Incremento_Tendencia (del correction_engine)
-        # - Tendencia_Consumo (del forecast_engine)
+        # Fórmula correcta solicitada por el usuario:
+        # Pedido_Final = max(0, Unidades_Finales + Stock_Mínimo_Objetivo - Stock_Real + Tendencia_Consumo)
+        #
+        # NOTA: Importante usar las variables originales (Unidades_Finales), NO Pedido_Corregido_Stock
+        # porque Pedido_Corregido_Stock ya aplica max(0, ...) que trunca a 0
+        # y perderíamos la tendencia de consumo en casos de sobrestock.
         # ================================================================
         if tiene_tendencia_existente:
-            df['Pedido_Final'] = df['Pedido_Corregido'] + df['Tendencia_Consumo']
-            logger.info(f"Tendencia_Consumo preservada y agregada al Pedido_Final")
+            # Determinar los nombres de columnas disponibles
+            col_unidades = encontrar_columna(list(df.columns), 'unidades_finales')
+            col_stock_min = encontrar_columna(list(df.columns), 'stock_minimo_objetivo')
+            col_stock_real = encontrar_columna(list(df.columns), 'stock_real')
+            col_tendencia = encontrar_columna(list(df.columns), 'tendencia_consumo')
+            
+            if col_unidades and col_stock_min and col_stock_real and col_tendencia:
+                df['Pedido_Final'] = (
+                    max(0, 
+                        df[col_unidades] + 
+                        df[col_stock_min] - 
+                        df[col_stock_real] + 
+                        df[col_tendencia]
+                    )
+                )
+                logger.info(f"Pedido_Final calculado con fórmula: max(0, UF + Stock_Min - Stock_Real + TC)")
+            else:
+                df['Pedido_Final'] = df['Pedido_Corregido_Stock']
+                logger.warning("No se encontraron todas las columnas necesarias para calcular Pedido_Final")
         else:
-            df['Pedido_Final'] = df['Pedido_Corregido']
+            df['Pedido_Final'] = df['Pedido_Corregido_Stock']
         # ================================================================
         
         # Calcular métricas de corrección
