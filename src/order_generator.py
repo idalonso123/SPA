@@ -19,9 +19,29 @@ from typing import Optional, Dict, Any
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Border, Side, Alignment
 from openpyxl.utils.dataframe import dataframe_to_rows
+from openpyxl.worksheet.page import PageMargins
 
 # Configuración del logger
 logger = logging.getLogger(__name__)
+
+# Intentamos importar el servicio de alertas (si está disponible)
+try:
+    from src.alert_service import crear_alert_service
+    ALERT_SERVICE = None
+    def get_alert_service():
+        global ALERT_SERVICE
+        if ALERT_SERVICE is None:
+            try:
+                from src.config_loader import cargar_configuracion
+                config = cargar_configuracion()
+                if config:
+                    ALERT_SERVICE = crear_alert_service(config)
+            except:
+                pass
+        return ALERT_SERVICE
+except ImportError:
+    def get_alert_service():
+        return None
 
 
 class OrderGenerator:
@@ -135,6 +155,10 @@ class OrderGenerator:
         
         if len(pedidos_df) == 0:
             logger.warning(f"No hay pedidos para generar en semana {semana}")
+            # Enviar alerta específica
+            alert_svc = get_alert_service()
+            if alert_svc:
+                alert_svc.alerta_pedido_error(seccion, semana, Exception("No hay pedidos para generar"))
             return None
         
         # Filtrar artículos con Unidades_Finales > 0 (artículos calculados por el forecast)
@@ -184,7 +208,7 @@ class OrderGenerator:
                 'Acción Aplicada',      # J - 10
                 'Stock Mínimo Objetivo',# K - 11
                 'Diferencia Stock',     # L - 12
-                'Ventas Objetivo',      # M - 13
+                'Ventas Objetivo\n13=7x21',      # M - 13
                 'Beneficio Objetivo',   # N - 14
                 'Proveedor',            # O - 15
                 'Stock Real',           # P - 16
@@ -209,7 +233,7 @@ class OrderGenerator:
                 'Accion_Aplicada': 'Acción Aplicada',
                 'Stock_Minimo_Objetivo': 'Stock Mínimo Objetivo',
                 'Diferencia_Stock': 'Diferencia Stock',
-                'Ventas_Objetivo': 'Ventas Objetivo',
+                'Ventas_Objetivo': 'Ventas Objetivo\n13=7x21',
                 'Beneficio_Objetivo': 'Beneficio Objetivo',
                 'Proveedor': 'Proveedor',
                 'Stock_Real': 'Stock Real',
@@ -273,7 +297,7 @@ class OrderGenerator:
                     
                     header_name = COLUMN_HEADERS[c_idx - 1]
                     
-                    if header_name in ['PVP', 'Coste Pedido', 'Ventas Objetivo', 'Beneficio Objetivo']:
+                    if header_name in ['PVP', 'Coste Pedido', 'Ventas Objetivo\n13=7x21', 'Beneficio Objetivo']:
                         if isinstance(value, (int, float)):
                             cell.value = round(value, 2)
                         cell.number_format = '#,##0.00'
@@ -290,10 +314,43 @@ class OrderGenerator:
                     
                     elif header_name == 'Proveedor':
                         cell.alignment = Alignment(horizontal='left', vertical='center')
+                    
+                    # Centrar columnas 9 (Categoría), 13 (Ventas Objetivo) y 21 (Pedido Final)
+                    # Este centrado se aplica siempre, independientemente del formato de número
+                    if header_name in ['Categoría', 'Ventas Objetivo\n13=7x21', 'Pedido Final\n21=6+11-16+20']:
+                        cell.alignment = Alignment(horizontal='center', vertical='center')
             
             # Aplicar anchuras de columna
             for col_letter, width in COLUMN_WIDTHS.items():
                 ws.column_dimensions[col_letter].width = width
+            
+            # OCULTAR COLUMNAS ESPECÍFICAS
+            # Columnas a ocultar: 5, 6, 7, 8, 10, 11, 12, 14, 17, 18, 19, 20
+            columns_to_hide = ['E', 'F', 'G', 'H', 'J', 'K', 'L', 'N', 'Q', 'R', 'S', 'T']
+            for col_letter in columns_to_hide:
+                ws.column_dimensions[col_letter].hidden = True
+            
+            # OCULTAR FILAS DONDE Pedido Final = 0 (sin eliminar los datos)
+            pedido_final_col_idx = 21  # Columna U (Pedido Final)
+            for row_idx in range(3, len(pedidos_filtrados) + 3):
+                cell_value = ws.cell(row=row_idx, column=pedido_final_col_idx).value
+                if cell_value is not None and cell_value == 0:
+                    ws.row_dimensions[row_idx].hidden = True
+            
+            # OCULTAR COLUMNA 16 (Stock Real - Columna P)
+            ws.column_dimensions['P'].hidden = True
+            
+            # CONFIGURACIÓN DE PÁGINA
+            # Márgenes mínimos
+            ws.page_margins = PageMargins(left=0.2, right=0.2, top=0.2, bottom=0.2, header=0.0, footer=0.0)
+            
+            # Orientación horizontal (landscape)
+            ws.page_setup.orientation = 'landscape'
+            
+            # Ajustar todas las columnas en una página
+            ws.page_setup.fitToPage = True
+            ws.page_setup.fitToWidth = 1
+            ws.page_setup.fitToHeight = False
             
             # Añadir métricas de resumen (los datos empiezan en fila 3, después de 2 filas de cabecera)
             summary_row = len(pedidos_filtrados) + 4
@@ -335,6 +392,25 @@ class OrderGenerator:
                 cell_value.border = self.THIN_BLACK_BORDER
                 cell_value.alignment = Alignment(horizontal='center', vertical='center')
             
+            # AUTO-AJUSTAR ANCHO DE COLUMNA 21 (Pedido Final)
+            # Calcular el ancho máximo necesario basado en el contenido
+            max_length_col_u = 0
+            for row in range(3, ws.max_row + 1):
+                cell_value = ws.cell(row=row, column=21).value
+                if cell_value is not None:
+                    cell_str = str(cell_value)
+                    # Contar caracteres considerando saltos de línea
+                    lines = cell_str.split('\n')
+                    for line in lines:
+                        max_length_col_u = max(max_length_col_u, len(line))
+            
+            # Añadir un pequeño margen y establecer el ancho
+            # El factor 1.2 proporciona un pequeño margen para legibilidad
+            optimal_width = min(max(max_length_col_u * 1.2, 8), 30)  # Mínimo 8, máximo 30
+            ws.column_dimensions['U'].width = optimal_width
+            
+            logger.info(f"Ancho de columna U (Pedido Final) ajustado a: {optimal_width:.1f}")
+
             # Guardar archivo
             wb.save(ruta_completa)
             
@@ -343,6 +419,10 @@ class OrderGenerator:
             
         except Exception as e:
             logger.error(f"Error al generar archivo: {str(e)}")
+            # Enviar alerta específica
+            alert_svc = get_alert_service()
+            if alert_svc:
+                alert_svc.alerta_excel_error("archivo_pedido.xlsx", str(e), seccion)
             return None
     
     def generar_resumen_excel(self, resumen_df: pd.DataFrame, seccion: str) -> Optional[str]:

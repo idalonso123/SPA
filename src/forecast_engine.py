@@ -21,6 +21,25 @@ from datetime import datetime, date
 # Configuración del logger
 logger = logging.getLogger(__name__)
 
+# Intentamos importar el servicio de alertas (si está disponible)
+try:
+    from src.alert_service import crear_alert_service
+    ALERT_SERVICE = None
+    def get_alert_service():
+        global ALERT_SERVICE
+        if ALERT_SERVICE is None:
+            try:
+                from src.config_loader import cargar_configuracion
+                config = cargar_configuracion()
+                if config:
+                    ALERT_SERVICE = crear_alert_service(config)
+            except:
+                pass
+        return ALERT_SERVICE
+except ImportError:
+    def get_alert_service():
+        return None
+
 
 class ForecastEngine:
     """
@@ -239,6 +258,10 @@ class ForecastEngine:
         """
         if len(datos_semana) == 0:
             logger.warning(f"No hay datos para la semana {semana}")
+            # Enviar alerta específica
+            alert_svc = get_alert_service()
+            if alert_svc:
+                alert_svc.alerta_datos_vacios(seccion="forecast", tipo_datos="ventas_semana", registros=0)
             return pd.DataFrame()
         
         logger.info(f"Calculando pedido para semana {semana} ({len(datos_semana)} registros)")

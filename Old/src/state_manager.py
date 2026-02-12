@@ -22,6 +22,25 @@ from pathlib import Path
 # Configuración del logger
 logger = logging.getLogger(__name__)
 
+# Intentamos importar el servicio de alertas (si está disponible)
+try:
+    from src.alert_service import crear_alert_service
+    ALERT_SERVICE = None
+    def get_alert_service():
+        global ALERT_SERVICE
+        if ALERT_SERVICE is None:
+            try:
+                from src.config_loader import cargar_configuracion
+                config = cargar_configuracion()
+                if config:
+                    ALERT_SERVICE = crear_alert_service(config)
+            except:
+                pass
+        return ALERT_SERVICE
+except ImportError:
+    def get_alert_service():
+        return None
+
 
 class StateManager:
     """
@@ -97,11 +116,23 @@ class StateManager:
             
         except json.JSONDecodeError as e:
             logger.error(f"Error al parsear estado JSON: {str(e)}")
+            # Enviar alerta específica
+            alert_svc = get_alert_service()
+            if alert_svc:
+                alert_svc.enviar_alerta("JSON_ERROR_PARSEO", {
+                    'archivo': self.ruta_archivo,
+                    'linea': str(e),
+                    'contenido_problematico': 'state.json corrupto'
+                }, clave_unica="state_json")
             logger.warning("Intentando recuperar estado anterior...")
             return self._recuperar_estado()
         
         except Exception as e:
             logger.error(f"Error inesperado al cargar estado: {str(e)}")
+            # Enviar alerta específica
+            alert_svc = get_alert_service()
+            if alert_svc:
+                alert_svc.alerta_error_procesamiento("state_manager", "carga_estado", e)
             return self._crear_estado_inicial()
     
     def _crear_estado_inicial(self) -> Dict[str, Any]:
@@ -206,6 +237,14 @@ class StateManager:
             
         except Exception as e:
             logger.error(f"Error al guardar estado: {str(e)}")
+            # Enviar alerta específica
+            alert_svc = get_alert_service()
+            if alert_svc:
+                alert_svc.enviar_alerta("STATE_ERROR", {
+                    'operacion': 'guardar_estado',
+                    'archivo_state': self.ruta_archivo,
+                    'tipo_error': str(e)
+                }, clave_unica="state_save")
             return False
     
     def obtener_ultima_semana_procesada(self) -> Optional[int]:

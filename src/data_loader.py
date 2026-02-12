@@ -23,6 +23,25 @@ from datetime import datetime
 # Configuración del logger
 logger = logging.getLogger(__name__)
 
+# Intentamos importar el servicio de alertas (si está disponible)
+try:
+    from src.alert_service import crear_alert_service
+    ALERT_SERVICE = None  # Se inicializará lazily
+    def get_alert_service():
+        global ALERT_SERVICE
+        if ALERT_SERVICE is None:
+            try:
+                from src.config_loader import cargar_configuracion
+                config = cargar_configuracion()
+                if config:
+                    ALERT_SERVICE = crear_alert_service(config)
+            except:
+                pass
+        return ALERT_SERVICE
+except ImportError:
+    def get_alert_service():
+        return None
+
 # ============================================================================
 # FUNCIONES DE NORMALIZACIÓN PARA BÚSQUEDAS INTELIGENTES
 # ============================================================================
@@ -436,6 +455,10 @@ class DataLoader:
         try:
             if not os.path.exists(ruta_archivo):
                 logger.error(f"Archivo no encontrado: {ruta_archivo}")
+                # Enviar alerta específica
+                alert_svc = get_alert_service()
+                if alert_svc:
+                    alert_svc.alerta_archivo_no_encontrado(ruta_archivo, seccion="data_loader", operacion="lectura")
                 return None
             
             logger.info(f"Leyendo archivo: {ruta_archivo}")
@@ -450,6 +473,10 @@ class DataLoader:
             
         except Exception as e:
             logger.error(f"Error al leer archivo {ruta_archivo}: {str(e)}")
+            # Enviar alerta específica
+            alert_svc = get_alert_service()
+            if alert_svc:
+                alert_svc.alerta_excel_error(ruta_archivo, str(e), seccion="data_loader")
             return None
     
     def leer_ventas(self) -> Optional[pd.DataFrame]:
@@ -597,10 +624,24 @@ class DataLoader:
         # Normalizar nombre de sección para búsqueda
         seccion_normalizada = self.normalizar_texto(seccion)
         
+        # Mapeo especial para secciones con guiones bajos que deben preservarse en el nombre del archivo
+        # Ejemplo: 'tierras_aridos' debe buscar 'TIERRA_ARIDOS' en el archivo
+        mapeo_secciones = {
+            'tierrasaridos': 'TIERRA_ARIDOS',
+            'mascotasvivo': 'MASCOTAS_VIVO',
+            'mascotasmanufacturado': 'MASCOTAS_MANUFACTURADO',
+            'decointerior': 'DECO_INTERIOR',
+            'decoexterior': 'DECO_EXTERIOR',
+            'utilesjardin': 'UTILES_JARDIN'
+        }
+        
+        # Usar el mapeo especial si existe, sinon usar la sección normalizada
+        seccion_busqueda = mapeo_secciones.get(seccion_normalizada, seccion_normalizada.upper())
+        
         # Buscar archivos con el nuevo formato que incluye período y año
         # Patrón: CLASIFICACION_ABC+D_{SECCION}_*.xlsx
         # Ejemplos: CLASIFICACION_ABC+D_INTERIOR_P1_2025.xlsx, CLASIFICACION_ABC+D_INTERIOR_P2_2026.xlsx
-        nuevo_patron = f"CLASIFICACION_ABC+D_{seccion_normalizada}_*.xlsx"
+        nuevo_patron = f"CLASIFICACION_ABC+D_{seccion_busqueda}_*.xlsx"
         ruta_nueva = os.path.join(dir_entrada, nuevo_patron)
         archivos_nuevos = glob.glob(ruta_nueva)
         
@@ -612,7 +653,7 @@ class DataLoader:
         
         # Si no encuentra el nuevo formato, buscar el formato antiguo
         # Patrón: CLASIFICACION_ABC+D_{SECCION}.xlsx (sin período)
-        antiguo_patron = f"CLASIFICACION_ABC+D_{seccion_normalizada}.xlsx"
+        antiguo_patron = f"CLASIFICACION_ABC+D_{seccion_busqueda}.xlsx"
         ruta_antigua = os.path.join(dir_entrada, antiguo_patron)
         
         if os.path.exists(ruta_antigua):
@@ -620,7 +661,7 @@ class DataLoader:
             return ruta_antigua
         
         # Búsqueda amplia por sección (formato genérico)
-        patron_generico = os.path.join(dir_entrada, f'*{seccion_normalizada}*.xlsx')
+        patron_generico = os.path.join(dir_entrada, f'*{seccion_busqueda}*.xlsx')
         archivos_genericos = glob.glob(patron_generico)
         
         if archivos_genericos:
@@ -638,6 +679,14 @@ class DataLoader:
             return archivos_catchall[0]
         
         logger.error(f"No se encontró ningún archivo ABC+D para sección '{seccion}'")
+        # Enviar alerta específica
+        alert_svc = get_alert_service()
+        if alert_svc:
+            alert_svc.enviar_alerta("ARCHIVO_NO_ENCONTRADO", {
+                'archivo': 'CLASIFICACION_ABC+D*.xlsx',
+                'seccion': seccion,
+                'operacion': 'lectura_clasificacion'
+            }, clave_unica=f"abc_{seccion}")
         return None
     
     def leer_clasificacion_abc(self, seccion: str) -> Optional[pd.DataFrame]:
@@ -726,6 +775,10 @@ class DataLoader:
         
         if abc_df is None:
             logger.error(f"No se pudo leer clasificación ABC para '{seccion}'")
+            # Enviar alerta específica
+            alert_svc = get_alert_service()
+            if alert_svc:
+                alert_svc.alerta_clasificacion_error(seccion, "CLASIFICACION_ABC+D*.xlsx", "Error al leer clasificación")
             return None, None, None
         
         # Leer ventas
@@ -738,6 +791,14 @@ class DataLoader:
         
         if ventas_df is None:
             logger.error("No se pudo leer archivo de ventas")
+            # Enviar alerta específica
+            alert_svc = get_alert_service()
+            if alert_svc:
+                alert_svc.enviar_alerta("ARCHIVO_NO_ENCONTRADO", {
+                    'archivo': 'SPA_ventas.xlsx',
+                    'seccion': seccion,
+                    'operacion': 'lectura_ventas'
+                }, clave_unica="ventas_archivo")
             return None, None, None
         
         # Filtrar ventas por sección
@@ -771,6 +832,14 @@ class DataLoader:
         
         if costes_df is None:
             logger.error("No se pudo leer archivo de costes")
+            # Enviar alerta específica
+            alert_svc = get_alert_service()
+            if alert_svc:
+                alert_svc.enviar_alerta("ARCHIVO_NO_ENCONTRADO", {
+                    'archivo': 'SPA_coste.xlsx',
+                    'seccion': seccion,
+                    'operacion': 'lectura_costes'
+                }, clave_unica="costes_archivo")
             return None, None, None
         
         logger.info(f"=== DATOS LEÍDOS CORRECTAMENTE PARA {seccion.upper()} ===")

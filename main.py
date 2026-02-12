@@ -36,6 +36,12 @@ from src.correction_data_loader import (
 )
 
 from src.email_service import EmailService, crear_email_service
+from src.alert_service import (
+    iniciar_sistema_alertas,
+    crear_alert_service,
+    AlertLoggingHandler,
+    configurar_excepthook
+)
 
 import pandas as pd
 
@@ -1020,6 +1026,27 @@ Ejemplos de uso:
         logger.error("No se pudo cargar la configuración. Saliendo.")
         sys.exit(1)
     
+    # ========================================================================
+    # INTEGRACIÓN DEL SISTEMA DE ALERTAS
+    # ========================================================================
+    # IMPORTAR Y CONFIGURAR EL SERVICIO DE ALERTAS
+    try:
+        from src.alert_service import (
+            iniciar_sistema_alertas,
+            crear_alert_service,
+            AlertLoggingHandler,
+            configurar_excepthook
+        )
+        
+        # Iniciar sistema completo de alertas (logging handler + excepthook)
+        iniciar_sistema_alertas(config)
+        logger.info("Sistema de alertas automáticamente configurado")
+        
+    except Exception as e:
+        # Si falla la configuración de alertas, continuar sin ellas pero avisar
+        logger.warning(f"No se pudo inicializar el sistema de alertas: {e}")
+        logger.warning("El sistema continuará sin notificaciones por email")
+    
     if args.verificar_email:
         logger.info("\nVERIFICANDO CONFIGURACIÓN DE EMAIL:")
         logger.info("-" * 40)
@@ -1179,4 +1206,21 @@ Ejemplos de uso:
         sys.exit(1)
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("\nEjecución cancelada por el usuario")
+        sys.exit(0)
+    except Exception as e:
+        # Esta alerta es redundante ya que el excepthook debería capturarlo
+        # pero por seguridad la mantenemos
+        try:
+            from src.alert_service import crear_alert_service
+            from src.config_loader import cargar_configuracion
+            config = cargar_configuracion()
+            if config:
+                alert_service = crear_alert_service(config)
+                alert_service.alerta_excepcion(e, seccion="main")
+        except:
+            pass  # Si falla la alerta, al menos mostrar el error
+        raise
