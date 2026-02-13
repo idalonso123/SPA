@@ -177,7 +177,7 @@
     ],
     
     "horario_ejecucion": {
-        "dia": "sunday",
+        "dia": "friday",
         "hora": 15,
         "minuto": 0
     },
