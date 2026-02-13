@@ -760,6 +760,26 @@ def leer_archivo_ventas_semana(directorio_entrada: str) -> Tuple[Optional[pd.Dat
     
     try:
         df = pd.read_excel(ruta_archivo)
+        
+        # ============================================================
+        # REGLA: Rellenar artículos en blanco con el valor anterior
+        # El ERP usa formato jerárquico donde el artículo solo se muestra
+        # en la primera fila, y las siguientes tienen valores en blanco
+        # ============================================================
+        
+        # Buscar columna de artículo
+        col_articulo = encontrar_columna(list(df.columns), 'articulo')
+        col_nombre = encontrar_columna(list(df.columns), 'nombrearticulo')
+        
+        # Aplicar forward fill (rellenar hacia adelante) para artículos en blanco
+        if col_articulo:
+            df[col_articulo] = df[col_articulo].fillna('').astype(str).replace('nan', '').replace('None', '')
+            df[col_articulo] = df[col_articulo].replace('', pd.NA).ffill().fillna('')
+            
+        if col_nombre:
+            df[col_nombre] = df[col_nombre].fillna('').astype(str).replace('nan', '').replace('None', '')
+            df[col_nombre] = df[col_nombre].replace('', pd.NA).ffill().fillna('')
+        
         logger.info(f"Archivo de ventas de semana cargado: {len(df)} registros")
         return df, True
     except Exception as e:
@@ -788,6 +808,29 @@ def leer_archivo_stock_actual(directorio_entrada: str) -> Optional[pd.DataFrame]
     if os.path.exists(ruta_exacta):
         try:
             df = pd.read_excel(ruta_exacta)
+            
+            # ============================================================
+            # REGLA: Rellenar artículos en blanco con el valor anterior
+            # El ERP usa formato jerárquico donde el artículo solo se muestra
+            # en la primera fila, y las siguientes tienen valores en blanco
+            # ============================================================
+            
+            # Buscar columna de artículo
+            col_articulo = encontrar_columna(list(df.columns), 'articulo')
+            col_nombre = encontrar_columna(list(df.columns), 'nombrearticulo')
+            
+            # Aplicar forward fill (rellenar hacia adelante) para artículos en blanco
+            if col_articulo:
+                # Convertir a string y aplicar fillna primero para valores NaN
+                df[col_articulo] = df[col_articulo].fillna('').astype(str).replace('nan', '').replace('None', '')
+                # Forward fill: copiar valor anterior a celdas vacías
+                df[col_articulo] = df[col_articulo].replace('', pd.NA).ffill().fillna('')
+                
+            if col_nombre:
+                # Lo mismo para nombre de artículo
+                df[col_nombre] = df[col_nombre].fillna('').astype(str).replace('nan', '').replace('None', '')
+                df[col_nombre] = df[col_nombre].replace('', pd.NA).ffill().fillna('')
+            
             logger.info(f"Archivo de stock actual cargado: {len(df)} registros")
             return df
         except Exception as e:
@@ -803,6 +846,26 @@ def leer_archivo_stock_actual(directorio_entrada: str) -> Optional[pd.DataFrame]
         ruta_archivo = archivos_encontrados[0]
         try:
             df = pd.read_excel(ruta_archivo)
+            
+            # ============================================================
+            # REGLA: Rellenar artículos en blanco con el valor anterior
+            # El ERP usa formato jerárquico donde el artículo solo se muestra
+            # en la primera fila, y las siguientes tienen valores en blanco
+            # ============================================================
+            
+            # Buscar columna de artículo
+            col_articulo = encontrar_columna(list(df.columns), 'articulo')
+            col_nombre = encontrar_columna(list(df.columns), 'nombrearticulo')
+            
+            # Aplicar forward fill (rellenar hacia adelante) para artículos en blanco
+            if col_articulo:
+                df[col_articulo] = df[col_articulo].fillna('').astype(str).replace('nan', '').replace('None', '')
+                df[col_articulo] = df[col_articulo].replace('', pd.NA).ffill().fillna('')
+                
+            if col_nombre:
+                df[col_nombre] = df[col_nombre].fillna('').astype(str).replace('nan', '').replace('None', '')
+                df[col_nombre] = df[col_nombre].replace('', pd.NA).ffill().fillna('')
+            
             logger.info(f"Archivo de stock actual encontrado y cargado: {os.path.basename(ruta_archivo)} ({len(df)} registros)")
             return df
         except Exception as e:
@@ -979,23 +1042,19 @@ def fusionar_datos_tendencia(
             col_color = encontrar_columna(list(df_ventas.columns), 'color')
             
             if col_talla and col_color:
-                # Filtrar filas con valores válidos (no NaN ni vacíos) en las columnas clave
-                df_ventas = df_ventas[
-                    df_ventas[col_articulo].notna() & 
-                    (df_ventas[col_articulo].astype(str).str.strip() != '') &
-                    df_ventas[col_talla].notna() & 
-                    (df_ventas[col_talla].astype(str).str.strip() != '') &
-                    df_ventas[col_color].notna() & 
-                    (df_ventas[col_color].astype(str).str.strip() != '')
-                ].copy()
+                # Normalizar talla y color PRIMERO (antes de cualquier filtro)
+                # Reemplazar NaN y valores vacíos por cadena vacía
+                df_ventas[col_talla] = df_ventas[col_talla].fillna('').astype(str).str.strip()
+                df_ventas[col_color] = df_ventas[col_color].fillna('').astype(str).str.strip()
+                
+                # NO filtrar por talla/color vacíos - todos los artículos son válidos
+                # (artículos sin talla/color también pueden tener ventas)
                 
                 if len(df_ventas) == 0:
-                    logger.warning("No hay registros válidos con artículo, talla y color en SPA_ventas_semana.xlsx")
+                    logger.warning("No hay registros válidos en SPA_ventas_semana.xlsx")
                 else:
                     # Normalizar códigos de artículo (eliminar decimales si los hay)
                     df_ventas[col_articulo] = df_ventas[col_articulo].astype(str).str.replace(r'\.0$', '', regex=True).str.strip()
-                    df_ventas[col_talla] = df_ventas[col_talla].astype(str).str.strip()
-                    df_ventas[col_color] = df_ventas[col_color].astype(str).str.strip()
                     
                     # Crear clave de artículo compuesta: Artículo|Talla|Color
                     df_ventas['Clave_Articulo'] = (
@@ -1051,19 +1110,13 @@ def fusionar_datos_tendencia(
             df_stock[col_articulo] = df_stock[col_articulo].astype(str).str.replace(r'\.0$', '', regex=True).str.strip()
             
             if col_talla and col_color:
-                # Filtrar filas con valores válidos (no NaN ni vacíos) en las columnas clave
-                df_stock = df_stock[
-                    df_stock[col_articulo].notna() & 
-                    (df_stock[col_articulo].astype(str).str.strip() != '') &
-                    df_stock[col_talla].notna() & 
-                    (df_stock[col_talla].astype(str).str.strip() != '') &
-                    df_stock[col_color].notna() & 
-                    (df_stock[col_color].astype(str).str.strip() != '')
-                ].copy()
+                # Normalizar talla y color PRIMERO (antes de cualquier filtro)
+                # Reemplazar NaN y valores vacíos por cadena vacía
+                df_stock[col_talla] = df_stock[col_talla].fillna('').astype(str).str.strip()
+                df_stock[col_color] = df_stock[col_color].fillna('').astype(str).str.strip()
                 
-                # Normalizar talla y color
-                df_stock[col_talla] = df_stock[col_talla].astype(str).str.strip()
-                df_stock[col_color] = df_stock[col_color].astype(str).str.strip()
+                # NO filtrar por talla/color vacíos - todos los artículos son válidos
+                # (artículos sin talla/color también tienen stock)
                 
                 # Crear clave de artículo compuesta: Artículo|Talla|Color
                 df_stock['Clave_Articulo'] = (

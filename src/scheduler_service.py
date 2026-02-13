@@ -87,23 +87,40 @@ class SchedulerService:
         }
         
         dia_config = self.dia_ejecucion.lower()
-        return dias.get(dia_config, 'sunday')
+        return dias.get(dia_config, 'friday')
     
     def obtener_numero_semana_actual(self) -> int:
         """
-        Obtiene el número de semana ISO actual.
+        Obtiene el número de semana personalizado (viernes a jueves).
         
         Returns:
-            int: Número de semana ISO (1-53)
+            int: Número de semana personalizado (1-53)
         """
-        return datetime.now().isocalendar()[1]
+        from datetime import date, timedelta
+        
+        hoy = date.today()
+        
+        # Encontrar el primer viernes del año
+        inicio_año = date(hoy.year, 1, 1)
+        dias_hasta_viernes = (4 - inicio_año.weekday()) % 7
+        primer_viernes = inicio_año + timedelta(days=dias_hasta_viernes)
+        
+        # Si hoy es antes del primer viernes del año, estamos en semana 1
+        if hoy < primer_viernes:
+            return 1
+        
+        # Calcular cuántas semanas han pasado desde el primer viernes
+        dias_desde_viernes = (hoy - primer_viernes).days
+        semana = (dias_desde_viernes // 7) + 1
+        
+        return semana
     
     def obtener_numero_semana_siguiente(self) -> int:
         """
-        Obtiene el número de la siguiente semana (semana actual + 1).
+        Obtiene el número de la siguiente semana personalizada (viernes a jueves).
         
         Returns:
-            int: Número de la siguiente semana ISO
+            int: Número de la siguiente semana
         """
         semana_actual = self.obtener_numero_semana_actual()
         semana_siguiente = semana_actual + 1
@@ -221,35 +238,40 @@ class SchedulerService:
         """
         Calcula las fechas relevantes para el pedido de una semana.
         
+        Este sistema usa semanas personalizadas de VIERNES A JUEVES.
+        
         Args:
-            semana (int): Número de semana ISO
+            semana (int): Número de semana personalizado (1-53)
             año (Optional[int]): Año (usa el actual si no se especifica)
         
         Returns:
-            Tuple[str, str, str]: (fecha_lunes, fecha_domingo, fecha_formateada)
+            Tuple[str, str, str]: (fecha_viernes, fecha_jueves, fecha_formateada)
         """
         if año is None:
             año = datetime.now().year
         
-        # Calcular fechas de la semana
+        # Calcular fechas de la semana personalizada (viernes a jueves)
         from datetime import date, timedelta
         
-        # Obtener el jueves de la semana (día central de la semana ISO)
-        fecha_base = date(año, 1, 4)  # 4 de enero siempre está en la semana 1 del año ISO
+        # Obtener el primer viernes del año
+        # Buscamos el primer día del año y encontramos el primer viernes
+        fecha_base = date(año, 1, 1)
+        
+        # Encontrar el primer viernes (weekday 4 = viernes)
+        dias_hasta_viernes = (4 - fecha_base.weekday()) % 7
+        primer_viernes = fecha_base + timedelta(days=dias_hasta_viernes)
+        
+        # Calcular el viernes de la semana especificada
         delta = timedelta(weeks=semana - 1)
-        fecha = fecha_base + delta
+        viernes = primer_viernes + delta
         
-        # Obtener el lunes de esa semana
-        dias_lunes = fecha.weekday()
-        lunes = fecha - timedelta(days=dias_lunes)
+        # El fin de semana personalizado es el jueves (viernes + 6 días)
+        jueves = viernes + timedelta(days=6)
         
-        # El fin de semana es el domingo
-        domingo = lunes + timedelta(days=6)
-        
-        # Fecha formateada para文件名
+        # Fecha formateada para nombre de archivo
         fecha_formateada = datetime.now().strftime('%Y-%m-%d')
         
-        return lunes.strftime('%Y-%m-%d'), domingo.strftime('%Y-%m-%d'), fecha_formateada
+        return viernes.strftime('%Y-%m-%d'), jueves.strftime('%Y-%m-%d'), fecha_formateada
     
     def obtener_dias_hasta_ejecucion(self) -> int:
         """

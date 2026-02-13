@@ -197,26 +197,30 @@ class ForecastEngine:
         """
         Calcula las fechas de inicio y fin de una semana específica.
         
+        Este sistema usa semanas personalizadas de VIERNES A JUEVES.
+        
         Args:
-            semana (int): Número de semana ISO
+            semana (int): Número de semana personalizado
             año (int): Año de la semana
         
         Returns:
-            Tuple[str, str]: (fecha_lunes, fecha_domingo) en formato YYYY-MM-DD
+            Tuple[str, str]: (fecha_viernes, fecha_jueves) en formato YYYY-MM-DD
         """
-        # Obtener el jueves de la semana (día central de la semana ISO)
-        fecha = date(año, 1, 4)  # 4 de enero siempre está en la semana 1 del año ISO
+        # Calcular fechas de la semana personalizada (viernes a jueves)
+        fecha_base = date(año, 1, 1)
+        
+        # Encontrar el primer viernes (weekday 4 = viernes)
+        dias_hasta_viernes = (4 - fecha_base.weekday()) % 7
+        primer_viernes = fecha_base + datetime.timedelta(days=dias_hasta_viernes)
+        
+        # Calcular el viernes de la semana especificada
         delta = datetime.timedelta(weeks=semana - 1)
-        fecha = fecha + delta
+        viernes = primer_viernes + delta
         
-        # Obtener el lunes de esa semana
-        dias_lunes = fecha.weekday()
-        lunes = fecha - datetime.timedelta(days=dias_lunes)
+        # El fin de semana personalizado es el jueves (viernes + 6 días)
+        jueves = viernes + datetime.timedelta(days=6)
         
-        # El fin de semana es el domingo
-        domingo = lunes + datetime.timedelta(days=6)
-        
-        return lunes.strftime('%Y-%m-%d'), domingo.strftime('%Y-%m-%d')
+        return viernes.strftime('%Y-%m-%d'), jueves.strftime('%Y-%m-%d')
     
     def obtener_objetivo_semana(self, seccion: str, semana: int) -> float:
         """

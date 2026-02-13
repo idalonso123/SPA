@@ -381,7 +381,7 @@ class CorrectionDataLoader:
         """
         nombre_base = self.correction_files.get('stock_actual', 'SPA_stock_actual.xlsx')
         
-        # Si se especifica semana, buscar con patrón de semana
+        # Si se especifica semana, buscar primero archivo específico de esa semana
         if semana:
             # Intentar buscar archivo con semana en el nombre
             nombre_con_semana = nombre_base.replace('.xlsx', f'_Semana_{semana}.xlsx')
@@ -391,20 +391,21 @@ class CorrectionDataLoader:
                 # Buscar con otro patrón común
                 nombre_con_semana = f"Stock_semana_{semana}.xlsx"
                 ruta = self.buscar_archivo_correccion(nombre_con_semana)
-        
-        # Si no se encontró archivo con semana, usar el base
-        if semana is None or not self.buscar_archivo_correccion(nombre_base):
-            # Verificar si existe el archivo base
-            dir_entrada = self.obtener_directorio_entrada()
-            ruta_base = os.path.join(dir_entrada, nombre_base)
-            if os.path.exists(ruta_base):
-                ruta = ruta_base
+            
+            # Si encontramos archivo con semana, usarlo
+            if ruta:
+                logger.info(f"Archivo de stock encontrado con semana: {ruta}")
             else:
-                logger.warning(f"No se encontró archivo de stock actual")
-                return None
+                logger.info(f"No se encontró archivo de stock específico para semana {semana}, usando archivo base")
         
-        if semana:
-            ruta = self.buscar_archivo_correccion(nombre_base)
+        # Si no se encontró archivo con semana o no se especificó semana, usar el base
+        dir_entrada = self.obtener_directorio_entrada()
+        ruta_base = os.path.join(dir_entrada, nombre_base)
+        if os.path.exists(ruta_base):
+            ruta = ruta_base
+        else:
+            logger.warning(f"No se encontró archivo de stock actual: {nombre_base}")
+            return None
         
         df = self.leer_excel(ruta)
         
@@ -523,21 +524,34 @@ class CorrectionDataLoader:
         
         df = pedido_teorico.copy()
         
-        # Preparar claves de unión normalizadas
+        # Preparar claves de unión normalizadas - verificar que las columnas existan
+        col_codigo = next((c for c in ['Codigo_Articulo', 'Código artículo', 'Codigo'] if c in df.columns), None)
+        col_talla = next((c for c in ['Talla', 'Talla_Articulo'] if c in df.columns), None)
+        col_color = next((c for c in ['Color', 'Color_Articulo'] if c in df.columns), None)
+        
+        if col_codigo is None:
+            logger.error("No se encontró columna de código de artículo en el DataFrame")
+            return df
+        
         df['_clave'] = (
-            df.get('Codigo_Articulo', df.get('Código artículo', df.get('Codigo', ''))).astype(str) + '|' +
-            df.get('Talla', '').astype(str) + '|' +
-            df.get('Color', '').astype(str)
+            df[col_codigo].astype(str) + '|' +
+            df[col_talla].astype(str) if col_talla else '' + '|' +
+            df[col_color].astype(str) if col_color else ''
         )
         
         # Fusionar stock actual
         if datos_correccion['stock'] is not None:
             stock_df = datos_correccion['stock'].copy()
-            stock_df['_clave'] = (
-                stock_df.get('Codigo_Articulo', '').astype(str) + '|' +
-                stock_df.get('Talla', '').astype(str) + '|' +
-                stock_df.get('Color', '').astype(str)
-            )
+            stock_col_codigo = next((c for c in ['Codigo_Articulo', 'Código artículo', 'Codigo'] if c in stock_df.columns), None)
+            stock_col_talla = next((c for c in ['Talla', 'Talla_Articulo'] if c in stock_df.columns), None)
+            stock_col_color = next((c for c in ['Color', 'Color_Articulo'] if c in stock_df.columns), None)
+            
+            if stock_col_codigo:
+                stock_df['_clave'] = (
+                    stock_df[stock_col_codigo].astype(str) + '|' +
+                    stock_df[stock_col_talla].astype(str) if stock_col_talla else '' + '|' +
+                    stock_df[stock_col_color].astype(str) if stock_col_color else ''
+                )
             
             # Seleccionar columnas relevantes
             cols_stock = ['_clave', 'Stock_Fisico']
