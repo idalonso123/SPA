@@ -261,6 +261,7 @@
     },
     
     "env_email": {
-        "password_var": "EMAIL_PASSWORD"
+        "password_var": "EMAIL_PASSWORD",
+        "destinatario_alertas": "ivan.delgado@viveverde.es"
     }
 }

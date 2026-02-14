@@ -378,6 +378,7 @@ DETALLE:
 - Destinatario: {destinatario}
 - Asunto del email: {asunto}
 - Tipo de error SMTP: {tipo_error}
+- Detalles adicionales: {detalles}
 
 INFORMACIÓN ADICIONAL:
 - Fecha y hora: {timestamp}
@@ -670,6 +671,7 @@ class AlertService:
         self.remitente = {}
         self.alertas_enviadas = []
         self.alertas_contador = {}  # Para evitar spam de alertas similares
+        self._alertas_deshabilitadas = False  # Para deshabilitar alertas si hay error de autenticación
         
         # Cargar configuración
         self._cargar_configuracion()
@@ -694,6 +696,10 @@ class AlertService:
             'email': email_config.get('remitente', {}).get('email', 'ivan.delgado@viveverde.es'),
             'nombre': email_config.get('remitente', {}).get('nombre', 'Sistema de Alertas VIVEVERDE')
         }
+        
+        # Destinatario de alertas - leer desde config o usar variable
+        env_config = self.config.get('env_email', {})
+        self.destinatario_principal = env_config.get('destinatario_alertas', self.destinatario_principal)
     
     def _obtener_password(self) -> str:
         """Obtiene la contraseña del remitente desde variable de entorno."""
@@ -863,6 +869,12 @@ class AlertService:
             
             return True
             
+        except smtplib.SMTPAuthenticationError as e:
+            logger.error(f"Error de autenticación SMTP al enviar alerta: {e}")
+            # No intentar enviar más alertas si la contraseña es inválida
+            logger.warning("Alertas deshabilitadas temporalmente debido a error de autenticación")
+            self._alertas_deshabilitadas = True
+            return False
         except Exception as e:
             logger.error(f"Error al enviar alerta por email: {e}")
             return False
@@ -912,6 +924,11 @@ class AlertService:
         Returns:
             bool: True si se envió correctamente, False si no
         """
+        # Verificar si las alertas están deshabilitadas debido a error de autenticación
+        if self._alertas_deshabilitadas:
+            logger.debug(f"Alerta {tipo_alerta} omitida (alertas deshabilitadas por error de autenticación)")
+            return False
+        
         # Verificar si ya se envió recientemente
         if not self._evitar_spam(tipo_alerta, clave_unica):
             logger.info(f"Alerta {tipo_alerta} suprimida para evitar spam")
@@ -1037,6 +1054,27 @@ class AlertService:
             'seccion': seccion
         })
     
+    def alerta_error_envio(self, destinatario: str, asunto: str, 
+                          tipo_error: str, detalles: str = "") -> bool:
+        """
+        Envía alerta cuando el envío de emails falla.
+        
+        Args:
+            destinatario (str): Destinatario(s) del email que falló
+            asunto (str): Asunto del email que se intentaba enviar
+            tipo_error (str): Tipo de error de envío
+            detalles (str): Detalles adicionales del error
+            
+        Returns:
+            bool: True si se envió correctamente
+        """
+        return self.enviar_alerta("EMAIL_ERROR_ENVIO", {
+            'destinatario': destinatario,
+            'asunto': asunto,
+            'tipo_error': tipo_error,
+            'detalles': detalles
+        }, clave_unica=f"email_error_{destinatario}_{asunto[:20]}")
+    
     def alerta_config_error(self, detalle: str, configuracion: str) -> bool:
         """Envía alerta de error de configuración."""
         return self.enviar_alerta("CONFIG_ERROR", {
@@ -1146,30 +1184,36 @@ class AlertLoggingHandler(logging.Handler):
         # En tu código de inicialización (ej: main.py):
         alert_handler = AlertLoggingHandler(config)
         logging.getLogger().addHandler(alert_handler)
+        
+        # Opcional: pasar un AlertService existente
+        alert_service = crear_alert_service(config)
+        alert_handler = AlertLoggingHandler(config, alert_service=alert_service)
     """
     
-    def __init__(self, config: dict, nivel_minimo: int = logging.WARNING):
+    def __init__(self, config: dict, nivel_minimo: int = logging.WARNING, alert_service=None):
         """
         Inicializa el handler.
         
         Args:
             config: Configuración del sistema
             nivel_minimo: Nivel mínimo de logging que triggers alertas (default: WARNING)
+            alert_service: AlertService existente (opcional)
         """
         super().__init__()
         self.config = config
         self.nivel_minimo = nivel_minimo
-        self.alert_service = None
+        self.alert_service = alert_service
         self.formato = logging.Formatter(
             '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
         )
         
-        # Inicializar el servicio de alertas
-        try:
-            self.alert_service = crear_alert_service(config)
-            logging.debug("AlertLoggingHandler inicializado correctamente")
-        except Exception as e:
-            logging.error(f"Error al inicializar AlertService: {e}")
+        # Usar el servicio de alertas proporcionado o crear uno nuevo
+        if self.alert_service is None:
+            try:
+                self.alert_service = crear_alert_service(config)
+                logging.debug("AlertLoggingHandler inicializado correctamente")
+            except Exception as e:
+                logging.error(f"Error al inicializar AlertService: {e}")
     
     def emit(self, record: logging.LogRecord):
         """Envía una alerta cuando se registra un mensaje de nivel WARNING o superior."""
@@ -1177,10 +1221,18 @@ class AlertLoggingHandler(logging.Handler):
         if record.levelno < self.nivel_minimo or not self.alert_service:
             return
         
+        # No procesar si las alertas están deshabilitadas
+        if getattr(self.alert_service, '_alertas_deshabilitadas', False):
+            return
+        
         try:
             # Obtener el nombre del módulo
             modulo = record.name
             mensaje = record.getMessage()
+            
+            # Ignorar mensajes del propio alert_service para evitar bucles
+            if 'alert_service' in modulo.lower() or 'alerta' in mensaje.lower():
+                return
             
             # Determinar tipo de alerta según el nivel
             if record.levelno >= logging.CRITICAL:
@@ -1208,21 +1260,22 @@ class AlertLoggingHandler(logging.Handler):
             
         except Exception as e:
             # No dejar que el handler de alertas falle el proceso
-            print(f"Error en AlertLoggingHandler: {e}")
+            logging.debug(f"Error en AlertLoggingHandler: {e}")
 
 
-def configurar_alertas_logging(config: dict) -> AlertLoggingHandler:
+def configurar_alertas_logging(config: dict, alert_service=None) -> AlertLoggingHandler:
     """
     Configura el sistema de logging para enviar alertas automáticamente.
     
     Args:
         config: Configuración del sistema
+        alert_service: AlertService existente (opcional)
         
     Returns:
         AlertLoggingHandler: El handler configurado
     """
     # Crear el handler
-    alert_handler = AlertLoggingHandler(config, nivel_minimo=logging.WARNING)
+    alert_handler = AlertLoggingHandler(config, nivel_minimo=logging.WARNING, alert_service=alert_service)
     
     # Añadir al logger raíz
     root_logger = logging.getLogger()
@@ -1237,14 +1290,16 @@ def configurar_alertas_logging(config: dict) -> AlertLoggingHandler:
 # INTEGRACIÓN CON sys.excepthook PARA EXCEPCIONES NO MANEJADAS
 # ============================================================================
 
-def configurar_excepthook(config: dict):
+def configurar_excepthook(config: dict, alert_service=None):
     """
     Configura un hook global para capturar excepciones no manejadas.
     
     Args:
         config: Configuración del sistema
+        alert_service: AlertService existente (opcional)
     """
-    alert_service = crear_alert_service(config)
+    if alert_service is None:
+        alert_service = crear_alert_service(config)
     
     def excepthook(tipo, valor, traza):
         """
@@ -1289,10 +1344,19 @@ def iniciar_sistema_alertas(config: dict):
     """
     logging.info("Inicializando sistema de alertas...")
     
-    # Configurar handler de logging
-    configurar_alertas_logging(config)
+    # Obtener destinatario de alertas desde configuración
+    env_config = config.get('env_email', {})
+    destinatario_alertas = env_config.get('destinatario_alertas', 'ivan.delgado@viveverde.es')
     
-    # Configurar excepthook
-    configurar_excepthook(config)
+    # Crear un único AlertService para compartir
+    alert_service = crear_alert_service(config, destinatario=destinatario_alertas)
+    
+    # Configurar handler de logging con el servicio existente
+    configurar_alertas_logging(config, alert_service=alert_service)
+    
+    # Configurar excepthook con el servicio existente
+    configurar_excepthook(config, alert_service=alert_service)
+    
+    logging.info("Sistema de alertas completamente configurado")
     
     logging.info("Sistema de alertas completamente configurado")

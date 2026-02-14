@@ -549,7 +549,7 @@ def enviar_emails_pedidos(
 
             resultados[seccion] = resultado
 
-            if resultado.get('exito', False):
+            if resultado.get('enviado', False):
                 emails_enviados += 1
                 logger.info(f"✓ Email enviado exitosamente a {seccion}")
             else:
@@ -959,14 +959,36 @@ def procesar_pedido_semana(
             logger.info(f"  Artículos con tendencia detectada: {articulos_tendencia_total}")
             logger.info(f"  Incremento total aplicado: {incremento_tendencia_total} unidades")
     
+    # Enviar alerta si el envío de emails a encargados falla
+    if not resultado_email.get('exito') and resultado_email.get('emails_fallidos', 0) > 0:
+        logger.warning(f"\n✗ EMAILS FALLIDOS: {resultado_email.get('emails_fallidos', 0)}")
+        # Intentar enviar alerta de error de email
+        try:
+            from src.alert_service import crear_alert_service
+            alert_service = crear_alert_service(config)
+            # Agrupar los errores por sección
+            errores_secciones = []
+            for seccion, res in resultado_email.get('resultados', {}).items():
+                if not res.get('exito', False):
+                    errores_secciones.append(f"{seccion}: {res.get('error', 'Error desconocido')}")
+
+            if errores_secciones:
+                alert_service.alerta_error_envio(
+                    destinatario='encargados_secciones',
+                    asunto=f"Error en envío de pedidos - Semana {semana}",
+                    tipo_error='Envío fallido a encargado',
+                    detalles='; '.join(errores_secciones)
+                )
+                logger.info("Alerta de error de email enviada")
+        except Exception as e:
+            logger.warning(f"No se pudo enviar alerta de error de email: {e}")
+
     if resultado_email.get('exito'):
         logger.info(f"\n✓ EMAILS ENVIADOS A ENCARGADOS: {resultado_email.get('emails_enviados', 0)}")
     elif resultado_email.get('razon') == 'deshabilitado':
         logger.info("\nEmails deshabilitados")
     elif resultado_email.get('razon') == 'sin_password':
         logger.warning("\n✗ No se enviaron emails (falta configurar EMAIL_PASSWORD)")
-    elif not resultado_email.get('exito') and resultado_email.get('emails_fallidos', 0) > 0:
-        logger.warning(f"\n✗ EMAILS FALLIDOS: {resultado_email.get('emails_fallidos', 0)}")
     
     # Mostrar resultado del resumen de gestión
     if resultado_resumen_gestion.get('enviado'):
@@ -975,6 +997,19 @@ def procesar_pedido_semana(
         logger.info("\nResumen de gestión no enviado (archivo no encontrado)")
     elif resultado_resumen_gestion.get('emails_fallidos', 0) > 0:
         logger.warning(f"\n✗ RESUMEN FALLIDO A RESPONSABLES: {resultado_resumen_gestion.get('emails_fallidos', 0)}/3")
+        # Enviar alerta si el resumen de gestión falla
+        try:
+            from src.alert_service import crear_alert_service
+            alert_service = crear_alert_service(config)
+            alert_service.alerta_error_envio(
+                destinatario='responsables_gestion',
+                asunto=f"Error en envío de resumen - Semana {semana}",
+                tipo_error='Resumen de gestión no enviado',
+                detalles=f"Fallidos: {resultado_resumen_gestion.get('emails_fallidos', 0)}/3"
+            )
+            logger.info("Alerta de error de resumen enviada")
+        except Exception as e:
+            logger.warning(f"No se pudo enviar alerta de error de resumen: {e}")
     
     logger.info("=" * 70)
     
@@ -1038,9 +1073,16 @@ Ejemplos de uso:
             configurar_excepthook
         )
         
+        # Obtener destinatario de alertas desde configuración
+        env_config = config.get('env_email', {})
+        destinatario_alertas = env_config.get('destinatario_alertas', 'ivan.delgado@viveverde.es')
+        
+        # Crear alert service con destinatario configurable
+        alert_service = crear_alert_service(config, destinatario=destinatario_alertas)
+        
         # Iniciar sistema completo de alertas (logging handler + excepthook)
         iniciar_sistema_alertas(config)
-        logger.info("Sistema de alertas automáticamente configurado")
+        logger.info(f"Sistema de alertas automáticamente configurado (destinatario: {destinatario_alertas})")
         
     except Exception as e:
         # Si falla la configuración de alertas, continuar sin ellas pero avisar
