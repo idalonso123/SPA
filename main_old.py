@@ -377,7 +377,8 @@ def aplicar_correccion_pedido(
             columna_ventas_reales='Unidades_Vendidas',
             columna_ventas_objetivo='Ventas_Objetivo',
             columna_compras_reales='Unidades_Recibidas',
-            columna_compras_sugeridas='Pedido_Corregido_Stock'
+            columna_compras_sugeridas='Pedido_Corregido_Stock',
+            seccion=seccion
         )
         
         metricas = engine.calcular_metricas_correccion(
@@ -701,6 +702,15 @@ def procesar_pedido_semana(
         logger.info(f"\n{'=' * 50}")
         logger.info(f"SECCION: {seccion.upper()}")
         logger.info(f"{'=' * 50}")
+        
+        # Actualizar contexto de alertas con la sección actual
+        try:
+            if 'alert_service' in dir():
+                fecha_str = datetime.now().strftime('%Y-%m-%d')
+                alert_service.establecer_contexto(seccion=seccion, fecha=fecha_str, area='Pedidos')
+                logger.debug(f"Contexto de alertas actualizado: Sección={seccion}")
+        except Exception as e:
+            logger.debug(f"No se pudo actualizar contexto de alertas: {e}")
         
         try:
             abc_df, ventas_df, costes_df = data_loader.leer_datos_seccion(seccion)

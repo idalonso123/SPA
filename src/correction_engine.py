@@ -541,7 +541,8 @@ class CorrectionEngine:
         columna_ventas_reales: str = 'Unidades_Vendidas',
         columna_ventas_objetivo: str = 'Ventas_Objetivo',
         columna_compras_reales: str = 'Unidades_Recibidas',
-        columna_compras_sugeridas: str = 'Pedido_Corregido_Stock'
+        columna_compras_sugeridas: str = 'Pedido_Corregido_Stock',
+        seccion: str = None
     ) -> pd.DataFrame:
         """
         Aplica la corrección a todo un DataFrame de pedidos.
@@ -669,14 +670,13 @@ class CorrectionEngine:
             col_tendencia = encontrar_columna(list(df.columns), 'tendencia_consumo')
             
             if col_unidades and col_stock_min and col_stock_real and col_tendencia:
+                # Usar clip(lower=0) paravectorizar correctamente con pandas
                 df['Pedido_Final'] = (
-                    max(0, 
-                        df[col_unidades] + 
-                        df[col_stock_min] - 
-                        df[col_stock_real] + 
-                        df[col_tendencia]
-                    )
-                )
+                    df[col_unidades] + 
+                    df[col_stock_min] - 
+                    df[col_stock_real] + 
+                    df[col_tendencia]
+                ).clip(lower=0)
                 logger.info(f"Pedido_Final calculado con fórmula: max(0, UF + Stock_Min - Stock_Real + TC)")
             else:
                 df['Pedido_Final'] = df['Pedido_Corregido_Stock']
@@ -777,7 +777,8 @@ class CorrectionEngine:
         
         # Verificar que existen las columnas necesarias
         if columna_ventas_reales not in df.columns or columna_ventas_objetivo not in df.columns:
-            logger.warning("No hay datos de ventas reales u objetivo. Omitiendo corrección de tendencia.")
+            seccion_info = f" - Sección: {seccion}" if seccion else ""
+            logger.warning(f"No hay datos de ventas reales u objetivo. Omitiendo corrección de tendencia.{seccion_info}")
             return df
         
         df = df.copy()
@@ -968,14 +969,15 @@ class CorrectionEngine:
             })
         
         # Artículos sin ventas pero con stock
-        sin_ventas_con_stock = df[(df['Unidades_Vendidas'] == 0) & (df['Stock_Fisico'] > 0)]
-        if len(sin_ventas_con_stock) > 0:
-            alertas.append({
-                'tipo': 'SIN_VENTAS',
-                'nivel': 'BAJO',
-                'mensaje': f'{len(sin_ventas_con_stock)} artículos con stock pero sin ventas',
-                'articulos': sin_ventas_con_stock['Codigo_Articulo'].head(10).tolist() if 'Codigo_Articulo' in sin_ventas_con_stock.columns else []
-            })
+        if 'Unidades_Vendidas' in df.columns and 'Stock_Fisico' in df.columns:
+            sin_ventas_con_stock = df[(df['Unidades_Vendidas'] == 0) & (df['Stock_Fisico'] > 0)]
+            if len(sin_ventas_con_stock) > 0:
+                alertas.append({
+                    'tipo': 'SIN_VENTAS',
+                    'nivel': 'BAJO',
+                    'mensaje': f'{len(sin_ventas_con_stock)} artículos con stock pero sin ventas',
+                    'articulos': sin_ventas_con_stock['Codigo_Articulo'].head(10).tolist() if 'Codigo_Articulo' in sin_ventas_con_stock.columns else []
+                })
         
         return alertas
 
