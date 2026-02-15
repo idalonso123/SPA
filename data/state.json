@@ -3,7 +3,7 @@
         "version": "2.0.0",
         "fecha_creacion": "2026-01-31T00:00:00",
         "ultima_actualizacion": null,
-        "ultima_ejecucion_exitosa": "2026-02-15T12:32:07.319116",
+        "ultima_ejecucion_exitosa": "2026-02-15T18:58:28.663137",
         "ultima_semana_procesada": 7,
         "año_en_curso": 2026
     },
@@ -4917,6 +4917,33 @@
             "importe": 9018.82,
             "exitosa": true,
             "notas": "Procesadas 11 secciones"
+        },
+        {
+            "semana": 7,
+            "fecha_ejecucion": "2026-02-15T18:39:06.041138",
+            "archivo_generado": "./data/output\\Pedido_Semana_7_2026-02-16_interior_CORREGIDO.xlsx",
+            "num_articulos": 352,
+            "importe": 9018.82,
+            "exitosa": true,
+            "notas": "Procesadas 11 secciones - 802 artículos corregidos en FASE 2"
+        },
+        {
+            "semana": 7,
+            "fecha_ejecucion": "2026-02-15T18:52:31.253485",
+            "archivo_generado": ".\\./data/output\\Pedido_Semana_07_15022026_interior.xlsx",
+            "num_articulos": 352,
+            "importe": 9018.82,
+            "exitosa": true,
+            "notas": "Procesadas 11 secciones - 802 artículos corregidos en FASE 2"
+        },
+        {
+            "semana": 7,
+            "fecha_ejecucion": "2026-02-15T18:58:28.663066",
+            "archivo_generado": ".\\./data/output\\Pedido_Semana_07_15022026_interior.xlsx",
+            "num_articulos": 352,
+            "importe": 9018.82,
+            "exitosa": true,
+            "notas": "Procesadas 11 secciones - 802 artículos corregidos en FASE 2"
         }
     ],
     "pedidos_generados": [
@@ -5675,12 +5702,30 @@
             "archivo": ".\\./data/output\\Pedido_Semana_07_15022026_interior.xlsx",
             "fecha": "2026-02-15",
             "importe": 9018.82
+        },
+        {
+            "semana": 7,
+            "archivo": "./data/output\\Pedido_Semana_7_2026-02-16_interior_CORREGIDO.xlsx",
+            "fecha": "2026-02-15",
+            "importe": 9018.82
+        },
+        {
+            "semana": 7,
+            "archivo": ".\\./data/output\\Pedido_Semana_07_15022026_interior.xlsx",
+            "fecha": "2026-02-15",
+            "importe": 9018.82
+        },
+        {
+            "semana": 7,
+            "archivo": ".\\./data/output\\Pedido_Semana_07_15022026_interior.xlsx",
+            "fecha": "2026-02-15",
+            "importe": 9018.82
         }
     ],
     "metricas": {
-        "total_ejecuciones": 126,
-        "total_articulos_procesados": 78415,
-        "total_importe_pedidos": 2394273.939999998,
+        "total_ejecuciones": 129,
+        "total_articulos_procesados": 79471,
+        "total_importe_pedidos": 2421330.3999999976,
         "ultima_semana_procesada_exitosamente": 7
     },
     "errores_pendientes": [],

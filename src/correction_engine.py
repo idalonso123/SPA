@@ -532,13 +532,13 @@ class CorrectionEngine:
         return escenario
     
     def aplicar_correccion_dataframe(
-        self, 
+        self,
         df: pd.DataFrame,
         columna_pedido: str = 'Pedido_Corregido_Stock',
         columna_stock_minimo: str = 'Stock_Minimo_Objetivo',
         columna_stock_real: str = 'Stock_Fisico',
         columna_categoria: str = 'Categoria',
-        columna_ventas_reales: str = 'Unidades_Vendidas',
+        columna_ventas_reales: str = 'Ventas_Reales',
         columna_ventas_objetivo: str = 'Ventas_Objetivo',
         columna_compras_reales: str = 'Unidades_Recibidas',
         columna_compras_sugeridas: str = 'Pedido_Corregido_Stock',
@@ -649,7 +649,8 @@ class CorrectionEngine:
             df,
             columna_pedido_corregido='Pedido_Corregido',
             columna_ventas_reales=columna_ventas_reales,
-            columna_ventas_objetivo=columna_ventas_objetivo
+            columna_ventas_objetivo=columna_ventas_objetivo,
+            seccion=seccion
         )
         # ================================================================
         
@@ -735,8 +736,9 @@ class CorrectionEngine:
         self,
         df: pd.DataFrame,
         columna_pedido_corregido: str = 'Pedido_Corregido',
-        columna_ventas_reales: str = 'Unidades_Vendidas',
-        columna_ventas_objetivo: str = 'Ventas_Objetivo'
+        columna_ventas_reales: str = 'Ventas_Reales',
+        columna_ventas_objetivo: str = 'Ventas_Objetivo',
+        seccion: str = None
     ) -> pd.DataFrame:
         """
         Aplica la corrección por tendencia de aumento de ventas.
@@ -846,11 +848,11 @@ class CorrectionEngine:
         return df
     
     def calcular_metricas_correccion(
-        self, 
+        self,
         df: pd.DataFrame,
         columna_pedido_original: str = 'Pedido_Corregido_Stock',
         columna_pedido_corregido: str = 'Pedido_Corregido',
-        columna_ventas_reales: str = 'Unidades_Vendidas',
+        columna_ventas_reales: str = 'Ventas_Reales',
         columna_ventas_objetivo: str = 'Ventas_Objetivo'
     ) -> Dict[str, Any]:
         """

@@ -375,7 +375,7 @@ def aplicar_correccion_pedido(
             columna_stock_minimo='Stock_Minimo_Objetivo',
             columna_stock_real='Stock_Fisico',
             columna_categoria='Categoria',
-            columna_ventas_reales='Unidades_Vendidas',
+            columna_ventas_reales='Ventas_Reales',
             columna_ventas_objetivo='Ventas_Objetivo',
             columna_compras_reales='Unidades_Recibidas',
             columna_compras_sugeridas='Pedido_Corregido_Stock',
@@ -386,7 +386,7 @@ def aplicar_correccion_pedido(
             pedido_corregido,
             columna_pedido_original='Pedido_Corregido_Stock',
             columna_pedido_corregido='Pedido_Corregido',
-            columna_ventas_reales='Unidades_Vendidas',
+            columna_ventas_reales='Ventas_Reales',
             columna_ventas_objetivo='Ventas_Objetivo'
         )
         metricas['correccion_aplicada'] = True
@@ -812,18 +812,14 @@ def procesar_pedido_semana(
                     pedidos.copy(), semana, config, seccion,
                     parametros_abc=config.get('parametros', {})
                 )
-                
+
                 if metricas.get('correccion_aplicada', False):
                     metricas_correccion_total[seccion] = metricas
-                    
-                    archivo_corregido = generar_archivo_pedido_corregido(
-                        pedidos_corregido, semana, seccion, parametros_seccion, config, order_generator
-                    )
-                    
-                    if archivo_corregido:
-                        archivos_generados.append(archivo_corregido)
-                        logger.info(f"Archivo corregido: {os.path.basename(archivo_corregido)}")
-                    
+
+                    # Ya no generamos archivo separado con "_CORREGIDO"
+                    # El archivo corregido se genera en la línea 835 con el formato correcto
+                    # usando order_generator.generar_archivo_pedido()
+
                     pedidos_final = pedidos_corregido
                     pedidos_corregidos[seccion] = pedidos_corregido
                 else:
@@ -831,7 +827,7 @@ def procesar_pedido_semana(
                     logger.info("Usando pedido teórico (sin corrección)")
             else:
                 pedidos_final = pedidos
-            
+
             archivo = order_generator.generar_archivo_pedido(pedidos_final, semana, seccion, parametros_seccion)
             
             if archivo:

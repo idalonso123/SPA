@@ -328,6 +328,7 @@ def aplicar_correccion_pedido(
     pedido_teorico: pd.DataFrame,
     semana: int,
     config: Dict[str, Any],
+    seccion: str,
     parametros_abc: Optional[Dict[str, Any]] = None
 ) -> Tuple[Optional[pd.DataFrame], Dict[str, Any]]:
     logger.info("\n" + "=" * 60)
@@ -808,7 +809,7 @@ def procesar_pedido_semana(
             
             if aplicar_correccion:
                 pedidos_corregido, metricas = aplicar_correccion_pedido(
-                    pedidos.copy(), semana, config,
+                    pedidos.copy(), semana, config, seccion,
                     parametros_abc=config.get('parametros', {})
                 )
                 
