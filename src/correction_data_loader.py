@@ -381,22 +381,8 @@ class CorrectionDataLoader:
         """
         nombre_base = self.correction_files.get('stock_actual', 'SPA_stock_actual.xlsx')
         
-        # Si se especifica semana, buscar primero archivo específico de esa semana
-        if semana:
-            # Intentar buscar archivo con semana en el nombre
-            nombre_con_semana = nombre_base.replace('.xlsx', f'_Semana_{semana}.xlsx')
-            ruta = self.buscar_archivo_correccion(nombre_con_semana)
-            
-            if ruta is None:
-                # Buscar con otro patrón común
-                nombre_con_semana = f"Stock_semana_{semana}.xlsx"
-                ruta = self.buscar_archivo_correccion(nombre_con_semana)
-            
-            # Si encontramos archivo con semana, usarlo
-            if ruta:
-                logger.info(f"Archivo de stock encontrado con semana: {ruta}")
-            else:
-                logger.info(f"No se encontró archivo de stock específico para semana {semana}, usando archivo base")
+        # Siempre usar el archivo base SPA_stock_actual.xlsx
+        # No se buscan archivos semanales porque el archivo base ya contiene la información actualizada
         
         # Si no se encontró archivo con semana o no se especificó semana, usar el base
         dir_entrada = self.obtener_directorio_entrada()
@@ -442,22 +428,29 @@ class CorrectionDataLoader:
             df (pd.DataFrame): DataFrame a normalizar
         """
         # Renombrar columnas comunes a nombres estándar
+        # IMPORTANTE: Procesar en orden específico para evitar conflictos
         mapeo_columnas = {}
         
         for col in df.columns:
             col_norm = self.normalizar_texto(col)
             
+            # Primero procesar combinaciones más específicas
             if 'articulo' in col_norm and 'codigo' in col_norm:
                 mapeo_columnas[col] = 'Codigo_Articulo'
+            elif 'nombre' in col_norm and 'articulo' in col_norm:
+                # 'Nombre artículo' debe mapear a Nombre_Articulo, no a Codigo_Articulo
+                mapeo_columnas[col] = 'Nombre_Articulo'
             elif 'codigo' in col_norm:
                 mapeo_columnas[col] = 'Codigo_Articulo'
-            elif 'nombre' in col_norm and 'articulo' in col_norm:
-                mapeo_columnas[col] = 'Nombre_Articulo'
+            elif 'articulo' in col_norm:
+                # Para columnas como 'Artículo' sin 'codigo' ni 'nombre'
+                mapeo_columnas[col] = 'Codigo_Articulo'
             elif col_norm == 'nombre':
                 mapeo_columnas[col] = 'Nombre_Articulo'
             elif 'stock' in col_norm and ('fisico' in col_norm or 'actual' in col_norm or col_norm == 'stock'):
                 mapeo_columnas[col] = 'Stock_Fisico'
-            elif 'unidades' in col_norm and 'stock' in col_norm:
+            elif 'unidades' in col_norm:
+                # Para columnas como 'Unidades' (con o sin 'stock')
                 mapeo_columnas[col] = 'Stock_Fisico'
             elif 'talla' in col_norm:
                 mapeo_columnas[col] = 'Talla'

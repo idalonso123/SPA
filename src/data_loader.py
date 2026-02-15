@@ -628,6 +628,7 @@ class DataLoader:
         # Ejemplo: 'tierras_aridos' debe buscar 'TIERRA_ARIDOS' en el archivo
         mapeo_secciones = {
             'tierrasaridos': 'TIERRA_ARIDOS',
+            'tierras_aridos': 'TIERRA_ARIDOS',  # Con guión bajo
             'mascotasvivo': 'MASCOTAS_VIVO',
             'mascotasmanufacturado': 'MASCOTAS_MANUFACTURADO',
             'decointerior': 'DECO_INTERIOR',
