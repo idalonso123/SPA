@@ -505,17 +505,17 @@ class ForecastEngine:
         # ================================================================
         # RECÁLCULO DE VENTAS_OBJETIVO Y BENEFICIO_OBJETIVO
         # Después de calcular Pedido_Final, recalculamos estas columnas
-        # usando Pedido_Final en lugar de Unidades_Finales
-        # Ventas_Objetivo = Pedido_Final * PVP
-        # Beneficio_Objetivo = Ventas_Objetivo - (Pedido_Final * Coste_Pedido)
+        # usando Unidades_Finales (Unidades Calculadas) en lugar de Pedido_Final
+        # Ventas_Objetivo = Unidades_Finales * PVP
+        # Beneficio_Objetivo = Ventas_Objetivo - (Unidades_Finales * Coste_Pedido)
         # ================================================================
-        if 'Pedido_Final' in pedidos_df.columns and 'PVP' in pedidos_df.columns:
-            pedidos_df['Ventas_Objetivo'] = (pedidos_df['Pedido_Final'] * pedidos_df['PVP']).round(2)
+        if 'Unidades_Finales' in pedidos_df.columns and 'PVP' in pedidos_df.columns:
+            pedidos_df['Ventas_Objetivo'] = (pedidos_df['Unidades_Finales'] * pedidos_df['PVP']).round(2)
             
             if 'Coste_Pedido' in pedidos_df.columns:
                 pedidos_df['Beneficio_Objetivo'] = (
                     pedidos_df['Ventas_Objetivo'] - 
-                    (pedidos_df['Pedido_Final'] * pedidos_df['Coste_Pedido'])
+                    (pedidos_df['Unidades_Finales'] * pedidos_df['Coste_Pedido'])
                 ).round(2)
         
         return pedidos_df, nuevo_stock_acumulado, ajustes_articulo

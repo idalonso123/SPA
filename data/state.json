@@ -3,7 +3,7 @@
         "version": "2.0.0",
         "fecha_creacion": "2026-01-31T00:00:00",
         "ultima_actualizacion": null,
-        "ultima_ejecucion_exitosa": "2026-02-13T17:07:50.709655",
+        "ultima_ejecucion_exitosa": "2026-02-15T01:06:44.041672",
         "ultima_semana_procesada": 7,
         "año_en_curso": 2026
     },
@@ -4809,6 +4809,33 @@
             "importe": 13453.94,
             "exitosa": true,
             "notas": "Procesadas 11 secciones"
+        },
+        {
+            "semana": 6,
+            "fecha_ejecucion": "2026-02-15T00:52:51.247505",
+            "archivo_generado": ".\\./data/output\\Pedido_Semana_06_15022026_interior.xlsx",
+            "num_articulos": 297,
+            "importe": 8109.21,
+            "exitosa": true,
+            "notas": "Procesadas 11 secciones"
+        },
+        {
+            "semana": 6,
+            "fecha_ejecucion": "2026-02-15T01:01:07.062463",
+            "archivo_generado": ".\\./data/output\\Pedido_Semana_06_15022026_interior.xlsx",
+            "num_articulos": 279,
+            "importe": 7900.88,
+            "exitosa": true,
+            "notas": "Procesadas 11 secciones"
+        },
+        {
+            "semana": 7,
+            "fecha_ejecucion": "2026-02-15T01:06:44.041619",
+            "archivo_generado": ".\\./data/output\\Pedido_Semana_07_15022026_interior.xlsx",
+            "num_articulos": 357,
+            "importe": 9060.64,
+            "exitosa": true,
+            "notas": "Procesadas 11 secciones"
         }
     ],
     "pedidos_generados": [
@@ -5495,12 +5522,30 @@
             "archivo": ".\\./data/output\\Pedido_Semana_07_13022026_interior.xlsx",
             "fecha": "2026-02-13",
             "importe": 13453.94
+        },
+        {
+            "semana": 6,
+            "archivo": ".\\./data/output\\Pedido_Semana_06_15022026_interior.xlsx",
+            "fecha": "2026-02-15",
+            "importe": 8109.21
+        },
+        {
+            "semana": 6,
+            "archivo": ".\\./data/output\\Pedido_Semana_06_15022026_interior.xlsx",
+            "fecha": "2026-02-15",
+            "importe": 7900.88
+        },
+        {
+            "semana": 7,
+            "archivo": ".\\./data/output\\Pedido_Semana_07_15022026_interior.xlsx",
+            "fecha": "2026-02-15",
+            "importe": 9060.64
         }
     ],
     "metricas": {
-        "total_ejecuciones": 114,
-        "total_articulos_procesados": 74308,
-        "total_importe_pedidos": 2288084.8599999985,
+        "total_ejecuciones": 117,
+        "total_articulos_procesados": 75241,
+        "total_importe_pedidos": 2313155.5899999985,
         "ultima_semana_procesada_exitosamente": 7
     },
     "errores_pendientes": [],
