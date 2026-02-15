@@ -755,7 +755,9 @@ def procesar_pedido_semana(
             df_ventas_objetivo_anterior = None
             if archivo_semana_anterior:
                 try:
-                    df_pedido_anterior = pd.read_excel(archivo_semana_anterior)
+                    # IMPORTANTE: El archivo Excel tiene los encabezados en la fila 2 (índice 1)
+                    # La primera fila es un índice. Sin header=1, pandas lee índices (1,2,3...) como columnas
+                    df_pedido_anterior = pd.read_excel(archivo_semana_anterior, header=1)
                     df_ventas_objetivo_anterior = normalizar_datos_historicos(df_pedido_anterior)
                     logger.info(f"Cargados datos de la semana anterior ({seccion}): {len(df_ventas_objetivo_anterior)} registros")
                 except Exception as e:
