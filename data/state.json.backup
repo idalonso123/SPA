@@ -3,7 +3,7 @@
         "version": "2.0.0",
         "fecha_creacion": "2026-01-31T00:00:00",
         "ultima_actualizacion": null,
-        "ultima_ejecucion_exitosa": "2026-02-15T18:58:28.663137",
+        "ultima_ejecucion_exitosa": "2026-02-16T15:34:50.126783",
         "ultima_semana_procesada": 7,
         "año_en_curso": 2026
     },
@@ -405,7 +405,7 @@
         "5401010025|         |        ": 1,
         "5401010022|         |        ": 1,
         "5401010019|         |        ": 1,
-        "5402040008|         |        ": 0,
+        "5402040008|         |        ": 1,
         "5402050002|         |        ": 0,
         "5402050004|         |        ": 1,
         "5402050003|         |        ": 1,
@@ -1916,7 +1916,7 @@
         "5402090007|         |        ": 0,
         "5401010020|         |        ": 0,
         "5401010004|         |        ": 1,
-        "5401010003|         |        ": 0,
+        "5401010003|         |        ": 1,
         "5402020009|         |        ": 1,
         "5402020003|         |        ": 0,
         "5401010010|         |        ": 1,
@@ -2614,10 +2614,10 @@
         "5401010032|         |        ": 0,
         "5402030005|         |        ": 0,
         "5401010035|         |        ": 0,
-        "5402090018|         |        ": 1,
-        "5402060003|         |        ": 2,
-        "5402050024|         |        ": 1,
-        "5402050018|         |        ": 1,
+        "5402090018|         |        ": 0,
+        "5402060003|         |        ": 1,
+        "5402050024|         |        ": 0,
+        "5402050018|         |        ": 0,
         "5404010008|         |        ": 1,
         "5404010020|         |        ": 1,
         "5303010002|         |        ": 2,
@@ -4944,6 +4944,15 @@
             "importe": 9018.82,
             "exitosa": true,
             "notas": "Procesadas 11 secciones - 802 artículos corregidos en FASE 2"
+        },
+        {
+            "semana": 7,
+            "fecha_ejecucion": "2026-02-16T15:34:50.126728",
+            "archivo_generado": ".\\./data/output\\Pedido_Semana_07_16022026_interior.xlsx",
+            "num_articulos": 353,
+            "importe": 9020.79,
+            "exitosa": true,
+            "notas": "Procesadas 11 secciones - 803 artículos corregidos en FASE 2"
         }
     ],
     "pedidos_generados": [
@@ -5720,12 +5729,18 @@
             "archivo": ".\\./data/output\\Pedido_Semana_07_15022026_interior.xlsx",
             "fecha": "2026-02-15",
             "importe": 9018.82
+        },
+        {
+            "semana": 7,
+            "archivo": ".\\./data/output\\Pedido_Semana_07_16022026_interior.xlsx",
+            "fecha": "2026-02-16",
+            "importe": 9020.79
         }
     ],
     "metricas": {
-        "total_ejecuciones": 129,
-        "total_articulos_procesados": 79471,
-        "total_importe_pedidos": 2421330.3999999976,
+        "total_ejecuciones": 130,
+        "total_articulos_procesados": 79824,
+        "total_importe_pedidos": 2430351.1899999976,
         "ultima_semana_procesada_exitosamente": 7
     },
     "errores_pendientes": [],
