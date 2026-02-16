@@ -329,7 +329,8 @@ def aplicar_correccion_pedido(
     semana: int,
     config: Dict[str, Any],
     seccion: str,
-    parametros_abc: Optional[Dict[str, Any]] = None
+    parametros_abc: Optional[Dict[str, Any]] = None,
+    alert_service=None
 ) -> Tuple[Optional[pd.DataFrame], Dict[str, Any]]:
     logger.info("\n" + "=" * 60)
     logger.info("FASE 2: APLICANDO CORRECCIÓN AL PEDIDO")
@@ -400,9 +401,30 @@ def aplicar_correccion_pedido(
         alertas = engine.generar_alertas(pedido_corregido)
         if alertas:
             metricas['alertas'] = alertas
+            # Ya no enviamos warning por email para cada alerta individual
+            # Ahora recolectamos los datos y los enviamos consolidados al final
             logger.warning("ALERTAS GENERADAS:")
             for alerta in alertas:
                 logger.warning(f"  [{alerta['nivel']}] {alerta['mensaje']}")
+                
+                # Agregar al buffer del alert_service si está disponible
+                if alert_service:
+                    if alerta['tipo'] == 'STOCK_CRITICO':
+                        # Extraer información de stock
+                        mensaje = alerta['mensaje']
+                        # El formato es: "X artículos con stock en 0 o negativo"
+                        # No tenemos información de区分 stock 0 vs negativo en este punto
+                        # Usamos 0 como aproximación
+                        alert_service.agregar_alerta_stock(
+                            seccion=seccion,
+                            articulos_stock_cero=int(alerta['mensaje'].split()[0]) if alerta['mensaje'].split()[0].isdigit() else 0,
+                            articulos_stock_negativo=0
+                        )
+                    elif alerta['tipo'] == 'CAMBIOS_SIGNIFICATIVOS':
+                        alert_service.agregar_alerta_cambios(
+                            seccion=seccion,
+                            articulos_cambio=int(alerta['mensaje'].split()[0]) if alerta['mensaje'].split()[0].isdigit() else 0
+                        )
         
         logger.info("\nRESUMEN DE CORRECCIÓN:")
         logger.info(f"  Artículos corregidos: {metricas['articulos_corregidos']}/{metricas['total_articulos']}")
@@ -416,6 +438,14 @@ def aplicar_correccion_pedido(
             logger.info(f"    Artículos con tendencia: {metricas['articulos_tendencia']}")
             logger.info(f"    Incremento total aplicado: {metricas['incremento_tendencia_total']} unidades")
             logger.info(f"    Incremento promedio: {metricas.get('incremento_tendencia_promedio', 0):.1f} unidades")
+            
+            # Agregar al buffer del alert_service si está disponible
+            if alert_service:
+                alert_service.agregar_alerta_tendencia(
+                    seccion=seccion,
+                    articulos_tendencia=metricas['articulos_tendencia'],
+                    incremento_total=metricas['incremento_tendencia_total']
+                )
         
         return pedido_corregido, metricas
         
@@ -651,7 +681,8 @@ def procesar_pedido_semana(
     state_manager: StateManager,
     forzar: bool = False,
     aplicar_correccion: bool = True,
-    enviar_email: bool = True
+    enviar_email: bool = True,
+    alert_service=None
 ) -> Tuple[bool, Optional[str], int, float, Dict[str, Any], Dict[str, Any]]:
     logger.info("=" * 70)
     logger.info(f"PROCESANDO PEDIDO PARA SEMANA {semana}")
@@ -810,7 +841,8 @@ def procesar_pedido_semana(
             if aplicar_correccion:
                 pedidos_corregido, metricas = aplicar_correccion_pedido(
                     pedidos.copy(), semana, config, seccion,
-                    parametros_abc=config.get('parametros', {})
+                    parametros_abc=config.get('parametros', {}),
+                    alert_service=alert_service if 'alert_service' in dir() else None
                 )
 
                 if metricas.get('correccion_aplicada', False):
@@ -1223,7 +1255,8 @@ Ejemplos de uso:
         semana, config, state_manager, 
         forzar=args.semana is not None,
         aplicar_correccion=aplicar_correccion,
-        enviar_email=enviar_email
+        enviar_email=enviar_email,
+        alert_service=alert_service if 'alert_service' in dir() else None
     )
     
     if exito:
@@ -1242,6 +1275,15 @@ Ejemplos de uso:
                 if total_tendencia > 0:
                     logger.info(f"  - Tendencia de ventas: {total_tendencia} artículos con incremento adicional")
                     logger.info(f"  - Incremento total aplicado: {total_incremento} unidades")
+            
+            # ENVÍO DE ALERTAS CONSOLIDADAS
+            # Enviar los correos consolidados con los resúmenes de alertas
+            try:
+                if 'alert_service' in dir() and alert_service is not None:
+                    alert_service.flush_alertas()
+                    logger.info("Alertas consolidadas enviadas por email")
+            except Exception as e:
+                logger.warning(f"Error al enviar alertas consolidadas: {e}")
         
         if resultado_email.get('exito'):
             logger.info(f"\nEmails enviados a encargados: {resultado_email.get('emails_enviados', 0)}")
