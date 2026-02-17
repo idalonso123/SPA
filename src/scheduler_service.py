@@ -4,7 +4,7 @@ Módulo SchedulerService - Control de ejecución programada
 
 Este módulo gestiona la lógica de programación y control de ejecución del
 sistema. Determina cuándo debe ejecutarse el proceso de generación de pedidos
-según la configuración de horario (domingos a las 15:00), identifica qué semana
+según la configuración de horario (jueves a las 21:50), identifica qué semana
 procesar, y verifica si la semana ya ha sido procesada anteriormente.
 
 Autor: Sistema de Pedidos Vivero V2
@@ -55,7 +55,7 @@ class SchedulerService:
         self.secciones = config.get('secciones_activas', [])
         
         # Valores por defecto si no están configurados
-        self.dia_ejecucion = self.horario.get('dia', 'sunday')
+        self.dia_ejecucion = self.horario.get('dia', 'thursday')
         self.hora_ejecucion = self.horario.get('hora', 15)
         self.minuto_ejecucion = self.horario.get('minuto', 0)
         
@@ -359,7 +359,7 @@ class SchedulerService:
         
         if dias_hasta == 0:
             if self.es_modo_prueba():
-                return f"MODO PRUEBA: La ejecución puede realizarse ahora (domingo a las {self.hora_ejecucion:02d}:{self.minuto_ejecucion:02d})"
+                return f"MODO PRUEBA: La ejecución puede realizarse ahora (jueves a las {self.hora_ejecucion:02d}:{self.minuto_ejecucion:02d})"
             else:
                 # Verificar si ya pasó la hora de ejecución
                 if ahora.hour >= self.hora_ejecucion:
@@ -397,7 +397,7 @@ if __name__ == "__main__":
     # Ejemplo de configuración
     config_ejemplo = {
         'horario_ejecucion': {
-            'dia': 'sunday',
+            'dia': 'thursday',
             'hora': 15,
             'minuto': 0
         },

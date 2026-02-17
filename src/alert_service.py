@@ -687,6 +687,14 @@ class AlertService:
             'area': 'Pedidos'
         }
         
+        # Buffer para recolectar alertas durante la ejecución
+        # Se enviarán consolidadas al final
+        self.alertas_buffer = {
+            'stock_cero': [],      # Artículos con stock en 0 o negativo
+            'cambios_significativos': [],  # Artículos con cambios > 50%
+            'tendencia': []        # Correcciones por tendencia de ventas
+        }
+        
         # Cargar configuración
         self._cargar_configuracion()
         
@@ -1218,6 +1226,254 @@ if __name__ == "__main__":
     print("  alert_service = crear_alert_service(config)")
     print("  alert_service.enviar_alerta('ARCHIVO_NO_ENCONTRADO', {...})")
 
+
+    # ============================================================================
+    # MÉTODOS PARA RECOLECTAR ALERTAS Y ENVIAR RESÚMENES CONSOLIDADOS
+    # ============================================================================
+
+    def agregar_alerta_stock(self, seccion: str, articulos_stock_cero: int, 
+                           articulos_stock_negativo: int = 0) -> None:
+        """
+        Agrega información de artículos con stock en 0 o negativo al buffer.
+        
+        Args:
+            seccion: Nombre de la sección
+            articulos_stock_cero: Cantidad de artículos con stock en 0
+            articulos_stock_negativo: Cantidad de artículos con stock negativo
+        """
+        self.alertas_buffer['stock_cero'].append({
+            'seccion': seccion,
+            'stock_cero': articulos_stock_cero,
+            'stock_negativo': articulos_stock_negativo
+        })
+        logger.debug(f"Alerta de stock recolectada para {seccion}: {articulos_stock_cero} artículos con stock 0, {articulos_stock_negativo} con stock negativo")
+    
+    def agregar_alerta_cambios(self, seccion: str, articulos_cambio: int) -> None:
+        """
+        Agrega información de artículos con cambios superiores al 50% al buffer.
+        
+        Args:
+            seccion: Nombre de la sección
+            articulos_cambio: Cantidad de artículos con cambios > 50%
+        """
+        self.alertas_buffer['cambios_significativos'].append({
+            'seccion': seccion,
+            'articulos_cambio': articulos_cambio
+        })
+        logger.debug(f"Alerta de cambios significativos recolectada para {seccion}: {articulos_cambio} artículos")
+    
+    def agregar_alerta_tendencia(self, seccion: str, articulos_tendencia: int,
+                                 incremento_total: int = 0) -> None:
+        """
+        Agrega información de correcciones por tendencia de ventas al buffer.
+        
+        Args:
+            seccion: Nombre de la sección
+            articulos_tendencia: Cantidad de artículos con tendencia
+            incremento_total: Incremento total aplicado en unidades
+        """
+        self.alertas_buffer['tendencia'].append({
+            'seccion': seccion,
+            'articulos_tendencia': articulos_tendencia,
+            'incremento_total': incremento_total
+        })
+        logger.debug(f"Alerta de tendencia recolectada para {seccion}: {articulos_tendencia} artículos, incremento total: {incremento_total}")
+    
+    def flush_alertas(self) -> None:
+        """
+        Envía los correos consolidados con todas las alertas recolectadas durante la ejecución.
+        
+        Este método debe llamarse al FINAL del proceso principal, después de que todas
+        las secciones hayan sido procesadas.
+        
+        Envía hasta 3 correos separados:
+        1. Stock en 0 o negativo
+        2. Cambios superiores al 50%
+        3. Corrección de tendencia
+        """
+        logger.info("Enviando alertas consolidadas...")
+        
+        # 1. Enviar alerta de stock en 0 o negativo
+        if self.alertas_buffer['stock_cero']:
+            self._enviar_alerta_stock_consolidada()
+        
+        # 2. Enviar alerta de cambios > 50%
+        if self.alertas_buffer['cambios_significativos']:
+            self._enviar_alerta_cambios_consolidada()
+        
+        # 3. Enviar alerta de tendencia
+        if self.alertas_buffer['tendencia']:
+            self._enviar_alerta_tendencia_consolidada()
+        
+        logger.info("Alertas consolidadas enviadas correctamente")
+    
+    def _enviar_alerta_stock_consolidada(self) -> bool:
+        """Envía el correo consolidado de stock en 0 o negativo."""
+        datos = self.alertas_buffer['stock_cero']
+        
+        # Crear tabla HTML
+        tabla = "<table style='border-collapse: collapse; width: 100%;'>"
+        tabla += "<tr style='background-color: #ffcccc;'>"
+        tabla += "<th style='border: 1px solid #ddd; padding: 8px; text-align: left;'>Sección</th>"
+        tabla += "<th style='border: 1px solid #ddd; padding: 8px; text-align: right;'>Stock 0</th>"
+        tabla += "<th style='border: 1px solid #ddd; padding: 8px; text-align: right;'>Stock Negativo</th>"
+        tabla += "<th style='border: 1px solid #ddd; padding: 8px; text-align: right;'>Total</th>"
+        tabla += "</tr>"
+        
+        total_cero = 0
+        total_negativo = 0
+        
+        for fila in datos:
+            cero = fila.get('stock_cero', 0)
+            negativo = fila.get('stock_negativo', 0)
+            total_cero += cero
+            total_negativo += negativo
+            
+            tabla += "<tr>"
+            tabla += f"<td style='border: 1px solid #ddd; padding: 8px;'>{fila.get('seccion', 'N/A')}</td>"
+            tabla += f"<td style='border: 1px solid #ddd; padding: 8px; text-align: right; color: red;'>{cero}</td>"
+            tabla += f"<td style='border: 1px solid #ddd; padding: 8px; text-align: right; color: red;'>{negativo}</td>"
+            tabla += f"<td style='border: 1px solid #ddd; padding: 8px; text-align: right; font-weight: bold;'>{cero + negativo}</td>"
+            tabla += "</tr>"
+        
+        # Fila de totales
+        tabla += "<tr style='background-color: #ff9999; font-weight: bold;'>"
+        tabla += f"<td style='border: 1px solid #ddd; padding: 8px;'>TOTAL</td>"
+        tabla += f"<td style='border: 1px solid #ddd; padding: 8px; text-align: right;'>{total_cero}</td>"
+        tabla += f"<td style='border: 1px solid #ddd; padding: 8px; text-align: right;'>{total_negativo}</td>"
+        tabla += f"<td style='border: 1px solid #ddd; padding: 8px; text-align: right;'>{total_cero + total_negativo}</td>"
+        tabla += "</tr>"
+        
+        tabla += "</table>"
+        
+        asunto = f"Alerta de Stock - {self.contexto_global['fecha_proceso']}"
+        cuerpo = f"""
+<html>
+<body>
+<h2>Alerta de Stock en 0 o Negativo</h2>
+<p>Se han detectado artículos con problemas de stock durante el procesamiento de pedidos.</p>
+{tabla}
+<p><em>Mensaje generado automáticamente por el Sistema de Pedidos Automatizado</em></p>
+</body>
+</html>
+"""
+        
+        return self.enviar_alerta("STOCK_CERO", {
+            'seccion': 'Varias',
+            'detalles': tabla,
+            'fecha': self.contexto_global['fecha_proceso']
+        })
+    
+    def _enviar_alerta_cambios_consolidada(self) -> bool:
+        """Envía el correo consolidado de cambios superiores al 50%."""
+        datos = self.alertas_buffer['cambios_significativos']
+        
+        # Crear tabla HTML
+        tabla = "<table style='border-collapse: collapse; width: 100%;'>"
+        tabla += "<tr style='background-color: #fff3cd;'>"
+        tabla += "<th style='border: 1px solid #ddd; padding: 8px; text-align: left;'>Sección</th>"
+        tabla += "<th style='border: 1px solid #ddd; padding: 8px; text-align: right;'>Artículos con Cambios &gt; 50%</th>"
+        tabla += "</tr>"
+        
+        total_articulos = 0
+        
+        for fila in datos:
+            articulos = fila.get('articulos_cambio', 0)
+            total_articulos += articulos
+            
+            tabla += "<tr>"
+            tabla += f"<td style='border: 1px solid #ddd; padding: 8px;'>{fila.get('seccion', 'N/A')}</td>"
+            tabla += f"<td style='border: 1px solid #ddd; padding: 8px; text-align: right; color: orange;'>{articulos}</td>"
+            tabla += "</tr>"
+        
+        # Fila de totales
+        tabla += "<tr style='background-color: #ffeeba; font-weight: bold;'>"
+        tabla += f"<td style='border: 1px solid #ddd; padding: 8px;'>TOTAL</td>"
+        tabla += f"<td style='border: 1px solid #ddd; padding: 8px; text-align: right;'>{total_articulos}</td>"
+        tabla += "</tr>"
+        
+        tabla += "</table>"
+        
+        asunto = f"Alerta de Cambios Significativos - {self.contexto_global['fecha_proceso']}"
+        cuerpo = f"""
+<html>
+<body>
+<h2>Alerta de Cambios Superiores al 50%</h2>
+<p>Se han detectado artículos con cambios de demanda superiores al 50% durante el procesamiento.</p>
+{tabla}
+<p><em>Mensaje generado automáticamente por el Sistema de Pedidos Automatizado</em></p>
+</body>
+</html>
+"""
+        
+        return self.enviar_alerta("CAMBIOS_SIGNIFICATIVOS", {
+            'seccion': 'Varias',
+            'detalles': tabla,
+            'fecha': self.contexto_global['fecha_proceso']
+        })
+    
+    def _enviar_alerta_tendencia_consolidada(self) -> bool:
+        """Envía el correo consolidado de correcciones por tendencia."""
+        datos = self.alertas_buffer['tendencia']
+        
+        # Crear tabla HTML
+        tabla = "<table style='border-collapse: collapse; width: 100%;'>"
+        tabla += "<tr style='background-color: #d4edda;'>"
+        tabla += "<th style='border: 1px solid #ddd; padding: 8px; text-align: left;'>Sección</th>"
+        tabla += "<th style='border: 1px solid #ddd; padding: 8px; text-align: right;'>Artículos con Tendencia</th>"
+        tabla += "<th style='border: 1px solid #ddd; padding: 8px; text-align: right;'>Incremento Total (uds)</th>"
+        tabla += "</tr>"
+        
+        total_articulos = 0
+        total_incremento = 0
+        
+        for fila in datos:
+            articulos = fila.get('articulos_tendencia', 0)
+            incremento = fila.get('incremento_total', 0)
+            total_articulos += articulos
+            total_incremento += incremento
+            
+            tabla += "<tr>"
+            tabla += f"<td style='border: 1px solid #ddd; padding: 8px;'>{fila.get('seccion', 'N/A')}</td>"
+            tabla += f"<td style='border: 1px solid #ddd; padding: 8px; text-align: right;'>{articulos}</td>"
+            tabla += f"<td style='border: 1px solid #ddd; padding: 8px; text-align: right; font-weight: bold; color: green;'>+{incremento}</td>"
+            tabla += "</tr>"
+        
+        # Fila de totales
+        tabla += "<tr style='background-color: #c3e6cb; font-weight: bold;'>"
+        tabla += f"<td style='border: 1px solid #ddd; padding: 8px;'>TOTAL</td>"
+        tabla += f"<td style='border: 1px solid #ddd; padding: 8px; text-align: right;'>{total_articulos}</td>"
+        tabla += f"<td style='border: 1px solid #ddd; padding: 8px; text-align: right; color: green;'>+{total_incremento}</td>"
+        tabla += "</tr>"
+        
+        tabla += "</table>"
+        
+        asunto = f"Alerta de Tendencia de Ventas - {self.contexto_global['fecha_proceso']}"
+        cuerpo = f"""
+<html>
+<body>
+<h2>Alerta de Corrección por Tendencia de Ventas</h2>
+<p>Se han aplicado correcciones por tendencia de ventas durante el procesamiento de pedidos.</p>
+{tabla}
+<p><em>Mensaje generado automáticamente por el Sistema de Pedidos Automatizado</em></p>
+</body>
+</html>
+"""
+        
+        return self.enviar_alerta("TENDENCIA", {
+            'seccion': 'Varias',
+            'detalles': tabla,
+            'fecha': self.contexto_global['fecha_proceso']
+        })
+    
+    def limpiar_buffer(self) -> None:
+        """Limpia el buffer de alertas. Llamar al inicio de cada ejecución."""
+        self.alertas_buffer = {
+            'stock_cero': [],
+            'cambios_significativos': [],
+            'tendencia': []
+        }
+        logger.debug("Buffer de alertas limpiado")
 
 
 # ============================================================================

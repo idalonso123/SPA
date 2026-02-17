@@ -177,9 +177,9 @@
     ],
     
     "horario_ejecucion": {
-        "dia": "friday",
-        "hora": 15,
-        "minuto": 0
+        "dia": "thursday",
+        "hora": 21,
+        "minuto": 50
     },
     
     "rutas": {

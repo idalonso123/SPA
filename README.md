@@ -59,7 +59,7 @@ El archivo `config/config.json` contiene todos los parámetros del sistema:
 python main.py
 ```
 
-El sistema se ejecutará automáticamente los domingos a las 15:00 horas según lo configurado en `config.json`.
+El sistema se ejecutará automáticamente los jueves a las 21:50 horas según lo configurado en `config.json`.
 
 ### Modo Forzado (para pruebas)
 
@@ -103,7 +103,7 @@ python main.py --verbose
 
 ## Flujo de Ejecución
 
-1. **Verificación de horario**: Comprueba si es el momento de ejecutar (domingo 15:00)
+1. **Verificación de horario**: Comprueba si es el momento de ejecutar (jueves 21:50)
 2. **Carga de configuración**: Lee `config/config.json`
 3. **Carga de estado**: Lee `data/state.json` para obtener información previa
 4. **Determinación de semana**: Calcula qué semana debe procesar
@@ -130,7 +130,7 @@ Los archivos generados se guardan en `data/output/`:
 
 ## Programación Automática (cron/Linux)
 
-Para ejecutar automáticamente cada domingo a las 15:00:
+Para ejecutar automáticamente cada jueves a las 21:50:
 
 ```bash
 crontab -e
@@ -139,7 +139,7 @@ crontab -e
 Añadir la línea:
 
 ```cron
-0 15 * * 0 /ruta/a/venv/bin/python /ruta/a/vivero_pedidos_v2/main.py >> /ruta/a/vivero_pedidos_v2/logs/cron.log 2>&1
+50 21 * * 4 /ruta/a/venv/bin/python /ruta/a/vivero_pedidos_v2/main.py >> /ruta/a/vivero_pedidos_v2/logs/cron.log 2>&1
 ```
 
 ## Programación Automática (Windows)
@@ -148,7 +148,7 @@ Usar el Programador de Tareas de Windows:
 
 1. Abrir Programador de Tareas
 2. Crear tarea básica
-3. Configurar para cada domingo a las 15:00
+3. Configurar para cada jueves a las 21:50
 4. Acción: Iniciar programa
 5. Programa/script: `python`
 6. Argumentos: `main.py`
