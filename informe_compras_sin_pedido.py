@@ -1,354 +1,441 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
-Script para generar informe de artículos comprados fuera del pedido planificado.
+Script para generar informe semanal de compras sin pedido
 
-Este script analiza los artículos que:
-- No estaban en el stock inicial ni en el pedido de compra, pero están en el stock actual
-- Estaban en el stock inicial, no estaban en el pedido, pero tienen más unidades en stock actual
+Este script identifica artículos que han sido comprados pero no estaban
+en el pedido semanal. Compara el stock histórico con el actual y los pedidos.
 
-Incluye registro histórico para evitar duplicados en semanas posteriores.
+Estructura de datos de entrada:
+- SPA_stock_P1.xlsx, SPA_stock_P2.xlsx, SPA_stock_P3.xlsx, SPA_stock_P4.xlsx
+- SPA_stock_actual.xlsx
+- Pedido_Semana_{semana}_{sección}.xlsx
 
-Autor: MiniMax Agent
-Fecha: 2026-02-18
+Estructura de datos de salida:
+- Excel con 11 hojas (una por sección)
+- JSON histórico para seguimiento dinámico de stock
 """
 
 import pandas as pd
-import os
-import glob
 import json
+import os
 from datetime import datetime
-import argparse
-import sys
-from openpyxl import Workbook
-from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
-from openpyxl.utils import get_column_letter
+from pathlib import Path
+import glob
+import warnings
+
+# Ignorar warnings de openpyxl
+warnings.filterwarnings('ignore', category=UserWarning, module='openpyxl')
+
+# Configuración
+BASE_PATH = Path(__file__).parent
+DATA_INPUT_PATH = BASE_PATH / "data" / "input"
+DATA_OUTPUT_PATH = BASE_PATH / "data" / "output"
+HISTORY_FILE = BASE_PATH / "data" / "compras_sin_pedido_historico.json"
+
+# Secciones del sistema
+SECCIONES = [
+    "maf",
+    "interior", 
+    "deco_exterior",
+    "deco_interior",
+    "fitos",
+    "mascotas_manufacturado",
+    "mascotas_vivo",
+    "semillas",
+    "utiles_jardin",
+    "vivero",
+    "tierras_aridos"
+]
+
+# Períodos de stock histórico
+PERIODOS = ["P1", "P2", "P3", "P4"]
+
+# Mapeo de prefijos de códigos de artículo por sección
+# Basado en el análisis de los archivos de pedido
+SECCION_PREFIX = {
+    "maf": ["7"],           # 72, 74, 75, 78, 79
+    "interior": ["1"],      # 11, 12, 14, 15, 16
+    "deco_exterior": ["9"], # 92, 93, 94, 95, 97
+    "deco_interior": ["6"], # 61, 62, 63, 64, 65
+    "fitos": ["3"],         # 33, 34, 35, 37, 39
+    "mascotas_manufacturado": ["2"],  # 21, 22, 23, 24, 27
+    "mascotas_vivo": ["2"],  # Compartido con mascotas_manufacturado
+    "semillas": ["5"],      # 53, 54
+    "utiles_jardin": ["4"], # 41, 42, 44, 46, 48
+    "vivero": ["8"],        # 81, 82, 83, 85, 86
+    "tierras_aridos": ["3"] # Compartido con fitos
+}
 
 
-# Configuración de rutas
-# Usar el directorio del script como base para rutas absolutas
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-RUTA_DATA_INPUT = os.path.join(SCRIPT_DIR, "data", "input")
-RUTA_DATA_OUTPUT = os.path.join(SCRIPT_DIR, "data", "output")
-RUTA_DATA = os.path.join(SCRIPT_DIR, "data")
-ARCHIVO_HISTORICO = "compras_sin_pedido_historico.json"
-
-
-def normalizar_clave(articulo, talla, color):
+def obtener_prefijo_articulo(articulo):
     """
-    Normaliza una clave para que coincida entre archivos.
+    Obtiene el prefijo (primer dígito) del código de artículo.
     """
-    articulo = str(articulo)
     try:
-        articulo_num = float(articulo)
-        if not pd.isna(articulo_num):
-            articulo = str(int(articulo_num))
+        articulo_str = str(articulo).replace('.0', '').strip()
+        if articulo_str and articulo_str != 'nan':
+            return articulo_str[0]
     except:
         pass
-    
-    if pd.notna(talla):
-        talla = str(talla).strip()
-    else:
-        talla = ""
-    
-    if pd.notna(color):
-        color = str(color).strip()
-    else:
-        color = ""
-    
-    return f"{articulo}_{talla}_{color}"
+    return ''
 
 
-def cargar_historico():
+def es_articulo_de_seccion(articulo, seccion):
     """
-    Carga el archivo histórico de compras sin pedido.
+    Verifica si un artículo pertenece a una sección basándose en su código.
+    """
+    prefijo = obtener_prefijo_articulo(articulo)
+    return prefijo in SECCION_PREFIX.get(seccion, [])
+
+
+def cargar_stock_historico():
+    """
+    Carga todos los archivos de stock histórico (P1-P4) y los combina.
+    Retorna un DataFrame con todos los artículos históricos.
+    """
+    dfs = []
     
-    Returns:
-        Diccionario con el histórico de artículos por sección
-    """
-    ruta_historico = os.path.join(RUTA_DATA, ARCHIVO_HISTORICO)
+    for periodo in PERIODOS:
+        archivo = DATA_INPUT_PATH / f"SPA_stock_{periodo}.xlsx"
+        if archivo.exists():
+            df = pd.read_excel(archivo)
+            # Rellenar celdas en blanco hacia abajo para Artículo y Nombre
+            df = fill_forward_blank_cells(df, ['Artículo', 'Nombre artículo'])
+            df['Periodo'] = periodo
+            dfs.append(df)
+            print(f"  - Cargado: {archivo.name}")
     
-    if os.path.exists(ruta_historico):
-        try:
-            with open(ruta_historico, 'r', encoding='utf-8') as f:
-                return json.load(f)
-        except Exception as e:
-            print(f"  Warning: Error al cargar histórico: {e}")
-            return {}
-    return {}
+    if dfs:
+        return pd.concat(dfs, ignore_index=True)
+    return pd.DataFrame()
 
 
-def guardar_historico(historico):
-    """
-    Guarda el archivo histórico de compras sin pedido.
-    
-    Args:
-        historico: Diccionario con el histórico de artículos por sección
-    """
-    ruta_historico = os.path.join(RUTA_DATA, ARCHIVO_HISTORICO)
-    
-    try:
-        with open(ruta_historico, 'w', encoding='utf-8') as f:
-            json.dump(historico, f, indent=2, ensure_ascii=False)
-    except Exception as e:
-        print(f"  Error al guardar histórico: {e}")
-
-
-def cargar_clasificacion_abc(seccion):
-    """
-    Carga los artículos de una sección desde el archivo de clasificación ABC.
-    """
-    secciones_archivo = {
-        "maf": "MAF",
-        "deco_interior": "DECO_INTERIOR",
-        "deco_exterior": "DECO_EXTERIOR",
-        "semillas": "SEMILLAS",
-        "mascotas_vivo": "MASCOTAS_VIVO",
-        "mascotas_manufacturado": "MASCOTAS_MANUFACTURADO",
-        "interior": "INTERIOR",
-        "fitos": "FITOS",
-        "vivero": "VIVERO",
-        "utiles_jardin": "UTILES_JARDIN",
-        "tierras_aridos": "TIERRA_ARIDOS"
-    }
-    
-    nombre_archivo = secciones_archivo.get(seccion, seccion.upper())
-    ruta_archivo = os.path.join(RUTA_DATA_INPUT, f"CLASIFICACION_ABC+D_{nombre_archivo}_ANUAL_2025.xlsx")
-    
-    try:
-        df = pd.read_excel(ruta_archivo)
-        df = df[['Artículo', 'Talla', 'Color']].copy()
-        df = df.dropna(subset=['Artículo', 'Talla', 'Color'])
-        df['clave'] = df.apply(lambda row: normalizar_clave(row['Artículo'], row['Talla'], row['Color']), axis=1)
-        return set(df['clave'].unique())
-    except Exception as e:
-        print(f"  Warning: No se pudo cargar clasificación ABC para {seccion}: {e}")
-        return None
-
-
-def cargar_stock_periodo(ruta_stock, periodo):
-    """
-    Carga un archivo de stock de un periodo específico.
-    """
-    try:
-        df = pd.read_excel(ruta_stock)
-        df = df[df['Tipo registro'] == 'Detalle'].copy()
-        df = df[['Artículo', 'Nombre artículo', 'Talla', 'Color', 'Unidades']].copy()
-        df = df.dropna(subset=['Artículo', 'Talla', 'Color'])
-        df['clave'] = df.apply(lambda row: normalizar_clave(row['Artículo'], row['Talla'], row['Color']), axis=1)
-        return df
-    except Exception as e:
-        print(f"Error al cargar {ruta_stock}: {e}")
-        return pd.DataFrame()
-
-
-def cargar_stock_actual(ruta_stock_actual):
+def cargar_stock_actual():
     """
     Carga el archivo de stock actual.
     """
-    try:
-        df = pd.read_excel(ruta_stock_actual)
-        df = df[df['Tipo registro'] == 'Detalle'].copy()
-        df = df[['Artículo', 'Nombre artículo', 'Talla', 'Color', 'Unidades']].copy()
-        df = df.dropna(subset=['Artículo', 'Talla', 'Color'])
-        df['clave'] = df.apply(lambda row: normalizar_clave(row['Artículo'], row['Talla'], row['Color']), axis=1)
+    archivo = DATA_INPUT_PATH / "SPA_stock_actual.xlsx"
+    if archivo.exists():
+        df = pd.read_excel(archivo)
+        # Rellenar celdas en blanco hacia abajo para Artículo y Nombre
+        df = fill_forward_blank_cells(df, ['Artículo', 'Nombre artículo'])
+        print(f"  - Cargado: {archivo.name}")
         return df
-    except Exception as e:
-        print(f"Error al cargar {ruta_stock_actual}: {e}")
-        return pd.DataFrame()
+    return pd.DataFrame()
 
 
-def cargar_pedido_semana(ruta_pedido):
+def cargar_pedido_semana(seccion, semana=None):
     """
-    Carga un archivo de pedido de semana.
+    Carga el archivo de pedido semanal para una sección específica.
+    Si no se especifica semana, busca el archivo más reciente.
+    
+    Nota: Los archivos de pedido tienen la primera fila como encabezados.
     """
-    try:
-        df = pd.read_excel(ruta_pedido, header=1)
-        df = df[['Código artículo', 'Talla', 'Color']].copy()
-        df = df.rename(columns={'Código artículo': 'Artículo'})
-        df = df.dropna(subset=['Artículo', 'Talla', 'Color'])
-        df['clave'] = df.apply(lambda row: normalizar_clave(row['Artículo'], row['Talla'], row['Color']), axis=1)
+    if semana is None:
+        # Buscar el archivo de pedido más reciente para la sección
+        patron = DATA_OUTPUT_PATH / f"Pedido_Semana_*_{seccion}.xlsx"
+        archivos = list(patron.glob("*"))
+        if not archivos:
+            return pd.DataFrame()
+        # Ordenar por fecha y tomar el más reciente
+        archivos.sort(key=lambda x: x.name, reverse=True)
+        archivo = archivos[0]
+    else:
+        archivo = DATA_OUTPUT_PATH / f"Pedido_Semana_{semana}_{seccion}.xlsx"
+    
+    if archivo.exists():
+        # Los archivos de pedido tienen la primera fila como encabezados
+        df = pd.read_excel(archivo, header=1)
+        # Rellenar celdas en blanco hacia abajo para Código artículo y Nombre
+        df = fill_forward_blank_cells(df, ['Código artículo', 'Nombre Artículo', 'Nombre artículo'])
+        print(f"  - Cargado: {archivo.name}")
         return df
-    except Exception as e:
-        print(f"Error al cargar {ruta_pedido}: {e}")
-        return pd.DataFrame()
+    return pd.DataFrame()
 
 
-def buscar_pedido_semana(seccion, semana=None, directorio=None):
+def normalizar_codigo_articulo(codigo):
     """
-    Busca el archivo de pedido de semana más reciente para una sección.
+    Normaliza el código de artículo para comparación.
+    Elimina decimales y limpia espacios.
     """
-    if directorio is None:
-        directorio = RUTA_DATA_OUTPUT
-    
-    patron = os.path.join(directorio, f"Pedido_Semana*_{seccion}.xlsx")
-    archivos = glob.glob(patron)
-    
-    if not archivos:
-        return None
-    
-    if semana is not None:
-        for archivo in archivos:
-            if f"Semana_{semana}_" in archivo:
-                return archivo
-    
-    archivos_ordenados = sorted(archivos, key=os.path.getmtime, reverse=True)
-    return archivos_ordenados[0] if archivos_ordenados else None
+    if pd.isna(codigo):
+        return ''
+    codigo_str = str(codigo).strip()
+    # Eliminar decimales como .0
+    if codigo_str.endswith('.0'):
+        codigo_str = codigo_str[:-2]
+    return codigo_str
 
 
-def obtener_secciones():
+def fill_forward_blank_cells(df, columns):
     """
-    Obtiene la lista de secciones activas del sistema.
-    """
-    return [
-        "interior",
-        "maf",
-        "deco_interior",
-        "deco_exterior",
-        "semillas",
-        "mascotas_vivo",
-        "mascotas_manufacturado",
-        "fitos",
-        "vivero",
-        "utiles_jardin",
-        "tierras_aridos"
-    ]
-
-
-def analizar_compras_no_planificadas(seccion, semana=None, historico=None):
-    """
-    Analiza los artículos comprados sin estar en el pedido para una sección.
+    Rellena celdas en blanco hacia abajo.
+    Cuando una celda está vacía, usa el valor de la celda anterior.
     
     Args:
-        seccion: Nombre de la sección
-        semana: Número de semana del pedido (opcional)
-        historico: Diccionario con artículos ya detectados en semanas anteriores
+        df: DataFrame
+        columns: Lista de columnas a procesar
     
     Returns:
-        Tupla (DataFrame con resultados, conjunto de claves nuevas detectadas)
+        DataFrame con las celdas rellenadas
     """
-    print(f"\n=== Analizando sección: {seccion} ===")
+    df = df.copy()
+    for col in columns:
+        if col in df.columns:
+            # Convertir a string para manejar NaN correctamente
+            df[col] = df[col].astype(str)
+            # Reemplazar 'nan' y '' con el valor anterior (forward fill)
+            df[col] = df[col].replace(['nan', 'None', ''], pd.NA)
+            df[col] = df[col].ffill()
+            # Convertir de nuevo a string original
+            df[col] = df[col].astype(str).replace('nan', '')
+    return df
+
+
+def normalizar_columnas(df, tipo='stock'):
+    """
+    Normaliza los nombres de columnas según el tipo de archivo.
+    """
+    if df.empty:
+        return df
     
-    # Obtener claves ya detectadas en el histórico
-    claves_historico = set()
-    if historico and seccion in historico:
-        claves_historico = set(historico[seccion].keys())
-    print(f"  Artículos en histórico: {len(claves_historico)}")
+    if tipo == 'stock':
+        # Columnas esperada: Artículo, Nombre artículo, Talla, Color, Unidades
+        columnas_normales = {
+            'Artículo': 'Artículo',
+            'Nombre artículo': 'Nombre Artículo', 
+            'Talla': 'Talla',
+            'Color': 'Color',
+            'Unidades': 'Stock'
+        }
+    elif tipo == 'pedido':
+        # Columnas esperada: Código artículo, Nombre Artículo, Talla, Color
+        # Los archivos de pedido pueden tener diferentes nombres de columnas
+        columnas_normales = {
+            'Código artículo': 'Artículo',
+            'Código': 'Artículo', 
+            'Nombre Artículo': 'Nombre Artículo',
+            'Nombre artículo': 'Nombre Artículo',
+            'Talla': 'Talla',
+            'Color': 'Color'
+        }
     
-    # Cargar artículos de la sección desde clasificación ABC
-    claves_seccion = cargar_clasificacion_abc(seccion)
-    if claves_seccion is None:
-        print(f"  Error: No se pudo obtener la lista de artículos para la sección {seccion}")
-        return pd.DataFrame(), set(), set()
-    print(f"  Artículos en sección (ABC): {len(claves_seccion)}")
+    # Renombrar columnas
+    df = df.rename(columns=columnas_normales)
     
-    # Cargar stock P1 (periodo inicial)
-    ruta_stock_p1 = os.path.join(RUTA_DATA_INPUT, "SPA_stock_P1.xlsx")
-    stock_p1 = cargar_stock_periodo(ruta_stock_p1, "P1")
-    stock_p1 = stock_p1[stock_p1['clave'].isin(claves_seccion)]
-    print(f"  Stock P1 (sección): {len(stock_p1)} artículos")
+    # Normalizar códigos de artículo
+    if 'Artículo' in df.columns:
+        df['Artículo'] = df['Artículo'].apply(normalizar_codigo_articulo)
+        # Filtrar valores vacíos
+        df = df[df['Artículo'] != '']
     
-    # Cargar stock actual
-    ruta_stock_actual = os.path.join(RUTA_DATA_INPUT, "SPA_stock_actual.xlsx")
-    stock_actual = cargar_stock_actual(ruta_stock_actual)
-    stock_actual = stock_actual[stock_actual['clave'].isin(claves_seccion)]
-    print(f"  Stock actual (sección): {len(stock_actual)} artículos")
+    return df
+
+
+def crear_clave_articulo(articulo, talla, color):
+    """
+    Crea una clave única para un artículo combinando código, talla y color.
+    """
+    articulo_norm = normalizar_codigo_articulo(articulo)
+    return f"{articulo_norm}_{talla}_{color}"
+
+
+def cargar_historico_json():
+    """
+    Carga el archivo JSON con el histórico de compras sin pedido.
+    Estructura: {seccion: {articulo_clave: {stock: float, fecha_actualizacion: str}}}
     
-    # Obtener claves que ya NO están en stock actual (consumidos)
-    claves_actual = set(stock_actual['clave'].unique())
-    claves_consumidas = claves_historico - claves_actual
-    if claves_consumidas:
-        print(f"  Artículos consumidos (se eliminarán del histórico): {len(claves_consumidas)}")
+    Nota: Si existe un archivo con estructura antigua (solo fechas), lo migra automáticamente.
+    """
+    if HISTORY_FILE.exists():
+        with open(HISTORY_FILE, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        
+        # Detectar si es la estructura antigua (sin stock)
+        # Estructura antigua: {seccion: {articulo: {fecha_deteccion: date}}}
+        # Estructura nueva: {seccion: {articulo: {stock: float, fecha_actualizacion: date}}}
+        first_key = list(data.keys())[0] if data else None
+        if first_key and first_key in SECCIONES:
+            first_item = list(data[first_key].values())[0] if data[first_key] else {}
+            if isinstance(first_item, dict) and 'stock' not in first_item:
+                print("  - Migrando estructura antigua del JSON a nueva estructura...")
+                # Migrar estructura antigua a nueva
+                nueva_data = {}
+                for seccion, articulos in data.items():
+                    nueva_data[seccion] = {}
+                    if isinstance(articulos, dict):
+                        for articulo, info in articulos.items():
+                            if isinstance(info, dict):
+                                nueva_data[seccion][articulo] = {
+                                    'stock': 0,
+                                    'fecha_actualizacion': info.get('fecha_deteccion', datetime.now().strftime('%Y-%m-%d'))
+                                }
+                            else:
+                                # Si el valor no es un dict, inicializar con stock 0
+                                nueva_data[seccion][articulo] = {
+                                    'stock': 0,
+                                    'fecha_actualizacion': datetime.now().strftime('%Y-%m-%d')
+                                }
+                return nueva_data
+        
+        return data
+    return {}
+
+
+def guardar_historico_json(datos):
+    """
+    Guarda el histórico en el archivo JSON.
+    """
+    with open(HISTORY_FILE, 'w', encoding='utf-8') as f:
+        json.dump(datos, f, indent=2, ensure_ascii=False)
+    print(f"  - Historico actualizado: {HISTORY_FILE.name}")
+
+
+def identificar_compras_sin_pedido(seccion):
+    """
+    Identifica los artículos comprados sin estar en el pedido para una sección.
     
-    # Cargar pedido de semana
-    ruta_pedido = buscar_pedido_semana(seccion, semana)
-    if ruta_pedido:
-        pedido = cargar_pedido_semana(ruta_pedido)
-        print(f"  Pedido semana: {len(pedido)} artículos")
-        print(f"  Archivo: {os.path.basename(ruta_pedido)}")
+    Lógica:
+    1. El artículo debe estar en SPA_stock_actual con stock > 0
+    2. El artículo NO debe estar en ningún período histórico (P1-P4)
+    3. El artículo NO debe estar en el pedido semanal
+    4. Si ya estaba en el histórico y el stock no ha cambiado, no aparece
+    5. Si el stock aumenta respecto al histórico, sí aparece (nueva compra)
+    """
+    print(f"\nProcesando sección: {seccion}")
+    
+    # Cargar datos
+    print("  Cargando archivos...")
+    stock_historico = cargar_stock_historico()
+    stock_actual = cargar_stock_actual()
+    pedido = cargar_pedido_semana(seccion)
+    
+    if stock_actual.empty:
+        print(f"  - No hay stock actual para {seccion}")
+        return pd.DataFrame()
+    
+    # Normalizar columnas
+    stock_historico = normalizar_columnas(stock_historico, tipo='stock')
+    stock_actual = normalizar_columnas(stock_actual, tipo='stock')
+    pedido = normalizar_columnas(pedido, tipo='pedido')
+    
+    # Obtener artículos del pedido (para exclusión)
+    if not pedido.empty and 'Artículo' in pedido.columns:
+        articulos_pedido = set(pedido['Artículo'].dropna().astype(str).str.strip())
     else:
-        pedido = pd.DataFrame()
-        print(f"  Pedido semana: No encontrado")
+        articulos_pedido = set()
     
-    # Obtener conjuntos de claves
-    claves_p1 = set(stock_p1['clave'].unique())
-    claves_pedido = set(pedido['clave'].unique()) if not pedido.empty else set()
+    # Obtener artículos históricos
+    if not stock_historico.empty and 'Artículo' in stock_historico.columns:
+        # Crear clave única para histórico
+        stock_historico['clave'] = stock_historico.apply(
+            lambda x: crear_clave_articulo(
+                str(x.get('Artículo', '')), 
+                str(x.get('Talla', '')), 
+                str(x.get('Color', ''))
+            ), axis=1
+        )
+        articulos_historicos = set(stock_historico['clave'].dropna())
+    else:
+        articulos_historicos = set()
     
-    # Crear diccionarios
-    stock_actual_dict = stock_actual.set_index('clave')['Unidades'].to_dict()
-    stock_p1_dict = stock_p1.set_index('clave')['Unidades'].to_dict()
-    nombre_articulo_dict = stock_actual.set_index('clave')['Nombre artículo'].to_dict()
-    
-    # Analizar cada artículo en stock actual
-    resultados = []
-    claves_nuevas = set()  # Nuevasdetections
-    
-    for clave in claves_actual:
-        # Ignorar si ya está en el histórico (ya fue detectado antes)
-        if clave in claves_historico:
-            continue
+    # Obtener artículos en stock actual
+    if 'Artículo' in stock_actual.columns:
+        stock_actual['clave'] = stock_actual.apply(
+            lambda x: crear_clave_articulo(
+                str(x.get('Artículo', '')), 
+                str(x.get('Talla', '')), 
+                str(x.get('Color', ''))
+            ), axis=1
+        )
         
-        en_p1 = clave in claves_p1
-        en_pedido = clave in claves_pedido
-        unidades_actual = stock_actual_dict.get(clave, 0)
-        unidades_p1 = stock_p1_dict.get(clave, 0)
+        # Filtrar: stock > 0 y no está en histórico
+        stock_actual_filtrado = stock_actual[
+            (stock_actual['Stock'].fillna(0) > 0) &
+            (~stock_actual['clave'].isin(articulos_historicos))
+        ].copy()
         
-        # Determinar si debe incluirse en el informe
-        incluir = False
-        razon = ""
+        # Filtrar: no está en el pedido
+        stock_actual_filtrado = stock_actual_filtrado[
+            ~stock_actual_filtrado['Artículo'].isin(articulos_pedido)
+        ]
         
-        if not en_p1 and not en_pedido:
-            incluir = True
-            razon = "Nuevo artículo comprado sin estar en pedido"
+        # NUEVO: Filtrar también por prefijo de sección para asegurar que
+        # solojamos artículos que pertenecen a esta sección
+        stock_actual_filtrado = stock_actual_filtrado[
+            stock_actual_filtrado['Artículo'].apply(lambda x: es_articulo_de_seccion(x, seccion))
+        ]
         
-        elif en_p1 and not en_pedido:
-            if unidades_actual > unidades_p1:
-                incluir = True
-                razon = f"Stock aumentado de {unidades_p1} a {unidades_actual} sin estar en pedido"
-            elif unidades_actual == unidades_p1:
-                razon = "Stock sin cambios"
+        # Cargar histórico JSON (estructura por sección)
+        historico_completo = cargar_historico_json()
+        historico_seccion = historico_completo.get(seccion, {})
+        
+        # Filtrar según el histórico (dinámico)
+        resultados = []
+        for idx, row in stock_actual_filtrado.iterrows():
+            clave = row['clave']
+            stock_actual_val = float(row.get('Stock', 0))
+            
+            # Buscar en histórico de la sección
+            if clave in historico_seccion:
+                stock_anterior = float(historico_seccion[clave].get('stock', 0))
+                
+                # Solo incluir si el stock ha cambiado (aumentado o disminuido)
+                if stock_actual_val != stock_anterior:
+                    resultados.append({
+                        'Artículo': row.get('Artículo', ''),
+                        'Nombre Artículo': row.get('Nombre Artículo', ''),
+                        'Talla': row.get('Talla', ''),
+                        'Color': row.get('Color', ''),
+                        'Stock': stock_actual_val
+                    })
+                    
+                    # Actualizar histórico de la sección
+                    historico_seccion[clave] = {
+                        'stock': stock_actual_val,
+                        'fecha_actualizacion': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                    }
             else:
-                razon = f"Stock reducido de {unidades_p1} a {unidades_actual} (ventas)"
+                # Es nuevo, incluirlo
+                resultados.append({
+                    'Artículo': row.get('Artículo', ''),
+                    'Nombre Artículo': row.get('Nombre Artículo', ''),
+                    'Talla': row.get('Talla', ''),
+                    'Color': row.get('Color', ''),
+                    'Stock': stock_actual_val
+                })
+                
+                # Agregar al histórico de la sección
+                historico_seccion[clave] = {
+                    'stock': stock_actual_val,
+                    'fecha_actualizacion': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                }
         
-        elif not en_p1 and en_pedido:
-            razon = "Artículo en pedido"
+        # Actualizar el histórico completo
+        historico_completo[seccion] = historico_seccion
         
+        # Guardar histórico actualizado
+        guardar_historico_json(historico_completo)
+        
+        if resultados:
+            print(f"  - Encontrados {len(resultados)} artículos comprados sin pedido")
+            return pd.DataFrame(resultados)
         else:
-            razon = "Artículo en pedido"
-        
-        if incluir:
-            partes = clave.split('_')
-            articulo = partes[0] if len(partes) > 0 else ""
-            talla = partes[1] if len(partes) > 1 else ""
-            color = partes[2] if len(partes) > 2 else ""
-            nombre = nombre_articulo_dict.get(clave, "")
-            
-            resultados.append({
-                'Artículo': articulo,
-                'Nombre Artículo': nombre,
-                'Talla': talla,
-                'Color': color,
-                'Stock': unidades_actual,
-                'Observación': razon
-            })
-            
-            # Añadir a nuevas detecciones
-            claves_nuevas.add(clave)
+            print(f"  - No hay compras sin pedido para {seccion}")
+            return pd.DataFrame()
     
-    df_resultado = pd.DataFrame(resultados)
-    print(f"  Artículos comprados sin estar en pedido (nuevos): {len(df_resultado)}")
-    
-    return df_resultado, claves_nuevas, claves_consumidas
+    return pd.DataFrame()
 
 
-def aplicar_formato_pedido(ws, df):
+def aplicar_estilo_excel(worksheet):
     """
-    Aplica el formato exacto de los archivos de pedido al Excel.
+    Aplica formato visual a la hoja de cálculo para que coincida con los pedidos semanales.
     """
-    # Definir estilos
-    header_fill = PatternFill(start_color="008000", end_color="008000", fill_type="solid")  # Verde oscuro
-    header_font = Font(name='Calibri', size=11, bold=True, color="FFFFFF")
-    header_alignment = Alignment(horizontal='center', vertical='center')
+    from openpyxl.styles import Font, Fill, PatternFill, Alignment, Border, Side
+    
+    # Fuentes y estilos
+    header_font = Font(name='Calibri', size=11, bold=True, color='FFFFFF')
+    header_fill = PatternFill(start_color='1F4E78', end_color='1F4E78', fill_type='solid')
+    header_alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
     
     thin_border = Border(
         left=Side(style='thin'),
@@ -357,165 +444,108 @@ def aplicar_formato_pedido(ws, df):
         bottom=Side(style='thin')
     )
     
-    # Fila 1: Números de columna
-    num_columnas = 5
-    for col in range(1, num_columnas + 1):
-        cell = ws.cell(row=1, column=col)
-        cell.value = str(col)
-        cell.fill = header_fill
+    # Aplicar formato a encabezados
+    for cell in worksheet[1]:
         cell.font = header_font
+        cell.fill = header_fill
         cell.alignment = header_alignment
         cell.border = thin_border
     
-    # Fila 2: Encabezados (mismo formato que archivo de pedido)
-    encabezados = ['Código artículo', 'Nombre Artículo', 'Talla', 'Color', 'Stock']
-    for col, encabezado in enumerate(encabezados, 1):
-        cell = ws.cell(row=2, column=col)
-        cell.value = encabezado
-        cell.fill = header_fill
-        cell.font = header_font
-        cell.alignment = header_alignment
-        cell.border = thin_border
+    # Aplicar formato a datos
+    for row in worksheet.iter_rows(min_row=2, max_row=worksheet.max_row):
+        for cell in row:
+            cell.border = thin_border
+            if cell.column in [1, 2]:  # Artículo y Nombre
+                cell.alignment = Alignment(horizontal='left', vertical='center')
+            else:  # Talla, Color, Stock
+                cell.alignment = Alignment(horizontal='center', vertical='center')
     
     # Ajustar anchos de columna
-    anchos = [15, 40, 12, 12, 10]
-    for col, ancho in enumerate(anchos, 1):
-        ws.column_dimensions[get_column_letter(col)].width = ancho
+    column_widths = {
+        'A': 15,  # Artículo
+        'B': 45,  # Nombre Artículo
+        'C': 12,  # Talla
+        'D': 12,  # Color
+        'E': 10   # Stock
+    }
     
-    # Escribir datos a partir de fila 3
-    for idx, row in df.iterrows():
-        ws.cell(row=idx+3, column=1, value=row['Artículo'])
-        ws.cell(row=idx+3, column=2, value=row['Nombre Artículo'])
-        ws.cell(row=idx+3, column=3, value=row['Talla'])
-        ws.cell(row=idx+3, column=4, value=row['Color'])
-        ws.cell(row=idx+3, column=5, value=row['Stock'])
+    for col, width in column_widths.items():
+        worksheet.column_dimensions[col].width = width
 
 
-def generar_informe_compras_no_planificadas(semana=None, archivo_salida=None, resetear_historico=False):
+def generar_informe_excel(resultados_por_seccion, nombre_archivo=None):
     """
-    Genera el informe completo de compras no planificadas para todas las secciones.
-    
-    Args:
-        semana: Número de semana del pedido (opcional)
-        archivo_salida: Ruta del archivo de salida (opcional)
-        resetear_historico: Si True, borra el histórico antes de generar
+    Genera el archivo Excel con los resultados de todas las secciones.
     """
-    secciones = obtener_secciones()
+    if nombre_archivo is None:
+        fecha = datetime.now().strftime('%d%m%Y')
+        nombre_archivo = f"Compras_Sin_Pedido_{fecha}.xlsx"
     
-    # Cargar o inicializar histórico
-    if resetear_historico:
-        print("\n*** REINICIANDO HISTÓRICO ***")
-        historico = {}
-    else:
-        historico = cargar_historico()
-        if historico:
-            print(f"\nHistórico cargado: {sum(len(v) for v in historico.values())} artículos")
+    output_path = DATA_OUTPUT_PATH / nombre_archivo
     
-    if archivo_salida is None:
-        fecha = datetime.now().strftime("%d%m%Y")
-        archivo_salida = os.path.join(RUTA_DATA_OUTPUT, f"Compras_Sin_Pedido_{fecha}.xlsx")
+    with pd.ExcelWriter(output_path, engine='openpyxl') as writer:
+        for seccion in SECCIONES:
+            if seccion in resultados_por_seccion and not resultados_por_seccion[seccion].empty:
+                df = resultados_por_seccion[seccion]
+                df.to_excel(writer, sheet_name=seccion.capitalize(), index=False)
+                print(f"  - Hoja '{seccion.capitalize()}' creada con {len(df)} registros")
+            else:
+                # Crear hoja vacía con encabezados
+                df_vacio = pd.DataFrame(columns=['Artículo', 'Nombre Artículo', 'Talla', 'Color', 'Stock'])
+                df_vacio.to_excel(writer, sheet_name=seccion.capitalize(), index=False)
     
-    # Crear workbook
-    wb = Workbook()
+    # Aplicar formato después de crear el archivo
+    from openpyxl import load_workbook
+    wb = load_workbook(output_path)
     
-    # Eliminar la hoja por defecto
-    if 'Sheet' in wb.sheetnames:
-        wb.remove(wb['Sheet'])
+    for sheet_name in wb.sheetnames:
+        ws = wb[sheet_name]
+        aplicar_estilo_excel(ws)
     
-    # Procesar cada sección
-    for seccion in secciones:
-        df_resultado, claves_nuevas, claves_consumidas = analizar_compras_no_planificadas(
-            seccion, semana, historico
-        )
-        
-        # Actualizar histórico: añadir nuevas detecciones
-        if seccion not in historico:
-            historico[seccion] = {}
-        
-        for clave in claves_nuevas:
-            historico[seccion][clave] = {
-                'fecha_deteccion': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            }
-        
-        # Actualizar histórico: eliminar consumidos
-        for clave in claves_consumidas:
-            if clave in historico[seccion]:
-                del historico[seccion][clave]
-        
-        # Generar Excel
-        if not df_resultado.empty:
-            df_resultado = df_resultado.sort_values('Artículo')
-            df_excel = df_resultado[['Artículo', 'Nombre Artículo', 'Talla', 'Color', 'Stock']].copy()
-        else:
-            df_excel = pd.DataFrame(columns=['Artículo', 'Nombre Artículo', 'Talla', 'Color', 'Stock'])
-        
-        # Crear hoja
-        ws = wb.create_sheet(title=seccion)
-        
-        # Aplicar formato
-        aplicar_formato_pedido(ws, df_excel)
-    
-    # Guardar archivo Excel
-    wb.save(archivo_salida)
-    
-    # Guardar histórico actualizado
-    guardar_historico(historico)
-    
-    # Mostrar resumen del histórico
-    total_historico = sum(len(v) for v in historico.values())
-    print(f"\n=== Resumen histórico ===")
-    print(f"Total artículos en histórico: {total_historico}")
-    for seccion in secciones:
-        if seccion in historico:
-            print(f"  {seccion}: {len(historico[seccion])} artículos")
-    
-    print(f"\n=== Informe generado: {archivo_salida} ===")
-    return archivo_salida
+    wb.save(output_path)
+    print(f"\nInforme generado: {output_path}")
+    return output_path
 
 
 def main():
-    """Función principal del script."""
-    parser = argparse.ArgumentParser(
-        description='Genera informe de artículos comprados fuera del pedido planificado.'
-    )
-    parser.add_argument(
-        '--semana', '-s',
-        type=int,
-        help='Número de semana del pedido (opcional)'
-    )
-    parser.add_argument(
-        '--output', '-o',
-        type=str,
-        help='Ruta del archivo de salida (opcional)'
-    )
-    parser.add_argument(
-        '--reset', '-r',
-        action='store_true',
-        help='Reiniciar el histórico (borra todos los registros anteriores)'
-    )
-    
-    args = parser.parse_args()
-    
+    """
+    Función principal que orquesta todo el proceso.
+    """
     print("=" * 60)
     print("INFORME DE COMPRAS SIN PEDIDO")
     print("=" * 60)
-    print(f"Fecha de generación: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"Fecha de ejecución: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     
-    try:
-        archivo = generar_informe_compras_no_planificadas(
-            semana=args.semana,
-            archivo_salida=args.output,
-            resetear_historico=args.reset
-        )
-        print(f"\n✓ Proceso completado exitosamente")
-        print(f"✓ Archivo generado: {archivo}")
-        return 0
-    except Exception as e:
-        print(f"\n✗ Error durante la ejecución: {e}")
-        import traceback
-        traceback.print_exc()
-        return 1
+    # Verificar que existen los archivos necesarios
+    print("\nVerificando archivos de entrada...")
+    
+    stock_actual = DATA_INPUT_PATH / "SPA_stock_actual.xlsx"
+    if not stock_actual.exists():
+        print(f"ERROR: No se encuentra el archivo: {stock_actual}")
+        return
+    
+    print(f"  - {stock_actual.name} ✓")
+    
+    # Procesar cada sección
+    resultados_por_seccion = {}
+    
+    for seccion in SECCIONES:
+        df_resultado = identificar_compras_sin_pedido(seccion)
+        resultados_por_seccion[seccion] = df_resultado
+    
+    # Generar informe Excel
+    print("\n" + "=" * 60)
+    print("GENERANDO INFORME EXCEL")
+    print("=" * 60)
+    
+    output_file = generar_informe_excel(resultados_por_seccion)
+    
+    print("\n" + "=" * 60)
+    print("PROCESO COMPLETADO")
+    print("=" * 60)
+    print(f"Archivo de salida: {output_file}")
+    print(f"Histórico guardado en: {HISTORY_FILE}")
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    main()
