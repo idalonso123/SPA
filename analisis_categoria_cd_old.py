@@ -479,8 +479,8 @@ def buscar_archivo_semana_anterior(fecha_actual=None):
     
     archivos_encontrados = []
     
-    # Buscar en directorio de análisis
-    for archivo in ANALISIS_DIR.iterdir():
+    # Buscar en output
+    for archivo in OUTPUT_DIR.iterdir():
         match = re.match(patron, archivo.name)
         if match:
             fecha_str = match.group(1)
