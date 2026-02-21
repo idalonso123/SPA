@@ -19,6 +19,7 @@ from typing import Optional, Dict, Any
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Border, Side, Alignment
 from openpyxl.utils.dataframe import dataframe_to_rows
+from src.paths import INPUT_DIR, OUTPUT_DIR
 from openpyxl.worksheet.page import PageMargins
 
 # Configuración del logger
@@ -90,7 +91,7 @@ class OrderGenerator:
             str: Ruta del directorio de salida
         """
         base = self.rutas.get('directorio_base', '.')
-        salida = self.rutas.get('directorio_salida', './data/output')
+        salida = self.rutas.get('directorio_salida', str(OUTPUT_DIR))
         
         # Si es ruta relativa, combinar con base
         if not os.path.isabs(salida):
@@ -614,7 +615,7 @@ if __name__ == "__main__":
     config_ejemplo = {
         'rutas': {
             'directorio_base': '.',
-            'directorio_salida': './data/output'
+            'directorio_salida': str(OUTPUT_DIR)
         },
         'formato_salida': {
             'prefijo_archivo': 'Pedido_Semana',

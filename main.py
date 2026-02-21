@@ -18,6 +18,7 @@ from typing import Optional, Dict, Any, Tuple, List
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+from src.paths import INPUT_DIR, OUTPUT_DIR
 from src.data_loader import DataLoader
 from src.state_manager import StateManager
 from src.forecast_engine import ForecastEngine
@@ -304,7 +305,7 @@ def buscar_valores_unicos_normalizados(df, nombre_columna):
 # ============================================================================
 
 def verificar_archivos_correccion(config: Dict[str, Any], semana: int) -> Dict[str, bool]:
-    dir_entrada = config.get('rutas', {}).get('directorio_entrada', './data/input')
+    dir_entrada = config.get('rutas', {}).get('directorio_entrada', str(INPUT_DIR))
     archivos_correccion = config.get('archivos_correccion', {})
     
     disponibilidad = {'stock': False, 'ventas': False, 'compras': False}
@@ -445,7 +446,7 @@ def generar_archivo_pedido_corregido(
         
         fecha_lunes_str = fecha_lunes.strftime('%Y-%m-%d')
         
-        dir_salida = config.get('rutas', {}).get('directorio_salida', './data/output')
+        dir_salida = config.get('rutas', {}).get('directorio_salida', str(OUTPUT_DIR))
         nombre_archivo = f"Pedido_Semana_{semana}_{fecha_lunes_str}_{seccion}_CORREGIDO.xlsx"
         ruta_archivo = os.path.join(dir_salida, nombre_archivo)
         
@@ -603,7 +604,7 @@ def agrupar_archivos_por_seccion(
     - DDMMYYYY (sin guiones): 03022026
     """
     archivos_por_seccion = {}
-    dir_salida = config.get('rutas', {}).get('directorio_salida', './data/output')
+    dir_salida = config.get('rutas', {}).get('directorio_salida', str(OUTPUT_DIR))
 
     for archivo in archivos_generados:
         if not archivo:
@@ -690,8 +691,8 @@ def procesar_pedido_semana(
     
     # Determinar directorios
     dir_base = os.path.dirname(os.path.abspath(__file__))
-    dir_entrada = os.path.join(dir_base, config.get('rutas', {}).get('directorio_entrada', 'data/input'))
-    dir_salida = os.path.join(dir_base, config.get('rutas', {}).get('directorio_salida', 'data/output'))
+    dir_entrada = os.path.join(dir_base, config.get('rutas', {}).get('directorio_entrada', str(INPUT_DIR)))
+    dir_salida = os.path.join(dir_base, config.get('rutas', {}).get('directorio_salida', str(OUTPUT_DIR)))
     
     # Cargar archivo de ventas de semana (SPA_ventas_semana.xlsx) - Contiene las ventas reales de la semana anterior
     df_ventas_reales, ventas_reales_existe = leer_archivo_ventas_semana(dir_entrada)

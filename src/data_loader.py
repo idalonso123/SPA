@@ -19,6 +19,7 @@ import logging
 import unicodedata
 from typing import Optional, Dict, List, Tuple, Any
 from datetime import datetime
+from src.paths import INPUT_DIR, OUTPUT_DIR
 
 # Configuración del logger
 logger = logging.getLogger(__name__)
@@ -417,7 +418,7 @@ class DataLoader:
             str: Ruta del directorio de entrada
         """
         base = self.rutas.get('directorio_base', '.')
-        entrada = self.rutas.get('directorio_entrada', './data/input')
+        entrada = self.rutas.get('directorio_entrada', str(INPUT_DIR))
         
         # Si es ruta relativa, combinar con base
         if not os.path.isabs(entrada):
@@ -433,7 +434,7 @@ class DataLoader:
             str: Ruta del directorio de salida
         """
         base = self.rutas.get('directorio_base', '.')
-        salida = self.rutas.get('directorio_salida', './data/output')
+        salida = self.rutas.get('directorio_salida', str(OUTPUT_DIR))
         
         # Si es ruta relativa, combinar con base
         if not os.path.isabs(salida):
@@ -994,8 +995,8 @@ if __name__ == "__main__":
     config_ejemplo = {
         'rutas': {
             'directorio_base': '.',
-            'directorio_entrada': './data/input',
-            'directorio_salida': './data/output'
+            'directorio_entrada': str(INPUT_DIR),
+            'directorio_salida': str(OUTPUT_DIR)
         },
         'archivos_entrada': {
             'ventas': 'SPA_ventas.xlsx',

@@ -20,6 +20,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
 from pathlib import Path
+from src.paths import INPUT_DIR, OUTPUT_DIR
 warnings.filterwarnings('ignore')
 
 # ============================================================================
@@ -147,7 +148,7 @@ def obtener_archivos_clasificacion():
     el nuevo formato con período y año (CLASIFICACION_ABC+D_SECCION_PERIODO_AÑO.xlsx).
     """
     patrones = [
-        "data/input/CLASIFICACION_ABC+D_*.xlsx",
+        str(INPUT_DIR / "CLASIFICACION_ABC+D_*.xlsx"),
     ]
     
     archivos_encontrados = []
@@ -292,8 +293,8 @@ def leer_capital_inmovilizado_stock(df_seccion):
     """
     # Buscar archivos con el patrón SPA_stock_P*.xlsx
     patrones_stock = [
-        "data/input/SPA_stock_P*.xlsx",
-        "data/input/stock.xlsx"  # Fallback legacy
+        str(INPUT_DIR / "SPA_stock_P*.xlsx"),
+        str(INPUT_DIR / "stock.xlsx")  # Fallback legacy
     ]
     
     archivo_encontrado = None
@@ -1344,7 +1345,7 @@ def procesar_seccion(ruta_archivo, nombre_seccion):
         html_informe = generar_html_informe(datos, df_completo, nombre_seccion)
         
         # Guardar archivo HTML
-        nombre_salida = f"data/output/INFORME_FINAL_{nombre_seccion}_{PERIODO_FILENAME}.html"
+        nombre_salida = OUTPUT_DIR / f"INFORME_FINAL_{nombre_seccion}_{PERIODO_FILENAME}.html"
         
         with open(nombre_salida, 'w', encoding='utf-8') as f:
             f.write(html_informe)
@@ -1413,8 +1414,8 @@ def main():
         for archivo in archivos:
             nombre_seccion = extraer_nombre_seccion(archivo)
             if nombre_seccion:
-                informe_html = f"data/output/INFORME_FINAL_{nombre_seccion}_{PERIODO_FILENAME}.html"
-                archivos_informes.append(informe_html)
+                informe_html = OUTPUT_DIR / f"INFORME_FINAL_{nombre_seccion}_{PERIODO_FILENAME}.html"
+                archivos_informes.append(str(informe_html))
                 print(f"  - {informe_html}")
         
         # Enviar email a Ivan con todos los informes adjuntos

@@ -23,6 +23,7 @@ import unicodedata
 from typing import Optional, Dict, List, Tuple, Any
 from datetime import datetime
 from src.data_loader import DataLoader
+from src.paths import INPUT_DIR
 
 # Configuración del logger
 logger = logging.getLogger(__name__)
@@ -300,7 +301,7 @@ class CorrectionDataLoader:
             str: Ruta del directorio de entrada
         """
         base = self.rutas.get('directorio_base', '.')
-        entrada = self.rutas.get('directorio_entrada', './data/input')
+        entrada = self.rutas.get('directorio_entrada', str(INPUT_DIR))
         
         if not os.path.isabs(entrada):
             entrada = os.path.join(base, entrada)
@@ -601,7 +602,7 @@ if __name__ == "__main__":
     config_ejemplo = {
         'rutas': {
             'directorio_base': '.',
-            'directorio_entrada': './data/input'
+            'directorio_entrada': str(INPUT_DIR)
         },
         'archivos_correccion': {
             'stock_actual': 'SPA_stock_actual.xlsx'

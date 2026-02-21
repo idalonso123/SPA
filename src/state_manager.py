@@ -19,6 +19,8 @@ from datetime import datetime
 from typing import Optional, Dict, List, Any, Tuple
 from pathlib import Path
 
+from src.paths import DATA_DIR
+
 # Configuración del logger
 logger = logging.getLogger(__name__)
 
@@ -79,7 +81,7 @@ class StateManager:
             str: Ruta absoluta al archivo state.json
         """
         base = self.rutas.get('directorio_base', '.')
-        dir_estado = self.rutas.get('directorio_estado', './data')
+        dir_estado = self.rutas.get('directorio_estado', str(DATA_DIR))
         archivo = self.rutas.get('archivo_estado', 'state.json')
         
         # Si es ruta relativa, combinar con base
@@ -540,7 +542,7 @@ if __name__ == "__main__":
     config_ejemplo = {
         'rutas': {
             'directorio_base': '.',
-            'directorio_estado': './data',
+            'directorio_estado': str(DATA_DIR),
             'archivo_estado': 'state.json'
         }
     }

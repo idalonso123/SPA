@@ -6,11 +6,13 @@ Compara las métricas de resumen entre el archivo actual y el de la semana pasad
 """
 
 import pandas as pd
-import os
 from datetime import datetime
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 import glob
+
+# Importar rutas centralizadas
+from src.paths import OUTPUT_DIR
 
 
 def extraer_metricas_de_excel(ruta_archivo):
@@ -292,7 +294,7 @@ def comparar_archivos(archivo_actual, archivo_anterior, archivo_salida=None):
     # Generar archivo Excel
     if archivo_salida is None:
         fecha = datetime.now().strftime("%d%m%Y")
-        archivo_salida = f"data/output/Comparacion_Categoria_CD_{fecha}.xlsx"
+        archivo_salida = OUTPUT_DIR / f"Comparacion_Categoria_CD_{fecha}.xlsx"
     
     print(f"\n📝 Generando archivo de comparación: {archivo_salida}")
     generar_excel_comparacion(comparacion, archivo_salida)

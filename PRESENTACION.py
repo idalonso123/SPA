@@ -13,7 +13,6 @@ import numpy as np
 from datetime import datetime
 import glob
 import warnings
-import os
 import smtplib
 import ssl
 from email import encoders
@@ -22,6 +21,9 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
 from pathlib import Path
 warnings.filterwarnings('ignore')
+
+# Importar rutas centralizadas
+from src.paths import INPUT_DIR, OUTPUT_DIR, PATRON_CLASIFICACION_ABC
 
 # ============================================================================
 # CONFIGURACIÓN DE EMAIL
@@ -148,7 +150,7 @@ def obtener_archivos_clasificacion():
     Soporta tanto el formato antiguo (CLASIFICACION_ABC+D_SECCION.xlsx) como
     el nuevo formato con período y año (CLASIFICACION_ABC+D_SECCION_PERIODO_AÑO.xlsx).
     """
-    patrones = ["data/input/CLASIFICACION_ABC+D_*.xlsx"]
+    patrones = [PATRON_CLASIFICACION_ABC]
     
     archivos_encontrados = []
     for patron in patrones:
@@ -158,7 +160,7 @@ def obtener_archivos_clasificacion():
     archivos_normalizados = set()
     archivos_unicos = []
     for archivo in archivos_encontrados:
-        archivo_norm = os.path.normpath(archivo)
+        archivo_norm = Path(archivo).resolve()
         if archivo_norm not in archivos_normalizados:
             archivos_normalizados.add(archivo_norm)
             archivos_unicos.append(archivo)
@@ -178,7 +180,7 @@ def extraer_nombre_seccion(nombre_archivo):
     Las secciones válidas son: INTERIOR, EXTERIOR, JARDINERIA, MACETAS, COMPLEMENTOS, 
     FITOSANITARIOS, MASCOTAS_MANUFACTURADO, MASCOTAS_VIVO, TIERRAS_ARIDOS
     """
-    basename = os.path.basename(nombre_archivo)
+    basename = Path(nombre_archivo).name
     nombre_sin_extension = basename.replace('.xlsx', '')
     prefijo = "CLASIFICACION_ABC+D_"
     
@@ -1285,7 +1287,7 @@ def main():
             )
             
             # Guardar archivo
-            nombre_salida = f"data/output/PRESENTACION_{nombre_seccion}_{PERIODO_FILENAME}.html"
+            nombre_salida = OUTPUT_DIR / f"PRESENTACION_{nombre_seccion}_{PERIODO_FILENAME}.html"
             with open(nombre_salida, 'w', encoding='utf-8') as f:
                 f.write(html_presentacion)
             
@@ -1320,7 +1322,7 @@ def main():
         for archivo in archivos_clasificacion:
             nombre_seccion = extraer_nombre_seccion(archivo)
             if nombre_seccion:
-                presentacion_html = f"data/output/PRESENTACION_{nombre_seccion}_{PERIODO_FILENAME}.html"
+                presentacion_html = str(OUTPUT_DIR / f"PRESENTACION_{nombre_seccion}_{PERIODO_FILENAME}.html")
                 archivos_presentaciones.append(presentacion_html)
                 print(f"  - {presentacion_html}")
         

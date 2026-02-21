@@ -19,6 +19,7 @@ import json
 import os
 from datetime import datetime
 from pathlib import Path
+from src.paths import INPUT_DIR, OUTPUT_DIR, HISTORICO_COMPRAS_SIN_PEDIDO
 import glob
 import warnings
 
@@ -27,9 +28,9 @@ warnings.filterwarnings('ignore', category=UserWarning, module='openpyxl')
 
 # Configuración
 BASE_PATH = Path(__file__).parent
-DATA_INPUT_PATH = BASE_PATH / "data" / "input"
-DATA_OUTPUT_PATH = BASE_PATH / "data" / "output"
-HISTORY_FILE = BASE_PATH / "data" / "compras_sin_pedido_historico.json"
+DATA_INPUT_PATH = INPUT_DIR
+DATA_OUTPUT_PATH = OUTPUT_DIR
+HISTORY_FILE = HISTORICO_COMPRAS_SIN_PEDIDO
 
 # Secciones del sistema
 SECCIONES = [

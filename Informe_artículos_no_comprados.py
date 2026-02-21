@@ -17,6 +17,7 @@ import pandas as pd
 import json
 from datetime import datetime
 from pathlib import Path
+from src.paths import INPUT_DIR, OUTPUT_DIR
 import glob
 import warnings
 
@@ -25,8 +26,8 @@ warnings.filterwarnings('ignore', category=UserWarning, module='openpyxl')
 
 # Configuración
 BASE_PATH = Path(__file__).parent
-DATA_INPUT_PATH = BASE_PATH / "data" / "input"
-DATA_OUTPUT_PATH = BASE_PATH / "data" / "output"
+DATA_INPUT_PATH = INPUT_DIR
+DATA_OUTPUT_PATH = OUTPUT_DIR
 
 # Secciones del sistema
 SECCIONES = [

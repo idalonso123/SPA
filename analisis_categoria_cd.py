@@ -12,7 +12,6 @@ Este script:
 """
 
 import pandas as pd
-import os
 from datetime import datetime
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
@@ -20,10 +19,8 @@ from openpyxl.utils.dataframe import dataframe_to_rows
 import glob
 import json
 
-# Configuración
-INPUT_DIR = "data/input"
-OUTPUT_DIR = "data/output"
-CONFIG_DIR = "config"
+# Importar rutas centralizadas
+from src.paths import INPUT_DIR, OUTPUT_DIR, CONFIG_DIR, ARCHIVO_STOCK_ACTUAL, PATRON_CLASIFICACION_ABC
 
 # Color de encabezado RGB[0,128,0] (verde)
 HEADER_COLOR = "FF008000"  # Verde en formato hex para openpyxl
@@ -50,8 +47,8 @@ CATEGORIA_C_D_ESCENARIOS = ["3", "7"]
 
 def cargar_configuracion():
     """Carga la configuración del sistema."""
-    config_path = os.path.join(CONFIG_DIR, "config.json")
-    if os.path.exists(config_path):
+    config_path = CONFIG_DIR / "config.json"
+    if config_path.exists():
         with open(config_path, 'r', encoding='utf-8') as f:
             return json.load(f)
     return {}
@@ -63,13 +60,13 @@ def obtener_archivo_clasificacion(seccion):
     """
     # Buscar archivos que coincidan con el patrón (con o sin "1" al principio)
     patrones = [
-        os.path.join(INPUT_DIR, f"CLASIFICACION_ABC+D_{seccion}_*.xlsx"),
-        os.path.join(INPUT_DIR, f"1CLASIFICACION_ABC+D_{seccion}_*.xlsx")
+        INPUT_DIR / f"CLASIFICACION_ABC+D_{seccion}_*.xlsx",
+        INPUT_DIR / f"1CLASIFICACION_ABC+D_{seccion}_*.xlsx"
     ]
     
     archivos = []
     for patron in patrones:
-        archivos.extend(glob.glob(patron))
+        archivos.extend(glob.glob(str(patron)))
     
     if not archivos:
         print(f"  ⚠️ No se encontró archivo de clasificación para {seccion}")
@@ -106,8 +103,8 @@ def cargar_stock_actual():
     Carga el archivo de stock actual.
     Llena las celdas vacías de artículo con el valor de la celda superior.
     """
-    stock_path = os.path.join(INPUT_DIR, "SPA_stock_actual.xlsx")
-    if not os.path.exists(stock_path):
+    stock_path = ARCHIVO_STOCK_ACTUAL
+    if not stock_path.exists():
         raise FileNotFoundError(f"No se encontró el archivo de stock: {stock_path}")
     
     df = pd.read_excel(stock_path)
@@ -432,7 +429,7 @@ def generar_informe():
     # Generar nombre de archivo con fecha
     fecha_actual = datetime.now().strftime("%d%m%Y")
     nombre_archivo = f"Analisis_Categoria_CD_{fecha_actual}.xlsx"
-    ruta_salida = os.path.join(OUTPUT_DIR, nombre_archivo)
+    ruta_salida = OUTPUT_DIR / nombre_archivo
     
     # Guardar archivo
     workbook.save(ruta_salida)
@@ -482,15 +479,15 @@ def buscar_archivo_semana_anterior(fecha_actual=None):
     archivos_encontrados = []
     
     # Buscar en output
-    for archivo in os.listdir(OUTPUT_DIR):
-        match = re.match(patron, archivo)
+    for archivo in OUTPUT_DIR.iterdir():
+        match = re.match(patron, archivo.name)
         if match:
             fecha_str = match.group(1)
             try:
                 fecha = datetime.strptime(fecha_str, "%d%m%Y")
                 # Excluir archivos de la fecha actual
                 if fecha.date() != fecha_actual.date():
-                    archivos_encontrados.append((fecha, os.path.join(OUTPUT_DIR, archivo)))
+                    archivos_encontrados.append((fecha, OUTPUT_DIR / archivo.name))
             except:
                 pass
     
