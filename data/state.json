@@ -3,7 +3,7 @@
         "version": "2.0.0",
         "fecha_creacion": "2026-01-31T00:00:00",
         "ultima_actualizacion": null,
-        "ultima_ejecucion_exitosa": "2026-02-21T14:30:57.864919",
+        "ultima_ejecucion_exitosa": "2026-02-21T16:24:33.480511",
         "ultima_semana_procesada": 7,
         "año_en_curso": 2026
     },
@@ -5007,6 +5007,15 @@
             "importe": 8993.59,
             "exitosa": true,
             "notas": "Procesadas 11 secciones - 802 artículos corregidos en FASE 2"
+        },
+        {
+            "semana": 7,
+            "fecha_ejecucion": "2026-02-21T16:24:33.480455",
+            "archivo_generado": "D:\\ALMACENAMIENTO\\Ivan\\viveverde\\Trabajos\\IA\\PROGRAMA_COMPRAS_AUTOMATICAS\\PRUEBA\\SPA\\data\\output\\Pedidos_semanales\\Pedido_Semana_07_21022026_interior.xlsx",
+            "num_articulos": 352,
+            "importe": 8993.59,
+            "exitosa": true,
+            "notas": "Procesadas 11 secciones - 802 artículos corregidos en FASE 2"
         }
     ],
     "pedidos_generados": [
@@ -5825,12 +5834,18 @@
             "archivo": ".\\./data/output\\Pedido_Semana_07_21022026_interior.xlsx",
             "fecha": "2026-02-21",
             "importe": 8993.59
+        },
+        {
+            "semana": 7,
+            "archivo": "D:\\ALMACENAMIENTO\\Ivan\\viveverde\\Trabajos\\IA\\PROGRAMA_COMPRAS_AUTOMATICAS\\PRUEBA\\SPA\\data\\output\\Pedidos_semanales\\Pedido_Semana_07_21022026_interior.xlsx",
+            "fecha": "2026-02-21",
+            "importe": 8993.59
         }
     ],
     "metricas": {
-        "total_ejecuciones": 136,
-        "total_articulos_procesados": 81944,
-        "total_importe_pedidos": 2484540.7599999974,
+        "total_ejecuciones": 137,
+        "total_articulos_procesados": 82296,
+        "total_importe_pedidos": 2493534.3499999973,
         "ultima_semana_procesada_exitosamente": 7
     },
     "errores_pendientes": [],
