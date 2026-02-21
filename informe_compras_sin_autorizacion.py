@@ -432,9 +432,9 @@ def aplicar_estilo_excel(worksheet):
     """
     from openpyxl.styles import Font, Fill, PatternFill, Alignment, Border, Side
     
-    # Fuentes y estilos
+    # Fuentes y estilos (color verde oscuro igual que los pedidos semanales)
     header_font = Font(name='Calibri', size=11, bold=True, color='FFFFFF')
-    header_fill = PatternFill(start_color='1F4E78', end_color='1F4E78', fill_type='solid')
+    header_fill = PatternFill(start_color='00B050', end_color='00B050', fill_type='solid')
     header_alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
     
     thin_border = Border(
@@ -479,7 +479,7 @@ def generar_informe_excel(resultados_por_seccion, nombre_archivo=None):
     """
     if nombre_archivo is None:
         fecha = datetime.now().strftime('%d%m%Y')
-        nombre_archivo = f"Compras_Sin_Pedido_{fecha}.xlsx"
+        nombre_archivo = f"Compras_sin_autorizacion_{fecha}.xlsx"
     
     output_path = DATA_OUTPUT_PATH / nombre_archivo
     
