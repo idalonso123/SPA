@@ -10,6 +10,7 @@ Envía automáticamente un email con todas las presentaciones generadas a Ivan.
 
 import pandas as pd
 import numpy as np
+import os
 from datetime import datetime
 import glob
 import warnings

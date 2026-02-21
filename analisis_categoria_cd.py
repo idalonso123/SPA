@@ -12,6 +12,7 @@ Este script:
 """
 
 import pandas as pd
+import os
 from datetime import datetime
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
@@ -428,7 +429,7 @@ def generar_informe():
     
     # Generar nombre de archivo con fecha
     fecha_actual = datetime.now().strftime("%d%m%Y")
-    nombre_archivo = f"Analisis_Categoria_CD_{fecha_actual}.xlsx"
+    nombre_archivo = f"Analisis_Categorias_C_y_D_{fecha_actual}.xlsx"
     ruta_salida = OUTPUT_DIR / nombre_archivo
     
     # Guardar archivo
@@ -474,7 +475,7 @@ def buscar_archivo_semana_anterior(fecha_actual=None):
         fecha_actual = datetime.now()
     
     # Patrón para buscar archivos de análisis de categoría CD
-    patron = r"Analisis_Categoria_CD_(\d{8})\.xlsx"
+    patron = r"Analisis_Categorias_C_y_D_(\d{8})\.xlsx"
     
     archivos_encontrados = []
     

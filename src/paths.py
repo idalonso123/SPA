@@ -54,7 +54,7 @@ ARCHIVOS_STOCK = {
 ARCHIVO_COSTES = INPUT_DIR / "SPA_coste.xlsx"
 
 # Archivos históricos
-HISTORICO_COMPRAS_SIN_PEDIDO = OUTPUT_DIR / "compras_sin_pedido_historico.json"
+HISTORICO_COMPRAS_SIN_PEDIDO = DATA_DIR / "compras_sin_pedido_historico.json"
 
 # Archivos de compras
 ARCHIVO_COMPRAS = INPUT_DIR / "SPA_compras.xlsx"
