@@ -19,7 +19,7 @@ import json
 import os
 from datetime import datetime
 from pathlib import Path
-from src.paths import INPUT_DIR, OUTPUT_DIR, HISTORICO_COMPRAS_SIN_PEDIDO
+from src.paths import INPUT_DIR, OUTPUT_DIR, HISTORICO_COMPRAS_SIN_PEDIDO, COMPRAS_SIN_AUTORIZACION_DIR
 import glob
 import warnings
 
@@ -29,7 +29,8 @@ warnings.filterwarnings('ignore', category=UserWarning, module='openpyxl')
 # Configuración
 BASE_PATH = Path(__file__).parent
 DATA_INPUT_PATH = INPUT_DIR
-DATA_OUTPUT_PATH = OUTPUT_DIR
+# Usar directorio centralizado para compras sin autorización
+DATA_OUTPUT_PATH = COMPRAS_SIN_AUTORIZACION_DIR
 HISTORY_FILE = HISTORICO_COMPRAS_SIN_PEDIDO
 
 # Secciones del sistema

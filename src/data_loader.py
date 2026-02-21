@@ -19,7 +19,7 @@ import logging
 import unicodedata
 from typing import Optional, Dict, List, Tuple, Any
 from datetime import datetime
-from src.paths import INPUT_DIR, OUTPUT_DIR
+from src.paths import INPUT_DIR, OUTPUT_DIR, PEDIDOS_SEMANALES_DIR
 
 # Configuración del logger
 logger = logging.getLogger(__name__)
@@ -418,7 +418,11 @@ class DataLoader:
             str: Ruta del directorio de entrada
         """
         base = self.rutas.get('directorio_base', '.')
-        entrada = self.rutas.get('directorio_entrada', str(INPUT_DIR))
+        entrada = self.rutas.get('directorio_entrada')
+        
+        # Si no hay configuración personalizada, usar la ruta centralizada
+        if entrada is None:
+            entrada = str(INPUT_DIR)
         
         # Si es ruta relativa, combinar con base
         if not os.path.isabs(entrada):
@@ -434,11 +438,18 @@ class DataLoader:
             str: Ruta del directorio de salida
         """
         base = self.rutas.get('directorio_base', '.')
-        salida = self.rutas.get('directorio_salida', str(OUTPUT_DIR))
+        salida = self.rutas.get('directorio_salida')
+        
+        # Si no hay configuración personalizada, usar la ruta centralizada
+        if salida is None:
+            salida = str(PEDIDOS_SEMANALES_DIR)
         
         # Si es ruta relativa, combinar con base
         if not os.path.isabs(salida):
             salida = os.path.join(base, salida)
+        
+        # Crear directorio si no existe
+        os.makedirs(salida, exist_ok=True)
         
         return salida
     
@@ -995,8 +1006,8 @@ if __name__ == "__main__":
     config_ejemplo = {
         'rutas': {
             'directorio_base': '.',
-            'directorio_entrada': str(INPUT_DIR),
-            'directorio_salida': str(OUTPUT_DIR)
+            'directorio_entrada': None,  # Usará INPUT_DIR por defecto
+            'directorio_salida': None  # Usará PEDIDOS_SEMANALES_DIR por defecto
         },
         'archivos_entrada': {
             'ventas': 'SPA_ventas.xlsx',

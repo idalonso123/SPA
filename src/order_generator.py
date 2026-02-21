@@ -19,7 +19,7 @@ from typing import Optional, Dict, Any
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Border, Side, Alignment
 from openpyxl.utils.dataframe import dataframe_to_rows
-from src.paths import INPUT_DIR, OUTPUT_DIR
+from src.paths import INPUT_DIR, OUTPUT_DIR, PEDIDOS_SEMANALES_DIR, RESUMENES_DIR
 from openpyxl.worksheet.page import PageMargins
 
 # Configuración del logger
@@ -90,8 +90,37 @@ class OrderGenerator:
         Returns:
             str: Ruta del directorio de salida
         """
+        # Primero verificar si hay una configuración personalizada en config
         base = self.rutas.get('directorio_base', '.')
-        salida = self.rutas.get('directorio_salida', str(OUTPUT_DIR))
+        salida = self.rutas.get('directorio_salida')
+        
+        # Si no hay configuración personalizada, usar la ruta centralizada
+        if salida is None:
+            salida = str(PEDIDOS_SEMANALES_DIR)
+        
+        # Si es ruta relativa, combinar con base
+        if not os.path.isabs(salida):
+            salida = os.path.join(base, salida)
+        
+        # Crear directorio si no existe
+        os.makedirs(salida, exist_ok=True)
+        
+        return salida
+    
+    def obtener_directorio_resumenes(self) -> str:
+        """
+        Obtiene el directorio de salida para resúmenes consolidados.
+        
+        Returns:
+            str: Ruta del directorio de resúmenes
+        """
+        # Primero verificar si hay una configuración personalizada en config
+        base = self.rutas.get('directorio_base', '.')
+        salida = self.rutas.get('directorio_resumenes')
+        
+        # Si no hay configuración personalizada, usar la ruta centralizada
+        if salida is None:
+            salida = str(RESUMENES_DIR)
         
         # Si es ruta relativa, combinar con base
         if not os.path.isabs(salida):
@@ -615,7 +644,7 @@ if __name__ == "__main__":
     config_ejemplo = {
         'rutas': {
             'directorio_base': '.',
-            'directorio_salida': str(OUTPUT_DIR)
+            'directorio_salida': str(PEDIDOS_SEMANALES_DIR)
         },
         'formato_salida': {
             'prefijo_archivo': 'Pedido_Semana',

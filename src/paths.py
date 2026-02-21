@@ -28,6 +28,19 @@ LOGS_DIR = BASE_DIR / "logs"
 DOCS_DIR = BASE_DIR / "docs"
 
 # ==============================================================================
+# SUBDIRECTORIOS DE SALIDA
+# ==============================================================================
+
+# Subdirectorios para organizar archivos de salida por tipo
+PEDIDOS_SEMANALES_DIR = OUTPUT_DIR / "Pedidos_semanales"
+INFORMES_DIR = OUTPUT_DIR / "Informes"
+PRESENTACIONES_DIR = OUTPUT_DIR / "Presentaciones"
+ANALISIS_DIR = OUTPUT_DIR / "Analisis"
+RESUMENES_DIR = OUTPUT_DIR / "Resumenes"
+COMPRAS_SIN_AUTORIZACION_DIR = OUTPUT_DIR / "Compras_sin_autorizacion"
+ARTICULOS_NO_COMPRADOS_DIR = OUTPUT_DIR / "Articulos_no_comprados"
+
+# ==============================================================================
 # ARCHIVOS DE DATOS COMUNES
 # ==============================================================================
 
@@ -134,18 +147,37 @@ def get_ruta_clasificacion_abc(categoria: str) -> Path | None:
 
 def verificar_directorios() -> bool:
     """
-    Verifica que los directorios principales existan.
+    Verifica que los directorios principales y subdirectorios de salida existan.
     
     Returns:
         True si todos los directorios existen, False en caso contrario
     """
-    directorios = [INPUT_DIR, OUTPUT_DIR, CONFIG_DIR, LOGS_DIR]
+    directorios = [
+        INPUT_DIR, OUTPUT_DIR, CONFIG_DIR, LOGS_DIR,
+        PEDIDOS_SEMANALES_DIR, INFORMES_DIR, PRESENTACIONES_DIR,
+        ANALISIS_DIR, RESUMENES_DIR, COMPRAS_SIN_AUTORIZACION_DIR,
+        ARTICULOS_NO_COMPRADOS_DIR
+    ]
     return all(d.exists() for d in directorios)
 
 
 def crear_directorios_si_no_existen():
-    """Crea los directorios principales si no existen."""
-    for directorio in [INPUT_DIR, OUTPUT_DIR, CONFIG_DIR, LOGS_DIR]:
+    """Crea los directorios principales y subdirectorios de salida si no existen."""
+    # Directorios principales
+    directorios = [INPUT_DIR, OUTPUT_DIR, CONFIG_DIR, LOGS_DIR]
+    
+    # Subdirectorios de salida
+    subdirectorios_salida = [
+        PEDIDOS_SEMANALES_DIR,
+        INFORMES_DIR,
+        PRESENTACIONES_DIR,
+        ANALISIS_DIR,
+        RESUMENES_DIR,
+        COMPRAS_SIN_AUTORIZACION_DIR,
+        ARTICULOS_NO_COMPRADOS_DIR,
+    ]
+    
+    for directorio in directorios + subdirectorios_salida:
         directorio.mkdir(parents=True, exist_ok=True)
 
 
@@ -163,3 +195,12 @@ LOGS_DIR_STR = str(LOGS_DIR)
 ARCHIVO_VENTAS_STR = str(ARCHIVO_VENTAS)
 ARCHIVO_COSTES_STR = str(ARCHIVO_COSTES)
 ARCHIVO_STOCK_ACTUAL_STR = str(ARCHIVO_STOCK_ACTUAL)
+
+# Strings de directorios de salida
+PEDIDOS_SEMANALES_DIR_STR = str(PEDIDOS_SEMANALES_DIR)
+INFORMES_DIR_STR = str(INFORMES_DIR)
+PRESENTACIONES_DIR_STR = str(PRESENTACIONES_DIR)
+ANALISIS_DIR_STR = str(ANALISIS_DIR)
+RESUMENES_DIR_STR = str(RESUMENES_DIR)
+COMPRAS_SIN_AUTORIZACION_DIR_STR = str(COMPRAS_SIN_AUTORIZACION_DIR)
+ARTICULOS_NO_COMPRADOS_DIR_STR = str(ARTICULOS_NO_COMPRADOS_DIR)

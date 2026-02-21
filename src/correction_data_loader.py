@@ -301,7 +301,11 @@ class CorrectionDataLoader:
             str: Ruta del directorio de entrada
         """
         base = self.rutas.get('directorio_base', '.')
-        entrada = self.rutas.get('directorio_entrada', str(INPUT_DIR))
+        entrada = self.rutas.get('directorio_entrada')
+        
+        # Si no hay configuración personalizada, usar la ruta centralizada
+        if entrada is None:
+            entrada = str(INPUT_DIR)
         
         if not os.path.isabs(entrada):
             entrada = os.path.join(base, entrada)
@@ -602,7 +606,7 @@ if __name__ == "__main__":
     config_ejemplo = {
         'rutas': {
             'directorio_base': '.',
-            'directorio_entrada': str(INPUT_DIR)
+            'directorio_entrada': None  # Usará INPUT_DIR por defecto
         },
         'archivos_correccion': {
             'stock_actual': 'SPA_stock_actual.xlsx'

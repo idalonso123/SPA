@@ -20,7 +20,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
 from pathlib import Path
-from src.paths import INPUT_DIR, OUTPUT_DIR
+from src.paths import INPUT_DIR, OUTPUT_DIR, INFORMES_DIR
 warnings.filterwarnings('ignore')
 
 # ============================================================================
@@ -1345,7 +1345,7 @@ def procesar_seccion(ruta_archivo, nombre_seccion):
         html_informe = generar_html_informe(datos, df_completo, nombre_seccion)
         
         # Guardar archivo HTML
-        nombre_salida = OUTPUT_DIR / f"INFORME_FINAL_{nombre_seccion}_{PERIODO_FILENAME}.html"
+        nombre_salida = INFORMES_DIR / f"INFORME_FINAL_{nombre_seccion}_{PERIODO_FILENAME}.html"
         
         with open(nombre_salida, 'w', encoding='utf-8') as f:
             f.write(html_informe)
@@ -1414,7 +1414,7 @@ def main():
         for archivo in archivos:
             nombre_seccion = extraer_nombre_seccion(archivo)
             if nombre_seccion:
-                informe_html = OUTPUT_DIR / f"INFORME_FINAL_{nombre_seccion}_{PERIODO_FILENAME}.html"
+                informe_html = INFORMES_DIR / f"INFORME_FINAL_{nombre_seccion}_{PERIODO_FILENAME}.html"
                 archivos_informes.append(str(informe_html))
                 print(f"  - {informe_html}")
         

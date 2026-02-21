@@ -24,7 +24,7 @@ from pathlib import Path
 warnings.filterwarnings('ignore')
 
 # Importar rutas centralizadas
-from src.paths import INPUT_DIR, OUTPUT_DIR, PATRON_CLASIFICACION_ABC
+from src.paths import INPUT_DIR, OUTPUT_DIR, PATRON_CLASIFICACION_ABC, PRESENTACIONES_DIR
 
 # ============================================================================
 # CONFIGURACIÓN DE EMAIL
@@ -1288,7 +1288,7 @@ def main():
             )
             
             # Guardar archivo
-            nombre_salida = OUTPUT_DIR / f"PRESENTACION_{nombre_seccion}_{PERIODO_FILENAME}.html"
+            nombre_salida = PRESENTACIONES_DIR / f"PRESENTACION_{nombre_seccion}_{PERIODO_FILENAME}.html"
             with open(nombre_salida, 'w', encoding='utf-8') as f:
                 f.write(html_presentacion)
             
@@ -1323,7 +1323,7 @@ def main():
         for archivo in archivos_clasificacion:
             nombre_seccion = extraer_nombre_seccion(archivo)
             if nombre_seccion:
-                presentacion_html = str(OUTPUT_DIR / f"PRESENTACION_{nombre_seccion}_{PERIODO_FILENAME}.html")
+                presentacion_html = str(PRESENTACIONES_DIR / f"PRESENTACION_{nombre_seccion}_{PERIODO_FILENAME}.html")
                 archivos_presentaciones.append(presentacion_html)
                 print(f"  - {presentacion_html}")
         

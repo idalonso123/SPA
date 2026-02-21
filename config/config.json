@@ -184,8 +184,8 @@
     
     "rutas": {
         "directorio_base": ".",
-        "directorio_entrada": "./data/input",
-        "directorio_salida": "./data/output",
+        "directorio_entrada": null,
+        "directorio_salida": null,
         "directorio_estado": "./data",
         "directorio_logs": "./logs",
         "archivo_estado": "state.json",

@@ -17,7 +17,7 @@ import pandas as pd
 import json
 from datetime import datetime
 from pathlib import Path
-from src.paths import INPUT_DIR, OUTPUT_DIR
+from src.paths import INPUT_DIR, OUTPUT_DIR, ARTICULOS_NO_COMPRADOS_DIR, PEDIDOS_SEMANALES_DIR
 import glob
 import warnings
 
@@ -27,7 +27,8 @@ warnings.filterwarnings('ignore', category=UserWarning, module='openpyxl')
 # Configuración
 BASE_PATH = Path(__file__).parent
 DATA_INPUT_PATH = INPUT_DIR
-DATA_OUTPUT_PATH = OUTPUT_DIR
+# Usar directorio centralizado para artículos no comprados
+DATA_OUTPUT_PATH = ARTICULOS_NO_COMPRADOS_DIR
 
 # Secciones del sistema
 SECCIONES = [
@@ -87,7 +88,8 @@ def cargar_pedido_semana(seccion, semana=None):
     Carga el archivo de pedido semanal para una sección específica.
     """
     # Buscar todos los archivos de pedido
-    todos_archivos = list(DATA_OUTPUT_PATH.glob('Pedido_Semana_*'))
+    # Buscar archivos de pedidos en el directorio de pedidos semanales
+    todos_archivos = list(PEDIDOS_SEMANALES_DIR.glob('Pedido_Semana_*'))
     
     # Filtrar por sección
     archivos = [f for f in todos_archivos if f.name.endswith(f'_{seccion}.xlsx')]

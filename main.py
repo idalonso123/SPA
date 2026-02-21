@@ -18,7 +18,7 @@ from typing import Optional, Dict, Any, Tuple, List
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from src.paths import INPUT_DIR, OUTPUT_DIR
+from src.paths import INPUT_DIR, OUTPUT_DIR, PEDIDOS_SEMANALES_DIR, RESUMENES_DIR
 from src.data_loader import DataLoader
 from src.state_manager import StateManager
 from src.forecast_engine import ForecastEngine
@@ -305,7 +305,10 @@ def buscar_valores_unicos_normalizados(df, nombre_columna):
 # ============================================================================
 
 def verificar_archivos_correccion(config: Dict[str, Any], semana: int) -> Dict[str, bool]:
-    dir_entrada = config.get('rutas', {}).get('directorio_entrada', str(INPUT_DIR))
+    # Usar ruta centralizada por defecto, permitir override desde config
+    dir_entrada_config = config.get('rutas', {}).get('directorio_entrada')
+    dir_entrada = str(INPUT_DIR) if dir_entrada_config is None else dir_entrada_config
+    
     archivos_correccion = config.get('archivos_correccion', {})
     
     disponibilidad = {'stock': False, 'ventas': False, 'compras': False}
@@ -446,7 +449,13 @@ def generar_archivo_pedido_corregido(
         
         fecha_lunes_str = fecha_lunes.strftime('%Y-%m-%d')
         
-        dir_salida = config.get('rutas', {}).get('directorio_salida', str(OUTPUT_DIR))
+        # Usar ruta centralizada por defecto, permitir override desde config
+        dir_salida_config = config.get('rutas', {}).get('directorio_salida')
+        if dir_salida_config:
+            dir_salida = dir_salida_config
+        else:
+            dir_salida = str(PEDIDOS_SEMANALES_DIR)
+        
         nombre_archivo = f"Pedido_Semana_{semana}_{fecha_lunes_str}_{seccion}_CORREGIDO.xlsx"
         ruta_archivo = os.path.join(dir_salida, nombre_archivo)
         
@@ -604,7 +613,13 @@ def agrupar_archivos_por_seccion(
     - DDMMYYYY (sin guiones): 03022026
     """
     archivos_por_seccion = {}
-    dir_salida = config.get('rutas', {}).get('directorio_salida', str(OUTPUT_DIR))
+    
+    # Usar ruta centralizada por defecto, permitir override desde config
+    dir_salida_config = config.get('rutas', {}).get('directorio_salida')
+    if dir_salida_config:
+        dir_salida = dir_salida_config
+    else:
+        dir_salida = str(PEDIDOS_SEMANALES_DIR)
 
     for archivo in archivos_generados:
         if not archivo:
@@ -691,8 +706,19 @@ def procesar_pedido_semana(
     
     # Determinar directorios
     dir_base = os.path.dirname(os.path.abspath(__file__))
-    dir_entrada = os.path.join(dir_base, config.get('rutas', {}).get('directorio_entrada', str(INPUT_DIR)))
-    dir_salida = os.path.join(dir_base, config.get('rutas', {}).get('directorio_salida', str(OUTPUT_DIR)))
+    dir_entrada_config = config.get('rutas', {}).get('directorio_entrada')
+    # Usar ruta centralizada por defecto si no hay override en config
+    if dir_entrada_config is None:
+        dir_entrada = str(INPUT_DIR)
+    else:
+        dir_entrada = os.path.join(dir_base, dir_entrada_config)
+    
+    # Usar ruta centralizada por defecto, permitir override desde config
+    dir_salida_config = config.get('rutas', {}).get('directorio_salida')
+    if dir_salida_config is None:
+        dir_salida = str(PEDIDOS_SEMANALES_DIR)
+    else:
+        dir_salida = os.path.join(dir_base, dir_salida_config)
     
     # Cargar archivo de ventas de semana (SPA_ventas_semana.xlsx) - Contiene las ventas reales de la semana anterior
     df_ventas_reales, ventas_reales_existe = leer_archivo_ventas_semana(dir_entrada)
