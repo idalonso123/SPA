@@ -310,6 +310,25 @@ def obtener_codigos_mascotas_vivo():
     
     return CODIGOS_MASCOTAS_VIVO
 
+
+def obtener_secciones_desde_config():
+    """
+    Obtiene las definiciones de secciones desde config_comun.json
+    
+    Returns:
+        dict: Diccionario de secciones o None si hay error
+    """
+    try:
+        if 'CONFIG' in globals() and CONFIG and 'configuracion_secciones' in CONFIG:
+            secciones = CONFIG['configuracion_secciones']
+            print(f"INFO: Secciones cargadas desde config: {len(secciones)} secciones")
+            return secciones
+    except Exception as e:
+        print(f"ERROR al cargar secciones desde config: {e}")
+    
+    return None
+
+
 # Definición de todas las secciones - Se cargará desde config_comun.json
 SECCIONES = {
     'interior': {
@@ -583,6 +602,20 @@ if CONFIG and 'configuracion_mascotas' in CONFIG:
     if codigos:
         CODIGOS_MASCOTAS_VIVO = codigos
         print(f"INFO: Códigos de mascotas vivos cargados desde config: {len(CODIGOS_MASCOTAS_VIVO)} códigos")
+
+# Actualizar secciones desde CONFIG (PUNTO 6)
+secciones_desde_config = obtener_secciones_desde_config()
+if secciones_desde_config:
+    SECCIONES = secciones_desde_config
+    # Actualizar las referencias a CODIGOS_MASCOTAS_VIVO en las definiciones de secciones
+    # Esto es necesario porque las secciones usan la variable global
+    for seccion in SECCIONES.values():
+        if 'rangos' in seccion:
+            for rango in seccion['rangos']:
+                if 'excluir' in rango and rango['excluir'] == ['2104', '2204', '2305', '2405', '2504', '2606', '2705', '2707', '2708', '2805', '2806', '2906']:
+                    rango['excluir'] = CODIGOS_MASCOTAS_VIVO
+                if 'valores' in rango and rango['valores'] == ['2104', '2204', '2305', '2504', '2606', '2405', '2705', '2707', '2708', '2805', '2806', '2906']:
+                    rango['valores'] = CODIGOS_MASCOTAS_VIVO
 
 # ============================================================================
 # CONFIGURACIÓN DE FORMATOS EXCEL
@@ -903,15 +936,51 @@ def cargar_encargados():
 ENCARGADOS = cargar_encargados()
 
 # ============================================================================
-# CONFIGURACIÓN DEL SERVIDOR SMTP (HARDCODED - SE ACTUALIZARÁ EN PUNTO 4)
+# CONFIGURACIÓN DEL SERVIDOR SMTP - DESDE config/email.json (PUNTO 4)
 # ============================================================================
 
-SMTP_CONFIG = {
-    'servidor': 'smtp.serviciodecorreo.es',
-    'puerto': 465,
-    'remitente_email': 'ivan.delgado@viveverde.es',
-    'remitente_nombre': 'Sistema de Pedidos automáticos VIVEVERDE'
-}
+def cargar_configuracion_smtp():
+    """
+    Carga la configuración SMTP desde config/email.json.
+    
+    Returns:
+        dict: Diccionario con configuración SMTP
+    """
+    ruta_email_json = Path('config/email.json')
+    
+    try:
+        if ruta_email_json.exists():
+            with open(ruta_email_json, 'r', encoding='utf-8') as f:
+                email_config = json.load(f)
+            
+            smtp = email_config.get('smtp', {})
+            remitente = email_config.get('remitente', {})
+            
+            return {
+                'servidor': smtp.get('servidor', 'smtp.serviciodecorreo.es'),
+                'puerto': smtp.get('puerto', 465),
+                'remitente_email': remitente.get('email', 'sistema@viveverde.es'),
+                'remitente_nombre': remitente.get('nombre', 'Sistema de Pedidos VIVEVERDE')
+            }
+        else:
+            # Valor por defecto si no existe el archivo
+            return {
+                'servidor': 'smtp.serviciodecorreo.es',
+                'puerto': 465,
+                'remitente_email': 'sistema@viveverde.es',
+                'remitente_nombre': 'Sistema de Pedidos VIVEVERDE'
+            }
+    except Exception as e:
+        print(f"Error al cargar configuración SMTP: {e}")
+        return {
+            'servidor': 'smtp.serviciodecorreo.es',
+            'puerto': 465,
+            'remitente_email': 'sistema@viveverde.es',
+            'remitente_nombre': 'Sistema de Pedidos VIVEVERDE'
+        }
+
+# Cargar configuración SMTP al iniciar el módulo
+SMTP_CONFIG = cargar_configuracion_smtp()
 
 # ============================================================================
 # FUNCIÓN PARA ENVIAR EMAIL CON ARCHIVO ADJUNTO

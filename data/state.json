@@ -3,7 +3,7 @@
         "version": "2.0.0",
         "fecha_creacion": "2026-01-31T00:00:00",
         "ultima_actualizacion": null,
-        "ultima_ejecucion_exitosa": "2026-02-22T22:59:43.027798",
+        "ultima_ejecucion_exitosa": "2026-02-23T00:31:39.748425",
         "ultima_semana_procesada": 7,
         "año_en_curso": 2026
     },
@@ -588,7 +588,7 @@
         "2401010011|         |        ": 0,
         "2401010014|         |        ": 0,
         "2401010008|         |        ": 1,
-        "2401010012|         |        ": 1,
+        "2401010012|         |        ": 2,
         "2401010336|         |        ": 0,
         "2401010364|         |        ": 0,
         "2605010011|         |        ": 1,
@@ -964,11 +964,11 @@
         "2303080011|S        |UNICO   ": 1,
         "2706030035|250ML    |UNICO   ": 0,
         "2301040053|3KG      |UNICO   ": 1,
-        "2404010015|         |        ": 1,
+        "2404010015|         |        ": 0,
         "2301180008|2KG      |UNICO   ": 0,
         "2703060001|L        |UNICO   ": 1,
         "2301090076|BMENSUAL |UNICO   ": 1,
-        "2301180006|2KG      |UNICO   ": 1,
+        "2301180006|2KG      |UNICO   ": 0,
         "2202050002|GDE      |UNICO   ": 0,
         "2301040074|3KG      |UNICO   ": 1,
         "2402020013|         |        ": 1,
@@ -2699,7 +2699,7 @@
         "2101040010|         |        ": 0,
         "2101040007|         |        ": 0,
         "2101040009|         |        ": 0,
-        "2101030002|         |        ": 1,
+        "2101030002|         |        ": 0,
         "2203020003|         |        ": 1,
         "2401010309|         |        ": 0,
         "2301010053|         |        ": 0,
@@ -2747,7 +2747,7 @@
         "2703060029|         |        ": 0,
         "2102060029|         |        ": 0,
         "2401010196|85GX4    |UNICO   ": 0,
-        "2302060085|7I5CM    |UNICO   ": 0,
+        "2302060085|7I5CM    |UNICO   ": 1,
         "2201010007|700g     |UNICO   ": 0,
         "2304010022|         |        ": 0,
         "2302061031|         |        ": 0,
@@ -2832,7 +2832,7 @@
         "2401050007|2KG      |UNICO   ": 0,
         "2303020009|25X60100 |UNICO   ": 0,
         "2701020040|1L       |UNICO   ": 0,
-        "2302050012|90X60X8  |UNICO   ": 1,
+        "2302050012|90X60X8  |UNICO   ": 0,
         "2401040001|1500G    |UNICO   ": 1,
         "2401040014|1500G    |UNICO   ": 1,
         "2301090088|1I9KG    |UNICO   ": 1,
@@ -5043,6 +5043,15 @@
             "importe": 9020.79,
             "exitosa": true,
             "notas": "Procesadas 11 secciones - 804 artículos corregidos en FASE 2"
+        },
+        {
+            "semana": 7,
+            "fecha_ejecucion": "2026-02-23T00:31:39.748378",
+            "archivo_generado": "D:\\ALMACENAMIENTO\\Ivan\\viveverde\\Trabajos\\IA\\PROGRAMA_COMPRAS_AUTOMATICAS\\SPA\\data\\output\\Pedidos_semanales\\Pedido_Semana_07_23022026_interior.xlsx",
+            "num_articulos": 352,
+            "importe": 8993.59,
+            "exitosa": true,
+            "notas": "Procesadas 11 secciones - 801 artículos corregidos en FASE 2"
         }
     ],
     "pedidos_generados": [
@@ -5885,12 +5894,18 @@
             "archivo": "D:\\ALMACENAMIENTO\\Ivan\\viveverde\\Trabajos\\IA\\PROGRAMA_COMPRAS_AUTOMATICAS\\PRUEBA1\\SPA\\data\\output\\Pedidos_semanales\\Pedido_Semana_07_22022026_interior.xlsx",
             "fecha": "2026-02-22",
             "importe": 9020.79
+        },
+        {
+            "semana": 7,
+            "archivo": "D:\\ALMACENAMIENTO\\Ivan\\viveverde\\Trabajos\\IA\\PROGRAMA_COMPRAS_AUTOMATICAS\\SPA\\data\\output\\Pedidos_semanales\\Pedido_Semana_07_23022026_interior.xlsx",
+            "fecha": "2026-02-23",
+            "importe": 8993.59
         }
     ],
     "metricas": {
-        "total_ejecuciones": 140,
-        "total_articulos_procesados": 83354,
-        "total_importe_pedidos": 2520569.519999997,
+        "total_ejecuciones": 141,
+        "total_articulos_procesados": 83706,
+        "total_importe_pedidos": 2529563.109999997,
         "ultima_semana_procesada_exitosamente": 7
     },
     "errores_pendientes": [],
