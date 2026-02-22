@@ -21,7 +21,7 @@ import glob
 import json
 
 # Importar rutas centralizadas
-from src.paths import INPUT_DIR, OUTPUT_DIR, CONFIG_DIR, ARCHIVO_STOCK_ACTUAL, PATRON_CLASIFICACION_ABC, ANALISIS_DIR
+from src.paths import INPUT_DIR, OUTPUT_DIR, CONFIG_DIR, ARCHIVO_STOCK_ACTUAL, PATRON_CLASIFICACION_ABC, ANALISIS_CATEGORIA_CD_DIR
 
 # Color de encabezado RGB[0,128,0] (verde)
 HEADER_COLOR = "FF008000"  # Verde en formato hex para openpyxl
@@ -430,7 +430,7 @@ def generar_informe():
     # Generar nombre de archivo con fecha
     fecha_actual = datetime.now().strftime("%d%m%Y")
     nombre_archivo = f"Analisis_Categorias_C_y_D_{fecha_actual}.xlsx"
-    ruta_salida = ANALISIS_DIR / nombre_archivo
+    ruta_salida = ANALISIS_CATEGORIA_CD_DIR / nombre_archivo
     
     # Guardar archivo
     workbook.save(ruta_salida)
@@ -480,7 +480,7 @@ def buscar_archivo_semana_anterior(fecha_actual=None):
     archivos_encontrados = []
     
     # Buscar en directorio de análisis
-    for archivo in ANALISIS_DIR.iterdir():
+    for archivo in ANALISIS_CATEGORIA_CD_DIR.iterdir():
         match = re.match(patron, archivo.name)
         if match:
             fecha_str = match.group(1)
@@ -488,7 +488,7 @@ def buscar_archivo_semana_anterior(fecha_actual=None):
                 fecha = datetime.strptime(fecha_str, "%d%m%Y")
                 # Excluir archivos de la fecha actual
                 if fecha.date() != fecha_actual.date():
-                    archivos_encontrados.append((fecha, ANALISIS_DIR / archivo.name))
+                    archivos_encontrados.append((fecha, ANALISIS_CATEGORIA_CD_DIR / archivo.name))
             except:
                 pass
     

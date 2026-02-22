@@ -12,7 +12,7 @@ from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 import glob
 
 # Importar rutas centralizadas
-from src.paths import OUTPUT_DIR, ANALISIS_DIR
+from src.paths import OUTPUT_DIR, ANALISIS_CATEGORIA_CD_DIR, COMPARACION_CATEGORIA_CD_DIR
 
 
 def extraer_metricas_de_excel(ruta_archivo):
@@ -275,11 +275,11 @@ def buscar_archivos_analisis():
     from datetime import datetime
     
     # Buscar todos los archivos de análisis
-    patron = str(ANALISIS_DIR / "Analisis_Categorias_C_y_D_*.xlsx")
+    patron = str(ANALISIS_CATEGORIA_CD_DIR / "Analisis_Categorias_C_y_D_*.xlsx")
     archivos = glob.glob(patron)
     
     if not archivos:
-        print("❌ No se encontraron archivos de análisis en:", ANALISIS_DIR)
+        print("❌ No se encontraron archivos de análisis en:", ANALISIS_CATEGORIA_CD_DIR)
         return None, None
     
     # Convertir a objetos Path
@@ -359,7 +359,7 @@ def comparar_archivos(archivo_actual=None, archivo_anterior=None, archivo_salida
     # Generar archivo Excel
     if archivo_salida is None:
         fecha = datetime.now().strftime("%d%m%Y")
-        archivo_salida = ANALISIS_DIR / f"Comparacion_Categorias_C_y_D_{fecha}.xlsx"
+        archivo_salida = COMPARACION_CATEGORIA_CD_DIR / f"Comparacion_Categorias_C_y_D_{fecha}.xlsx"
     
     print(f"\n📝 Generando archivo de comparación: {archivo_salida}")
     generar_excel_comparacion(comparacion, archivo_salida)
