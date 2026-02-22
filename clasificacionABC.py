@@ -1,29 +1,36 @@
 #!/usr/bin/env python3
 """
-Motor de Cálculo ABC+D para Gestión de Inventarios - VERSIÓN MULTI-SECCIÓN CON PERÍODOS
-Jardinería Aranjuez - Período configurable mediante argumentos
+Motor de Cálculo ABC+D para Gestión de Inventarios - VERSIÓN DINÁMICA
+Jardinería Aranjuez - Período y año configurables automáticamente o mediante argumentos
 
 Este script combina:
 - Cálculo de clasificación ABC+D
 - Aplicación de formatos Excel
 - Lógica corregida de riesgo
-- Período configurable mediante argumentos --P1, --P2, --P3, --P4
+- Período y año configurables mediante argumentos
 - Filtrado automático de datos según el período indicado
 - Procesamiento de múltiples secciones
 - Envío automático de emails a los encargados de cada sección
 
 MODO DE USO:
-- Sin parámetros: Procesa TODOS los datos y genera un archivo por cada sección
-- Con parámetro --P1, --P2, --P3, --P4: Procesa solo el período especificado
-  filtrando automáticamente los datos de compras y ventas
+- Sin parámetros: Procesa automáticamente según la fecha actual
+  * Detecta el período y año actual
+  * Analiza los datos del año anterior
+  * Genera archivos para el período SIGUIENTE al actual
+  * Ejemplo: Si hoy es febrero 2026 (P1), analiza datos de 2025 y genera archivos para P2_2025
+
+- Con parámetros:
+  * -P <periodo>: Período específico (P1, P2, P3, P4)
+  * -Y <año>: Año de los datos a analizar
+  * -S <sección>: Sección específica a procesar
+  
+  Ejemplo: python clasificacionABC.py -P P3 -Y 2025 -S maf
 
 Ejecutar: 
-    python clasificacionABC.py                              # Procesa todas las secciones (período por defecto)
-    python clasificacionABC.py --P1                          # Procesa período P1 (enero-febrero)
-    python clasificacionABC.py --P2                          # Procesa período P2 (marzo-mayo)
-    python clasificacionABC.py --P3                          # Procesa período P3 (junio-agosto)
-    python clasificacionABC.py --P4                          # Procesa período P4 (septiembre-diciembre)
-    python clasificacionABC.py --P2 --seccion vivero         # Procesa solo vivero en período P2
+    python clasificacionABC.py                              # Modo automático
+    python clasificacionABC.py -P P1 -Y 2025               # Período P1 del año 2025
+    python clasificacionABC.py -S maf                       # Solo sección maf (modo automático)
+    python clasificacionABC.py -P P2 -Y 2025 -S vivero     # Período P2 de 2025, solo vivero
 
 Los datos se leen de archivos con datos de TODO el año:
 - SPA_compras.xlsx: Datos de compras de todo el año
@@ -278,10 +285,32 @@ def buscar_valores_unicos_normalizados(df, nombre_columna):
 # CONFIGURACIÓN DE SECCIONES
 # ============================================================================
 
-# Códigos de animales vivos (tienen tratamiento especial dentro de sección 2)
-CODIGOS_MASCOTAS_VIVO = ['2104', '2204', '2305', '2405', '2504', '2606', '2705', '2707', '2708', '2805', '2806', '2906']
+# Códigos de animales vivos - Se cargan desde config_comun.json
+# La variable se inicializa después de CONFIG
+CODIGOS_MASCOTAS_VIVO = ['2104', '2204', '2305', '2405', '2504', '2606', '2705', '2707', '2708', '2805', '2806', '2906']  # Valor por defecto
 
-# Definición de todas las secciones y sus rangos de códigos
+def obtener_codigos_mascotas_vivo():
+    """
+    Obtiene los códigos de mascotas vivos desde config_comun.json
+    
+    Returns:
+        list: Lista de códigos de mascotas vivos
+    """
+    global CODIGOS_MASCOTAS_VIVO
+    
+    # Intentar cargar desde CONFIG (definida más adelante en el archivo)
+    try:
+        if 'CONFIG' in globals() and CONFIG and 'configuracion_mascotas' in CONFIG:
+            codigos = CONFIG['configuracion_mascotas'].get('codigos_mascotas_vivo', [])
+            if codigos:
+                CODIGOS_MASCOTAS_VIVO = codigos
+                print(f"INFO: Códigos de mascotas vivos cargados desde config: {len(CODIGOS_MASCOTAS_VIVO)} códigos")
+    except:
+        pass
+    
+    return CODIGOS_MASCOTAS_VIVO
+
+# Definición de todas las secciones - Se cargará desde config_comun.json
 SECCIONES = {
     'interior': {
         'descripcion': 'Plantas de interior',
@@ -462,6 +491,22 @@ def obtener_periodo_desde_fecha(fecha, config):
     else:
         return "P4"
 
+
+def obtener_periodo_siguiente(periodo_actual):
+    """
+    Obtiene el período siguiente al actual.
+    
+    Args:
+        periodo_actual: Período actual (P1, P2, P3, P4)
+    
+    Returns:
+        str: Período siguiente (P2->P3, P3->P4, P4->P1, P1->P2)
+    """
+    orden_periodos = ["P1", "P2", "P3", "P4"]
+    idx = orden_periodos.index(periodo_actual)
+    return orden_periodos[(idx + 1) % 4]
+
+
 def configurar_periodo(periodo_seleccionado, config, año_datos=None):
     """
     Configura las variables globales de período basándose en el argumento proporcionado.
@@ -531,6 +576,13 @@ def detectar_año_datos(compras_df, ventas_df):
 
 # Cargar configuración al inicio
 CONFIG = cargar_configuracion()
+
+# Actualizar códigos de mascotas vivos desde CONFIG
+if CONFIG and 'configuracion_mascotas' in CONFIG:
+    codigos = CONFIG['configuracion_mascotas'].get('codigos_mascotas_vivo', [])
+    if codigos:
+        CODIGOS_MASCOTAS_VIVO = codigos
+        print(f"INFO: Códigos de mascotas vivos cargados desde config: {len(CODIGOS_MASCOTAS_VIVO)} códigos")
 
 # ============================================================================
 # CONFIGURACIÓN DE FORMATOS EXCEL
@@ -824,58 +876,36 @@ IVA_SUBFAMILIA = {
 }
 
 # ============================================================================
-# TABLA DE ENCARGADOS POR SECCIÓN (HARDCODED - SIN VINCULACIÓN A EXCEL)
+# CARGA DE ENCARGADOS DESDE ARCHIVO JSON
 # ============================================================================
 
-# Datos extraídos de encargados.xlsx - Mapeo de secciones a encargados y sus emails
-ENCARGADOS = {
-    'interior': {
-        'nombre': 'Iris',
-        'email': 'ivan.delgado@viveverde.es'
-    },
-    'mascotas_manufacturado': {
-        'nombre': 'María',
-        'email': 'ivan.delgado@viveverde.es'
-    },
-    'mascotas_vivo': {
-        'nombre': 'María',
-        'email': 'ivan.delgado@viveverde.es'
-    },
-    'deco_exterior': {
-        'nombre': 'Pablo',
-        'email': 'ivan.delgado@viveverde.es'
-    },
-    'tierra_aridos': {
-        'nombre': 'Pablo',
-        'email': 'ivan.delgado@viveverde.es'
-    },
-    'fitos': {
-        'nombre': 'Ivan',
-        'email': 'ivan.delgado@viveverde.es'
-    },
-    'semillas': {
-        'nombre': 'Ivan',
-        'email': 'ivan.delgado@viveverde.es'
-    },
-    'utiles_jardin': {
-        'nombre': 'Ivan',
-        'email': 'ivan.delgado@viveverde.es'
-    },
-    'deco_interior': {
-        'nombre': 'Rocío',
-        'email': 'ivan.delgado@viveverde.es'
-    },
-    'maf': {
-        'nombre': 'Jose',
-        'email': 'ivan.delgado@viveverde.es'
-    },
-    'vivero': {
-        'nombre': 'Jose',
-        'email': 'ivan.delgado@viveverde.es'
-    }
-}
+def cargar_encargados():
+    """
+    Carga los encargados desde el archivo config/encargados.json
+    
+    Returns:
+        dict: Diccionario de encargados cargado desde JSON
+    """
+    try:
+        ruta_encargados = os.path.join(DIRECTORIO_CONFIG, 'encargados.json')
+        if os.path.exists(ruta_encargados):
+            with open(ruta_encargados, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                return data.get('encargados', {})
+        else:
+            print(f"ADVERTENCIA: No se encontró {ruta_encargados}. Usando diccionario vacío.")
+            return {}
+    except Exception as e:
+        print(f"ERROR al cargar encargados: {e}. Usando diccionario vacío.")
+        return {}
 
-# Configuración del servidor SMTP
+# Cargar encargados desde JSON al inicio
+ENCARGADOS = cargar_encargados()
+
+# ============================================================================
+# CONFIGURACIÓN DEL SERVIDOR SMTP (HARDCODED - SE ACTUALIZARÁ EN PUNTO 4)
+# ============================================================================
+
 SMTP_CONFIG = {
     'servidor': 'smtp.serviciodecorreo.es',
     'puerto': 465,
@@ -890,6 +920,7 @@ SMTP_CONFIG = {
 def enviar_email_clasificacion(seccion: str, archivo: str, periodo: str) -> bool:
     """
     Envía un email con el archivo de clasificación ABC+D adjunto al encargado de la sección.
+    Soporta tanto un único encargado (objeto) como varios encargados (array).
     
     Args:
         seccion: Nombre de la sección procesada
@@ -897,7 +928,7 @@ def enviar_email_clasificacion(seccion: str, archivo: str, periodo: str) -> bool
         periodo: Período del análisis (formato: "dd/mm/yyyy - dd/mm/yyyy")
     
     Returns:
-        bool: True si el email fue enviado exitosamente, False en caso contrario
+        bool: True si el email fue enviado exitosamente a al menos un destinatario, False en caso contrario
     """
     # Obtener información del encargado
     encargado = ENCARGADOS.get(seccion.lower())
@@ -906,8 +937,11 @@ def enviar_email_clasificacion(seccion: str, archivo: str, periodo: str) -> bool
         print(f"  AVISO: No hay encargado configurado para la sección '{seccion}'. No se enviará email.")
         return False
     
-    nombre_encargado = encargado['nombre']
-    email_destinatario = encargado['email']
+    # Normalizar: puede ser un objeto único o un array de objetos
+    if isinstance(encargado, list):
+        lista_encargados = encargado
+    else:
+        lista_encargados = [encargado]
     
     # Verificar que el archivo existe
     if not Path(archivo).exists():
@@ -917,18 +951,29 @@ def enviar_email_clasificacion(seccion: str, archivo: str, periodo: str) -> bool
     # Verificar contraseña en variable de entorno
     password = os.environ.get('EMAIL_PASSWORD')
     if not password:
-        print(f"  AVISO: Variable de entorno 'EMAIL_PASSWORD' no configurada. No se enviará email a {nombre_encargado}.")
+        print(f"  AVISO: Variable de entorno 'EMAIL_PASSWORD' no configurada. No se enviará email.")
         return False
     
-    try:
-        # Crear mensaje MIME
-        msg = MIMEMultipart()
-        msg['From'] = f"{SMTP_CONFIG['remitente_nombre']} <{SMTP_CONFIG['remitente_email']}>"
-        msg['To'] = email_destinatario
-        msg['Subject'] = f"VIVEVERDE: listado ClasificacionABC+D de {seccion} del periodo {periodo}"
+    # Enviar email a cada encargado en la lista
+    emails_enviados = 0
+    
+    for encargado_item in lista_encargados:
+        nombre_encargado = encargado_item.get('nombre', 'Encargado')
+        email_destinatario = encargado_item.get('email', '')
         
-        # Cuerpo del email
-        cuerpo = f"""Buenos días {nombre_encargado},
+        if not email_destinatario:
+            print(f"  AVISO: Email no configurado para {nombre_encargado}. Saltando...")
+            continue
+        
+        try:
+            # Crear mensaje MIME
+            msg = MIMEMultipart()
+            msg['From'] = f"{SMTP_CONFIG['remitente_nombre']} <{SMTP_CONFIG['remitente_email']}>"
+            msg['To'] = email_destinatario
+            msg['Subject'] = f"VIVEVERDE: listado ClasificacionABC+D de {seccion} del periodo {periodo}"
+            
+            # Cuerpo del email
+            cuerpo = f"""Buenos días {nombre_encargado},
 
 Te adjunto en este correo el listado Clasificación ABC+D de {seccion} para que lo analices y te aprendas cuales son los artículos de cada categoría:
 
@@ -942,35 +987,35 @@ Pon en práctica el listado.
 Atentamente,
 
 Sistema de Pedidos automáticos VIVEVERDE."""
-        
-        msg.attach(MIMEText(cuerpo, 'plain', 'utf-8'))
-        
-        # Adjuntar archivo Excel
-        filename = Path(archivo).name
-        with open(archivo, 'rb') as f:
-            part = MIMEBase('application', 'octet-stream')
-            part.set_payload(f.read())
-        
-        encoders.encode_base64(part)
-        part.add_header('Content-Disposition', f'attachment; filename= "{filename}"')
-        part.add_header('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-        msg.attach(part)
-        
-        # Enviar email mediante SSL
-        context = ssl.create_default_context()
-        with smtplib.SMTP_SSL(SMTP_CONFIG['servidor'], SMTP_CONFIG['puerto'], context=context) as server:
-            server.login(SMTP_CONFIG['remitente_email'], password)
-            server.sendmail(SMTP_CONFIG['remitente_email'], email_destinatario, msg.as_string())
-        
-        print(f"  Email enviado a {nombre_encargado} ({email_destinatario})")
-        return True
-        
-    except smtplib.SMTPException as e:
-        print(f"  ERROR SMTP al enviar email a {nombre_encargado}: {e}")
-        return False
-    except Exception as e:
-        print(f"  ERROR al enviar email a {nombre_encargado}: {e}")
-        return False
+            
+            msg.attach(MIMEText(cuerpo, 'plain', 'utf-8'))
+            
+            # Adjuntar archivo Excel
+            filename = Path(archivo).name
+            with open(archivo, 'rb') as f:
+                part = MIMEBase('application', 'octet-stream')
+                part.set_payload(f.read())
+            
+            encoders.encode_base64(part)
+            part.add_header('Content-Disposition', f'attachment; filename= "{filename}"')
+            part.add_header('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+            msg.attach(part)
+            
+            # Enviar email mediante SSL
+            context = ssl.create_default_context()
+            with smtplib.SMTP_SSL(SMTP_CONFIG['servidor'], SMTP_CONFIG['puerto'], context=context) as server:
+                server.login(SMTP_CONFIG['remitente_email'], password)
+                server.sendmail(SMTP_CONFIG['remitente_email'], email_destinatario, msg.as_string())
+            
+            print(f"  Email enviado a {nombre_encargado} ({email_destinatario})")
+            emails_enviados += 1
+            
+        except smtplib.SMTPException as e:
+            print(f"  ERROR SMTP al enviar email a {nombre_encargado}: {e}")
+        except Exception as e:
+            print(f"  ERROR al enviar email a {nombre_encargado}: {e}")
+    
+    return emails_enviados > 0
 
 # ============================================================================
 # FUNCIÓN PARA OBTENER IVA DE UN ARTÍCULO
@@ -1675,74 +1720,155 @@ def main():
     # PARSEO DE ARGUMENTOS DE LÍNEA DE COMANDOS
     # =========================================================================
     
-    parser = argparse.ArgumentParser(
-        description='Motor de Cálculo ABC+D para Gestión de Inventarios',
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Ejemplos de uso:
-  python clasificacionABC.py                              # Procesa todas las secciones (año completo)
-  python clasificacionABC.py --P1                          # Procesa período P1 (enero-febrero)
-  python clasificacionABC.py --P2                          # Procesa período P2 (marzo-mayo)
-  python clasificacionABC.py --P3                          # Procesa período P3 (junio-agosto)
-  python clasificacionABC.py --P4                          # Procesa período P4 (septiembre-diciembre)
-  python clasificacionABC.py --P2 --seccion vivero         # Procesa solo vivero en período P2
-  python clasificacionABC.py -P1 -s interior               # Procesa solo interior en período P1
-
-Períodos disponibles:
-  P1: 1 enero a 28 de febrero
-  P2: 1 marzo a 31 mayo
-  P3: 1 junio a 31 de agosto
-  P4: 1 septiembre a 31 de diciembre
-
-Secciones disponibles:
-  interior, utiles_jardin, semillas, deco_interior, maf, vivero, 
-  deco_exterior, mascotas_manufacturado, mascotas_vivo, tierra_aridos, fitos
-        """
-    )
+    # Primeiro, verificar se hai argumentos sin前缀 para detectar o modo
+    import sys
     
-    # Argumentos de período (mutuamente excluyentes)
-    grupo_periodo = parser.add_mutually_exclusive_group()
-    grupo_periodo.add_argument(
-        '--P1',
-        action='store_true',
-        help='Procesar período P1 (enero - febrero)'
-    )
-    grupo_periodo.add_argument(
-        '--P2',
-        action='store_true',
-        help='Procesar período P2 (marzo - mayo)'
-    )
-    grupo_periodo.add_argument(
-        '--P3',
-        action='store_true',
-        help='Procesar período P3 (junio - agosto)'
-    )
-    grupo_periodo.add_argument(
-        '--P4',
-        action='store_true',
-        help='Procesar período P4 (septiembre - diciembre)'
-    )
+    # Analizar os argumentos de forma flexible
+    argumentos_sin_prefijo = []
+    argumentos_con_prefijo = {}
     
-    parser.add_argument(
-        '-s', '--seccion',
-        type=str,
-        help='Procesar solo una sección específica (modo mono-sección)'
-    )
+    i = 1
+    while i < len(sys.argv):
+        arg = sys.argv[i]
+        
+        # Argumentos con prefijo corto (-P, -Y, -S)
+        if arg.startswith('-') and not arg.startswith('--'):
+            if i + 1 < len(sys.argv) and not sys.argv[i + 1].startswith('-'):
+                argumentos_con_prefijo[arg] = sys.argv[i + 1]
+                i += 2
+            else:
+                argumentos_con_prefijo[arg] = True
+                i += 1
+        # Argumentos con prefijo longo (--P3, --2025, --maf)
+        elif arg.startswith('--'):
+            arg_sin_doble_guion = arg[2:]
+            # Detectar se é un período (P1, P2, P3, P4)
+            if arg_sin_doble_guion.upper() in ['P1', 'P2', 'P3', 'P4']:
+                argumentos_con_prefijo['--periodo'] = arg_sin_doble_guion.upper()
+                i += 1
+            # Detectar se é un ano (número de 4 díxitos)
+            elif arg_sin_doble_guion.isdigit() and len(arg_sin_doble_guion) == 4:
+                argumentos_con_prefijo['--año'] = int(arg_sin_doble_guion)
+                i += 1
+            # Detectar se é unha sección
+            elif arg_sin_doble_guion.lower() in SECCIONES:
+                argumentos_con_prefijo['--seccion'] = arg_sin_doble_guion.lower()
+                i += 1
+            else:
+                i += 1
+        # Argumentos sen prefijo (posicionais)
+        else:
+            argumentos_sin_prefijo.append(arg)
+            i += 1
     
-    args = parser.parse_args()
+    # Determinar período, ano e sección desde os argumentos
+    periodo_especificado = None
+    año_especificado = None
+    seccion_especificada = None
     
-    # Determinar el período seleccionado
-    periodo_seleccionado = None
-    if args.P1:
-        periodo_seleccionado = "P1"
-    elif args.P2:
-        periodo_seleccionado = "P2"
-    elif args.P3:
-        periodo_seleccionado = "P3"
-    elif args.P4:
-        periodo_seleccionado = "P4"
+    # Analizar argumentos sin prefijo (posicionais)
+    for idx, arg in enumerate(argumentos_sin_prefijo):
+        arg_upper = arg.upper()
+        arg_lower = arg.lower()
+        
+        # Se é un período (P1, P2, P3, P4)
+        if arg_upper in ['P1', 'P2', 'P3', 'P4']:
+            periodo_especificado = arg_upper
+        # Se é un ano (número de 4 díxitos)
+        elif arg.isdigit() and len(arg) == 4:
+            año_especificado = int(arg)
+        # Se é unha sección
+        elif arg_lower in SECCIONES:
+            seccion_especificada = arg_lower
     
-    seccion_especifica = args.seccion.lower() if args.seccion else None
+    # Sobrescribir cos argumentos con prefijo se existen
+    if '--periodo' in argumentos_con_prefijo:
+        periodo_especificado = argumentos_con_prefijo['--periodo']
+    if '--año' in argumentos_con_prefijo:
+        año_especificado = argumentos_con_prefijo['--año']
+    if '--seccion' in argumentos_con_prefijo:
+        seccion_especificada = argumentos_con_prefijo['--seccion']
+    
+    # Ver os argumentos -P, -Y, -S tamén
+    if '-P' in argumentos_con_prefijo:
+        periodo_especificado = argumentos_con_prefijo['-P']
+    if '-Y' in argumentos_con_prefijo:
+        año_especificado = argumentos_con_prefijo['-Y']
+    if '-S' in argumentos_con_prefijo:
+        seccion_especificada = argumentos_con_prefijo['-S']
+    
+    # Determinar o modo de operación
+    # Modo automático: solo sin parámetros, o solo con sección (sin período ni año)
+    # Modo manual: cualquier combinación que incluya período o año, o solo período, o solo año
+    modo_automatico = (periodo_especificado is None and año_especificado is None)
+    
+    # Obter data actual
+    fecha_actual = datetime.now()
+    año_actual = fecha_actual.year
+    periodo_actual = obtener_periodo_desde_fecha(fecha_actual, CONFIG)
+    
+    if modo_automatico:
+        # MODO AUTOMÁTICO: Sin parámetros especificados
+        # Analiza datos do ano anterior e xera arquivos para o período seguinte
+        periodo_seleccionado = obtener_periodo_siguiente(periodo_actual)
+        año_datos = año_actual - 1
+        print("=" * 80)
+        print("MODO: AUTOMÁTICO (período e ano calculados desde data do sistema)")
+        print("=" * 80)
+        print(f"\nData actual do sistema: {fecha_actual.strftime('%d de %B de %Y')}")
+        print(f"Período actual detectado: {periodo_actual}")
+        print(f"Ano actual: {año_actual}")
+        print(f"\n>>> O script analizará os datos do ano {año_datos}")
+        print(f">>> e xerará arquivos para o período {periodo_seleccionado}")
+    else:
+        # MODO MANUAL: Con parámetros específicos
+        periodo_seleccionado = periodo_especificado if periodo_especificado else obtener_periodo_siguiente(periodo_actual)
+        año_datos = año_especificado if año_especificado else año_actual - 1
+        
+        print("=" * 80)
+        print("MODO: MANUAL (parámetros especificados polo usuario)")
+        print("=" * 80)
+        print(f"\nPeríodo especificado: {periodo_seleccionado}")
+        print(f"Ano especificado: {año_datos}")
+    
+    seccion_especifica = seccion_especificada
+    
+    # Validar sección se se especificou
+    if seccion_especifica and seccion_especifica not in SECCIONES:
+        print(f"ERROR: Sección '{seccion_especifica}' non válida.")
+        print(f"Seccións dispoñibles: {', '.join(sorted(SECCIONES.keys()))}")
+        sys.exit(1)
+    
+    # Obtener fecha actual
+    fecha_actual = datetime.now()
+    año_actual = fecha_actual.year
+    periodo_actual = obtener_periodo_desde_fecha(fecha_actual, CONFIG)
+    
+    if modo_automatico:
+        # MODO AUTOMÁTICO: Sin parámetros especificados
+        # Analiza datos del año anterior y genera archivos para el período siguiente
+        periodo_seleccionado = obtener_periodo_siguiente(periodo_actual)
+        año_datos = año_actual - 1
+        print("=" * 80)
+        print("MODO: AUTOMÁTICO (período y año calculados desde fecha del sistema)")
+        print("=" * 80)
+        print(f"\nFecha actual del sistema: {fecha_actual.strftime('%d de %B de %Y')}")
+        print(f"Período actual detectado: {periodo_actual}")
+        print(f"Año actual: {año_actual}")
+        print(f"\n>>> El script analizará los datos del año {año_datos}")
+        print(f">>> y generará archivos para el período {periodo_seleccionado}")
+    else:
+        # MODO MANUAL: Con parámetros específicos
+        periodo_seleccionado = periodo_especificado if periodo_especificado else obtener_periodo_siguiente(periodo_actual)
+        año_datos = año_especificado if año_especificado else año_actual - 1
+        
+        print("=" * 80)
+        print("MODO: MANUAL (parámetros especificados por el usuario)")
+        print("=" * 80)
+        print(f"\nPeríodo especificado: {periodo_seleccionado}")
+        print(f"Año especificado: {año_datos}")
+    
+    # La variable seccion_especifica ya está definida en el parser personalizado
     
     # Validar sección si se especificó
     if seccion_especifica and seccion_especifica not in SECCIONES:
@@ -1797,25 +1923,16 @@ Secciones disponibles:
     print(f"COSTE: {len(coste_df)} registros cargados")
     
     # =========================================================================
-    # DETECTAR AÑO DE LOS DATOS AUTOMÁTICAMENTE
+    # CARGAR STOCK Y CONFIGURAR PERÍODO USANDO AÑO Y PERIODO SELECCIONADOS
     # =========================================================================
     
-    print("\n" + "=" * 80)
-    print("FASE 1A: DETECCIÓN AUTOMÁTICA DEL AÑO DE DATOS")
-    print("=" * 80)
+    # El período y año ya fueron determinados al inicio del main()
+    # periodo_seleccionado contiene el período a procesar
+    # año_datos contiene el año de los datos a analizar
     
-    año_datos = detectar_año_datos(compras_df, ventas_df)
-    
-    # =========================================================================
-    # CARGAR STOCK Y CONFIGURAR PERÍODO DESPUÉS DE DETECTAR AÑO
-    # =========================================================================
-    
-    # Determinar el nombre del archivo de stock según el período
-    if periodo_seleccionado:
-        nombre_stock = f'SPA_stock_{periodo_seleccionado}.xlsx'
-    else:
-        # Si no hay período específico, buscar el archivo más reciente
-        nombre_stock = 'SPA_stock_P1.xlsx'  # Valor por defecto
+    # Determinar el nombre del archivo de stock según el período seleccionado
+    # Siempre hay un período seleccionado (ya sea automático o manual)
+    nombre_stock = f'SPA_stock_{periodo_seleccionado}.xlsx'
     
     try:
         stock_df = pd.read_excel(os.path.join(DIRECTORIO_DATA, nombre_stock))
@@ -1832,13 +1949,14 @@ Secciones disponibles:
     
     print(f"STOCK: {len(stock_df)} registros cargados ({nombre_stock})")
     
-    # Configurar el período usando el año detectado
+    # Configurar el período usando el año de datos seleccionado
     global FECHA_INICIO, FECHA_FIN, DIAS_PERIODO, PERIODO, AÑO
     FECHA_INICIO, FECHA_FIN, DIAS_PERIODO, PERIODO, AÑO = configurar_periodo(periodo_seleccionado, CONFIG, año_datos)
     
     print(f"\nPeríodo de análisis:")
-    print(f"   Desde: {FECHA_INICIO.strftime('%d de %B de %Y')}")
-    print(f"   Hasta: {FECHA_FIN.strftime('%d de %B de %Y')}")
+    print(f"   Período a generar: {periodo_seleccionado}")
+    print(f"   Año de los datos: {año_datos}")
+    print(f"   Fechas: {FECHA_INICIO.strftime('%d de %B de %Y')} - {FECHA_FIN.strftime('%d de %B de %Y')}")
     print(f"   Días: {DIAS_PERIODO}")
     
     # =========================================================================
@@ -2125,12 +2243,10 @@ Secciones disponibles:
     print("RESUMEN DEL PROCESAMIENTO")
     print("=" * 80)
     
-    # Mostrar información del período
-    if periodo_seleccionado:
-        print(f"\nPeríodo procesado: {periodo_seleccionado}")
-    else:
-        print(f"\nPeríodo procesado: AÑO COMPLETO (sin filtro de período)")
-    print(f"Fechas: {FECHA_INICIO.strftime('%d/%m/%Y')} - {FECHA_FIN.strftime('%d/%m/%Y')} ({DIAS_PERIODO} días)")
+    # Mostrar información del período y año
+    print(f"\nPeríodo procesado: {periodo_seleccionado}")
+    print(f"Año de los datos: {año_datos}")
+    print(f"Fechas de análisis: {FECHA_INICIO.strftime('%d/%m/%Y')} - {FECHA_FIN.strftime('%d/%m/%Y')} ({DIAS_PERIODO} días)")
     
     print(f"\nSecciones procesadas: {len(secciones_procesadas)}")
     if secciones_procesadas:

@@ -266,20 +266,6 @@
         "2906": 21
     },
     
-    "configuracion_encargados": {
-        "interior": {"nombre": "Iris", "email": "ivan.delgado@viveverde.es"},
-        "mascotas_manufacturado": {"nombre": "María", "email": "ivan.delgado@viveverde.es"},
-        "mascotas_vivo": {"nombre": "María", "email": "ivan.delgado@viveverde.es"},
-        "deco_exterior": {"nombre": "Pablo", "email": "ivan.delgado@viveverde.es"},
-        "tierras_aridos": {"nombre": "Pablo", "email": "ivan.delgado@viveverde.es"},
-        "fitos": {"nombre": "Ivan", "email": "ivan.delgado@viveverde.es"},
-        "semillas": {"nombre": "Ivan", "email": "ivan.delgado@viveverde.es"},
-        "utiles_jardin": {"nombre": "Ivan", "email": "ivan.delgado@viveverde.es"},
-        "deco_interior": {"nombre": "Rocío", "email": "ivan.delgado@viveverde.es"},
-        "maf": {"nombre": "Jose", "email": "ivan.delgado@viveverde.es"},
-        "vivero": {"nombre": "Jose", "email": "ivan.delgado@viveverde.es"}
-    },
-    
     "configuracion_texto_email": {
         "asunto_informe": "VIVEVERDE: Informes de ClasificacionABC+D de cada sección del periodo {periodo}",
         "cuerpo_informe": "Buenos días {nombre},\n\nTe adjunto en este correo los informes de Clasificación ABC+D de cada sección.\n\nAtentamente,\n\nSistema de Pedidos automáticos VIVEVERDE.",

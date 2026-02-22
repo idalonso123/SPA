@@ -1,15 +1,68 @@
 {
     "encargados": {
-        "interior": "Iris",
-        "mascotas_manufacturado": "María",
-        "mascotas_vivo": "María",
-        "deco_exterior": "Pablo",
-        "tierras_aridos": "Pablo",
-        "fitos": "Ivan",
-        "semillas": "Ivan",
-        "utiles_jardin": "Ivan",
-        "deco_interior": "Sandra",
-        "maf": "Jose",
-        "vivero": "Jose"
+        "interior": {
+            "nombre": "Iris",
+            "email": "iris@viveverde.es"
+        },
+        "maf": {
+            "nombre": "Jose",
+            "email": "jose@viveverde.es"
+        },
+        "deco_interior": [
+            {
+                "nombre": "Sandra",
+                "email": "sandra@viveverde.es"
+            },
+            {
+                "nombre": "Rocío",
+                "email": "rocio@viveverde.es"
+            }
+        ],
+        "deco_exterior": {
+            "nombre": "Pablo",
+            "email": "pablo@viveverde.es"
+        },
+        "semillas": {
+            "nombre": "Ivan",
+            "email": "ivan@viveverde.es"
+        },
+        "mascotas_vivo": {
+            "nombre": "María",
+            "email": "maria@viveverde.es"
+        },
+        "mascotas_manufacturado": {
+            "nombre": "María",
+            "email": "maria@viveverde.es"
+        },
+        "fitos": {
+            "nombre": "Ivan",
+            "email": "ivan@viveverde.es"
+        },
+        "vivero": {
+            "nombre": "Jose",
+            "email": "jose@viveverde.es"
+        },
+        "utiles_jardin": {
+            "nombre": "Ivan",
+            "email": "ivan@viveverde.es"
+        },
+        "tierras_aridos": {
+            "nombre": "Pablo",
+            "email": "pablo@viveverde.es"
+        }
+    },
+    "administrador": {
+        "nombre": "Ivan",
+        "email": "ivan.delgado@viveverde.es"
+    },
+    "responsables_gestion": [
+        {"nombre": "Sandra", "email": "sandra@viveverde.es"},
+        {"nombre": "Ivan", "email": "ivan.delgado@viveverde.es"},
+        {"nombre": "Pedro", "email": "pedro@viveverde.es"}
+    ],
+    "meta": {
+        "version": "1.1",
+        "ultima_actualizacion": "2026-02-23",
+        "notas": "Este archivo es la FUENTE ÚNICA de verdad para datos de encargados. Una sección puede tener UNO (objeto) o VARIOS encargado (array). NO debe haber duplicación en otros archivos de configuración."
     }
 }
