@@ -9,12 +9,6 @@
         "destinatario_ivan": {
             "nombre": "Ivan",
             "email": "ivan.delgado@viveverde.es"
-        },
-        "smtp_config": {
-            "servidor": "smtp.serviciodecorreo.es",
-            "puerto": 465,
-            "remitente_email": "ivan.delgado@viveverde.es",
-            "remitente_nombre": "Sistema de Pedidos automáticos VIVEVERDE"
         }
     },
     
