@@ -278,7 +278,15 @@ class DataLoader:
         self.rutas = config.get('rutas', {})
         self.archivos = config.get('archivos_entrada', {})
         self.secciones = config.get('secciones_activas', [])
-        self.codigos_mascotas = config.get('codigos_mascotas_vivo', [])
+        
+        # Leer códigos de mascotas desde config_comun.json (fuente centralizada)
+        try:
+            from src.config_loader import obtener_configuracion_mascotas
+            mascotas_config = obtener_configuracion_mascotas()
+            self.codigos_mascotas = mascotas_config.get('CODIGOS_MASCOTAS_VIVO', [])
+        except Exception as e:
+            logger.warning(f"No se pudo cargar codigos_mascotas_vivo desde config_comun.json: {e}")
+            self.codigos_mascotas = []
         
         logger.info("DataLoader inicializado correctamente")
     

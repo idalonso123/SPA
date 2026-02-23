@@ -18,6 +18,12 @@ import traceback
 import sys
 import platform
 
+# Importar config_loader para acceder a la configuración centralizada
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from src import config_loader
+
 # psutil es opcional - si no está disponible, se usa una versión simple
 try:
     import psutil
@@ -702,26 +708,40 @@ class AlertService:
         logger.info(f"Destinatario de alertas: {self.destinatario_principal}")
     
     def _cargar_configuracion(self):
-        """Carga la configuración del email desde el diccionario config."""
-        email_config = self.config.get('email', {})
+        """
+        Carga la configuración del email desde múltiples fuentes.
         
-        # Configuración SMTP
+        Lee la configuración SMTP y remitente desde email.json.
+        Lee los destinatarios desde config.json (sección 'email').
+        """
+        # Cargar configuración SMTP y remitente desde email.json
+        email_json = config_loader.cargar_configuracion_email()
+        
+        # Configuración SMTP - leer desde email.json
+        smtp_data = email_json.get('smtp', {})
         self.smtp_config = {
-            'servidor': email_config.get('servidor', 'smtp.serviciodecorreo.es'),
-            'puerto': email_config.get('puerto', 465),
-            'usar_ssl': email_config.get('usar_ssl', True),
-            'usar_tls': email_config.get('usar_tls', False)
+            'servidor': smtp_data.get('servidor', 'smtp.serviciodecorreo.es'),
+            'puerto': smtp_data.get('puerto', 465),
+            'usar_ssl': smtp_data.get('usar_ssl', True),
+            'usar_tls': smtp_data.get('usar_tls', False)
         }
         
-        # Remitente
+        # Remitente - leer desde email.json
+        remitente_data = email_json.get('remitente', {})
         self.remitente = {
-            'email': email_config.get('remitente', {}).get('email', 'ivan.delgado@viveverde.es'),
-            'nombre': email_config.get('remitente', {}).get('nombre', 'Sistema de Alertas VIVEVERDE')
+            'email': remitente_data.get('email', 'sistema@viveverde.es'),
+            'nombre': remitente_data.get('nombre', 'Sistema de Alertas VIVEVERDE')
         }
         
-        # Destinatario de alertas - leer desde config o usar variable
+        # Destinatario de alertas - leer desde config.json o email.json
+        # Primero intentar desde config.json (env_email)
         env_config = self.config.get('env_email', {})
         self.destinatario_principal = env_config.get('destinatario_alertas', self.destinatario_principal)
+        
+        # Si no está en env_email, buscar en email.json
+        if not self.destinatario_principal:
+            alertas_data = email_json.get('destinatarios_alertas', {})
+            self.destinatario_principal = alertas_data.get('email', self.destinatario_principal)
     
     def _obtener_password(self) -> str:
         """Obtiene la contraseña del remitente desde variable de entorno."""

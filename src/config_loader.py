@@ -42,6 +42,30 @@ def cargar_configuracion(ruta_config="config/config_comun.json"):
     return config
 
 
+def cargar_configuracion_email(ruta_email="config/email.json"):
+    """
+    Carga la configuración de email desde el archivo JSON específico.
+    
+    Args:
+        ruta_email: Ruta al archivo de configuración de email JSON
+    
+    Returns:
+        dict: Diccionario con la configuración de email cargada
+    """
+    email_config = {}
+    
+    try:
+        if os.path.exists(ruta_email):
+            with open(ruta_email, 'r', encoding='utf-8') as f:
+                email_config = json.load(f)
+        else:
+            print(f"  ⚠ Archivo de configuración de email no encontrado: {ruta_email}")
+    except Exception as e:
+        print(f"  ⚠ Error al cargar configuración de email: {e}")
+    
+    return email_config
+
+
 def calcular_periodo_desde_dataframe(df_ventas):
     """
     Calcula automáticamente el período de análisis desde un DataFrame de ventas.

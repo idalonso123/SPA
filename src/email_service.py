@@ -285,40 +285,80 @@ class EmailService:
         """
         Carga la configuración del email desde el diccionario config.
         Extrae configuración SMTP, remitente, destinatarios y templates.
-        Los destinatarios se leen exclusivamente desde config.json.
+        - SMTP y plantillas: Se leen desde email.json (fuente centralizada)
+        - Destinatarios: Se leen desde config.json (específico por sección)
         """
+        # Primero intentar leer desde email.json (fuente centralizada)
+        email_json_config = {}
+        try:
+            import os
+            base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            email_json_path = os.path.join(base_dir, 'config', 'email.json')
+            if os.path.exists(email_json_path):
+                with open(email_json_path, 'r', encoding='utf-8') as f:
+                    email_json_config = json.load(f)
+                logger.debug("Configuración SMTP cargada desde email.json")
+        except Exception as e:
+            logger.warning(f"No se pudo cargar email.json: {e}")
+        
+        # Obtener configuración desde config.json
         email_config = self.config.get('email', {})
         
-        # Configuración SMTP
-        self.smtp_config = {
-            'servidor': email_config.get('servidor', 'smtp.serviciodecorreo.es'),
-            'puerto': email_config.get('puerto', 465),
-            'usar_ssl': email_config.get('usar_ssl', True),
-            'usar_tls': email_config.get('usar_tls', False)
-        }
+        # Configuración SMTP -优先从 email.json 读取
+        if 'smtp' in email_json_config:
+            smtp = email_json_config['smtp']
+            self.smtp_config = {
+                'servidor': smtp.get('servidor', 'smtp.serviciodecorreo.es'),
+                'puerto': smtp.get('puerto', 465),
+                'usar_ssl': smtp.get('usar_ssl', True),
+                'usar_tls': smtp.get('usar_tls', False)
+            }
+        else:
+            self.smtp_config = {
+                'servidor': email_config.get('smtp', {}).get('servidor', 'smtp.serviciodecorreo.es'),
+                'puerto': email_config.get('smtp', {}).get('puerto', 465),
+                'usar_ssl': email_config.get('smtp', {}).get('usar_ssl', True),
+                'usar_tls': email_config.get('smtp', {}).get('usar_tls', False)
+            }
         
-        # Remitente
-        self.remitente = {
-            'email': email_config.get('remitente', {}).get('email', 'ivan.delgado@viveverde.es'),
-            'nombre': email_config.get('remitente', {}).get('nombre', 'Sistema de Pedidos VIVEVERDE')
-        }
+        # Remitente -优先从 email.json 读取
+        if 'remitente' in email_json_config:
+            remitente = email_json_config['remitente']
+            self.remitente = {
+                'email': remitente.get('email', 'sistema@viveverde.es'),
+                'nombre': remitente.get('nombre', 'Sistema de Pedidos VIVEVERDE')
+            }
+        else:
+            self.remitente = {
+                'email': email_config.get('remitente', {}).get('email', 'ivan.delgado@viveverde.es'),
+                'nombre': email_config.get('remitente', {}).get('nombre', 'Sistema de Pedidos VIVEVERDE')
+            }
         
-        # Destinatarios - SE LEEN EXCLUSIVAMENTE DESDE CONFIG.JSON
+        # Destinatarios - SIEMPRE desde config.json (específico por sección)
         self.destinatarios = email_config.get('destinatarios', {})
         
-        # Plantillas
-        self.plantilla_asunto = email_config.get('plantillas', {}).get(
-            'asunto', 
-            'VIVEVERDE: Pedido de compra - Semana {semana} - {seccion}'
-        )
-        self.plantilla_cuerpo = email_config.get('plantillas', {}).get(
-            'cuerpo', 
-            'Buenos días {nombre_encargado}. Te adjunto el pedido de compra generado '
-            'para la semana {semana} de la sección {seccion}. Atentamente, '
-            'Sistema de Pedidos automáticos VIVEVERDE.'
-        )
+        # Plantillas -优先从 email.json 读取
+        if 'plantillas' in email_json_config:
+            plantillas = email_json_config['plantillas']
+            self.plantilla_asunto = plantillas.get('asunto_pedido', 
+                'VIVEVERDE: Pedido de compra - Semana {semana} - {seccion}')
+            self.plantilla_cuerpo = plantillas.get('cuerpo_pedido', 
+                'Buenos días {nombre_encargado}. Te adjunto el pedido de compra generado '
+                'para la semana {semana} de la sección {seccion}. Atentamente, '
+                'Sistema de Pedidos automáticos VIVEVERDE.')
+        else:
+            self.plantilla_asunto = email_config.get('plantillas', {}).get(
+                'asunto', 
+                'VIVEVERDE: Pedido de compra - Semana {semana} - {seccion}'
+            )
+            self.plantilla_cuerpo = email_config.get('plantillas', {}).get(
+                'cuerpo', 
+                'Buenos días {nombre_encargado}. Te adjunto el pedido de compra generado '
+                'para la semana {semana} de la sección {seccion}. Atentamente, '
+                'Sistema de Pedidos automáticos VIVEVERDE.'
+            )
         
-        logger.debug("Configuración de email cargada desde config.json")
+        logger.debug("Configuración de email cargada desde email.json + config.json")
     
     def _cargar_encargados(self):
         """
