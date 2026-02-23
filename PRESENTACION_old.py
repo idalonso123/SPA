@@ -13,7 +13,6 @@ import numpy as np
 import os
 from datetime import datetime
 import glob
-import argparse
 import warnings
 import smtplib
 import ssl
@@ -26,15 +25,6 @@ warnings.filterwarnings('ignore')
 
 # Importar rutas centralizadas
 from src.paths import INPUT_DIR, OUTPUT_DIR, PATRON_CLASIFICACION_ABC, PRESENTACIONES_DIR
-
-# ============================================================================
-# VARIABLES PARA ARGUMENTOS DE LÍNEA DE COMANDOS
-# ============================================================================
-
-# Valores por defecto (se sobrescriben con argparse)
-ARG_PERIODO = None  # None = automático (período más reciente)
-ARG_AÑO = None      # None = automático (año más reciente)
-ARG_SECCION = None  # None = todas las secciones
 
 # ============================================================================
 # CONFIGURACIÓN DE EMAIL
@@ -155,13 +145,8 @@ Sistema de Pedidos automáticos VIVEVERDE."""
         return False
 
 
-def obtener_archivos_clasificacion(filtro_periodo=None, filtro_año=None, filtro_seccion=None):
-    """Busca archivos de clasificación ABC+D por sección con filtros opcionales.
-    
-    Args:
-        filtro_periodo: Período a buscar (ej: 'P2'). Si es None, busca todos.
-        filtro_año: Año a buscar (ej: 2025). Si es None, busca todos.
-        filtro_seccion: Sección a buscar (ej: 'vivero'). Si es None, busca todas.
+def obtener_archivos_clasificacion():
+    """Busca todos los archivos de clasificación ABC+D por sección en la carpeta actual.
     
     Soporta tanto el formato antiguo (CLASIFICACION_ABC+D_SECCION.xlsx) como
     el nuevo formato con período y año (CLASIFICACION_ABC+D_SECCION_PERIODO_AÑO.xlsx).
@@ -181,38 +166,7 @@ def obtener_archivos_clasificacion(filtro_periodo=None, filtro_año=None, filtro
             archivos_normalizados.add(archivo_norm)
             archivos_unicos.append(archivo)
     
-    # Aplicar filtros
-    archivos_filtrados = []
-    for archivo in archivos_unicos:
-        nombre = os.path.basename(archivo).upper()
-        
-        # Filtrar por período
-        if filtro_periodo:
-            periodo_buscar = filtro_periodo.upper()
-            if periodo_buscar not in nombre:
-                continue
-        
-        # Filtrar por año
-        if filtro_año:
-            año_str = str(filtro_año)
-            if año_str not in nombre:
-                continue
-        
-        # Filtrar por sección
-        if filtro_seccion:
-            seccion_buscar = filtro_seccion.upper()
-            # Extraer sección del nombre del archivo
-            if 'CLASIFICACION_ABC+D_' in nombre:
-                parte_seccion = nombre.replace('CLASIFICACION_ABC+D_', '').replace('.XLSX', '')
-                # Quitar período y año si existen
-                for p in ['_P1_', '_P2_', '_P3_', '_P4_']:
-                    parte_seccion = parte_seccion.split(p)[0]
-                if seccion_buscar not in parte_seccion:
-                    continue
-        
-        archivos_filtrados.append(archivo)
-    
-    return sorted(archivos_filtrados)
+    return sorted(archivos_unicos)
 
 
 def extraer_nombre_seccion(nombre_archivo):
@@ -1280,8 +1234,6 @@ def main():
     Función principal que ejecuta todo el proceso.
     Lee SOLO los archivos de clasificación ABC+D (ya contienen los datos correctos).
     """
-    global ARG_PERIODO, ARG_AÑO, ARG_SECCION
-    
     print("=" * 70)
     print("GENERADOR DE PRESENTACIONES ABC+D POR SECCIÓN")
     print("Vivero Aranjuez")
@@ -1289,24 +1241,9 @@ def main():
     print("\nMODO: Usando archivos de clasificación como fuente de datos")
     print("      (NO se procesan archivos individuales Ventas/stock/compras)")
     
-    # Mostrar información de filtros activos
-    if ARG_PERIODO or ARG_AÑO or ARG_SECCION:
-        print("\n*** FILTROS ACTIVOS ***")
-        if ARG_PERIODO:
-            print(f"  - Período: {ARG_PERIODO}")
-        if ARG_AÑO:
-            print(f"  - Año: {ARG_AÑO}")
-        if ARG_SECCION:
-            print(f"  - Sección: {ARG_SECCION}")
-        print("*" * 50)
-    
-    # Buscar archivos de clasificación con filtros
+    # Buscar archivos de clasificación
     print("\n[1/3] Buscando archivos de clasificación ABC+D...")
-    archivos_clasificacion = obtener_archivos_clasificacion(
-        filtro_periodo=ARG_PERIODO,
-        filtro_año=ARG_AÑO,
-        filtro_seccion=ARG_SECCION
-    )
+    archivos_clasificacion = obtener_archivos_clasificacion()
     
     if not archivos_clasificacion:
         print("    ⚠ No se encontraron archivos CLASIFICACION_ABC+D_*.xlsx")
@@ -1408,47 +1345,4 @@ def main():
 
 
 if __name__ == "__main__":
-    # Configurar argumentos de línea de comandos
-    parser = argparse.ArgumentParser(
-        description='Generador de Presentaciones ABC+D por Sección - Vivero Aranjuez',
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog='''
-Ejemplos de uso:
-  python PRESENTACION.py                           # Ejecutar con valores automáticos
-  python PRESENTACION.py --periodo P2              # Período específico
-  python PRESENTACION.py --año 2025                # Año específico
-  python PRESENTACION.py --seccion vivero           # Sección específica
-  python PRESENTACION.py -S maf -P P2 -A 2025      # Todos los filtros
-  python PRESENTACION.py -S deco_interior -P P1    # Período y sección
-        '''
-    )
-    
-    parser.add_argument(
-        '-p', '--periodo',
-        type=str,
-        default=None,
-        help='Período a procesar (ej: P1, P2, P3, P4). Si no se especifica, usa el automático.'
-    )
-    
-    parser.add_argument(
-        '-a', '--año',
-        type=int,
-        default=None,
-        help='Año a procesar (ej: 2025). Si no se especifica, usa el automático.'
-    )
-    
-    parser.add_argument(
-        '-s', '--seccion',
-        type=str,
-        default=None,
-        help='Sección específica a procesar (ej: vivero, maf, interior). Si no se especifica, procesa todas.'
-    )
-    
-    args = parser.parse_args()
-    
-    # Asignar a variables globales
-    ARG_PERIODO = args.periodo
-    ARG_AÑO = args.año
-    ARG_SECCION = args.seccion
-    
     main()
