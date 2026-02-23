@@ -8,9 +8,17 @@ NO utiliza los archivos individuales (SPA_ventas.xlsx, SPA_stock.xlsx, SPA_compr
 Envía automáticamente un email con todas las presentaciones generadas a Ivan.
 """
 
+import sys
+import os
+from pathlib import Path
+
+# Añadir el directorio del script al path para poder importar src
+_script_dir = Path(__file__).resolve().parent
+if str(_script_dir) not in sys.path:
+    sys.path.insert(0, str(_script_dir))
+
 import pandas as pd
 import numpy as np
-import os
 from datetime import datetime
 import glob
 import argparse
@@ -21,11 +29,11 @@ from email import encoders
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
-from pathlib import Path
 warnings.filterwarnings('ignore')
 
 # Importar rutas centralizadas
 from src.paths import INPUT_DIR, OUTPUT_DIR, PATRON_CLASIFICACION_ABC, PRESENTACIONES_DIR
+from src.date_utils import get_periodo_y_año_dinamico, get_periodo_info_detallada
 
 # ============================================================================
 # VARIABLES PARA ARGUMENTOS DE LÍNEA DE COMANDOS
@@ -1447,8 +1455,37 @@ Ejemplos de uso:
     args = parser.parse_args()
     
     # Asignar a variables globales
-    ARG_PERIODO = args.periodo
-    ARG_AÑO = args.año
+    # Si no se especifican período y/o año, usar valores dinámicos automáticos
     ARG_SECCION = args.seccion
+    
+    # Determinar período y año dinámicamente si no se especifican
+    if args.periodo is None or args.año is None:
+        # Obtener período y año dinámicamente (siguiente período, año anterior)
+        datos_dinamicos = get_periodo_y_año_dinamico(tipo_calculo="siguiente")
+        
+        # Mostrar información de cálculo automático
+        info_periodo = get_periodo_info_detallada()
+        print(f"\n*** MODO AUTOMÁTICO: Determinando período y año dinámicamente ***")
+        print(f"  Fecha actual: {info_periodo['fecha_actual']} (semana {info_periodo['semana_actual']})")
+        print(f"  Período actual del sistema: {info_periodo['periodo_actual']}")
+        print(f"  Período a procesar (siguiente): {datos_dinamicos['periodo']}")
+        print(f"  Año a procesar (anterior): {datos_dinamicos['año']}")
+        print("*" * 60)
+        
+        # Asignar valores dinámicos si no se especificaron
+        if args.periodo is None:
+            ARG_PERIODO = datos_dinamicos['periodo']
+        else:
+            ARG_PERIODO = args.periodo
+            
+        if args.año is None:
+            ARG_AÑO = datos_dinamicos['año']
+        else:
+            ARG_AÑO = args.año
+    else:
+        # Usar valores proporcionados por el usuario
+        ARG_PERIODO = args.periodo
+        ARG_AÑO = args.año
+        print(f"\n*** MODO MANUAL: Usando valores especificados por el usuario ***")
     
     main()

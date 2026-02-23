@@ -11,16 +11,8 @@ Este script:
 4. Genera un archivo Excel con el análisis por sección
 """
 
-import sys
-import os
-from pathlib import Path
-
-# Añadir el directorio del script al path para poder importar src
-_script_dir = Path(__file__).resolve().parent
-if str(_script_dir) not in sys.path:
-    sys.path.insert(0, str(_script_dir))
-
 import pandas as pd
+import os
 from datetime import datetime
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
@@ -30,7 +22,6 @@ import json
 
 # Importar rutas centralizadas
 from src.paths import INPUT_DIR, OUTPUT_DIR, CONFIG_DIR, ARCHIVO_STOCK_ACTUAL, PATRON_CLASIFICACION_ABC, ANALISIS_CATEGORIA_CD_DIR
-from src.date_utils import get_periodo_y_año_dinamico, get_periodo_info_detallada
 
 # Color de encabezado RGB[0,128,0] (verde)
 HEADER_COLOR = "FF008000"  # Verde en formato hex para openpyxl
@@ -66,31 +57,12 @@ def cargar_configuracion():
 
 def obtener_archivo_clasificacion(seccion):
     """
-    Obtiene el archivo de clasificación ABC+D para el período actual.
-    
-    Utiliza la lógica dinámica para determinar el período y año:
-    - Período: actual (basado en la fecha del sistema)
-    - Año: anterior (año anterior al actual)
+    Obtiene el archivo de clasificación ABC+D más reciente para una sección.
     """
-    # Obtener período y año dinámicamente (período actual, año anterior)
-    datos_dinamicos = get_periodo_y_año_dinamico(tipo_calculo="actual")
-    periodo = datos_dinamicos['periodo']
-    año = datos_dinamicos['año']
-    
-    # Mostrar información de cálculo automático (solo una vez)
-    if seccion == SECCIONES[0]:  # Solo mostrar en la primera sección
-        info_periodo = get_periodo_info_detallada()
-        print(f"\n*** MODO AUTOMÁTICO: Determinando período y año dinámicamente ***")
-        print(f"  Fecha actual: {info_periodo['fecha_actual']} (semana {info_periodo['semana_actual']})")
-        print(f"  Período actual del sistema: {info_periodo['periodo_actual']}")
-        print(f"  Período a procesar: {periodo}")
-        print(f"  Año a procesar: {año}")
-        print("*" * 60)
-    
-    # Buscar archivos que coincidan con el patrón específico (período y año)
+    # Buscar archivos que coincidan con el patrón (con o sin "1" al principio)
     patrones = [
-        INPUT_DIR / f"CLASIFICACION_ABC+D_{seccion}_{periodo}_{año}.xlsx",
-        INPUT_DIR / f"1CLASIFICACION_ABC+D_{seccion}_{periodo}_{año}.xlsx"
+        INPUT_DIR / f"CLASIFICACION_ABC+D_{seccion}_*.xlsx",
+        INPUT_DIR / f"1CLASIFICACION_ABC+D_{seccion}_*.xlsx"
     ]
     
     archivos = []
@@ -98,10 +70,11 @@ def obtener_archivo_clasificacion(seccion):
         archivos.extend(glob.glob(str(patron)))
     
     if not archivos:
-        print(f"  ⚠️ No se encontró archivo de clasificación para {seccion} ({periodo}_{año})")
+        print(f"  ⚠️ No se encontró archivo de clasificación para {seccion}")
         return None
     
-    # Devolver el primer archivo encontrado (debería haber solo uno con el filtro específico)
+    # Devolver el más reciente (basado en nombre)
+    archivos.sort(reverse=True)
     return archivos[0]
 
 
