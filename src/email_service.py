@@ -2,8 +2,8 @@
 """
 Módulo EmailService - Servicio de envío de correos electrónicos
 Este módulo gestiona el envío de correos electrónicos con archivos adjuntos
-utilizando SMTP. Los destinatarios se configuran exclusivamente en config.json
-y los nombres de los encargados se leen desde config/encargados.json.
+utilizando SMTP. Los destinatarios se leen EXCLUSIVAMENTE desde 
+config/encargados.json (FUENTE ÚNICA).
 Autor: Sistema de Pedidos Vivero V2
 Fecha: 2026-02-05
 """
@@ -243,14 +243,14 @@ class EmailService:
     configuración SMTP, gestión de destinatarios, generación de mensajes
     y envío de adjuntos.
     
-    Los destinatarios se configuran exclusivamente en config.json.
+    Los destinatarios se leen EXCLUSIVAMENTE desde encargacos.json (FUENTE ÚNICA).
     Los nombres de los encargados se leen desde config/encargados.json.
     
     Attributes:
         config (dict): Configuración del sistema
         smtp_config (dict): Configuración del servidor SMTP
         remitente (dict): Información del remitente
-        destinatarios (dict): Mapeo sección -> lista de destinatarios desde config.json
+        destinatarios (dict): Mapeo sección -> lista de destinatarios desde encargacos.json
         plantilla_asunto (str): Template del asunto del email
         plantilla_cuerpo (str): Template del cuerpo del email
         encargados_por_seccion (dict): Mapeo de secciones a nombres de encargados
@@ -286,7 +286,7 @@ class EmailService:
         Carga la configuración del email desde el diccionario config.
         Extrae configuración SMTP, remitente, destinatarios y templates.
         - SMTP y plantillas: Se leen desde email.json (fuente centralizada)
-        - Destinatarios: Se leen desde config.json (específico por sección)
+        - Destinatarios: Se leen desde encargados.json (FUENTE ÚNICA)
         """
         # Primero intentar leer desde email.json (fuente centralizada)
         email_json_config = {}
@@ -334,8 +334,51 @@ class EmailService:
                 'nombre': email_config.get('remitente', {}).get('nombre', 'Sistema de Pedidos VIVEVERDE')
             }
         
-        # Destinatarios - SIEMPRE desde config.json (específico por sección)
-        self.destinatarios = email_config.get('destinatarios', {})
+        # Destinatarios - Desde encargacos.json (FUENTE ÚNICA)
+        # Leer los encargado desde el archivo dedicado
+        # Formato: {seccion: [{'email': 'x@x.com', 'nombre': 'Nombre'}, ...]}
+        self.destinatarios = {}
+        self.encargados_por_seccion = {}  # Para compatibilidad con funciones existentes
+        try:
+            import os
+            base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            encargado_path = os.path.join(base_dir, 'config', 'encargados.json')
+            if os.path.exists(encargado_path):
+                with open(encargado_path, 'r', encoding='utf-8') as f:
+                    encargodos_data = json.load(f)
+                
+                # Transformar encargado.json al formato de destinatarios
+                # Puede ser un objeto (un encargado) o un array (múltiples encargado)
+                for seccion, encargado in encargodos_data.get('encargados', {}).items():
+                    if isinstance(encargado, list):
+                        # Múltiples encargado
+                        destinatarios_seccion = []
+                        for e in encargado:
+                            if e.get('email'):
+                                destinatarios_seccion.append({
+                                    'email': e.get('email', ''),
+                                    'nombre': e.get('nombre', 'Encargado')
+                                })
+                        self.destinatarios[seccion] = destinatarios_seccion
+                        # También guardar para compatibilidad
+                        self.encargados_por_seccion[seccion] = [e.get('nombre', 'Encargado') for e in encargado if e.get('nombre')]
+                    elif isinstance(encargado, dict):
+                        # Un solo encargado
+                        email = encargado.get('email', '')
+                        nombre = encargado.get('nombre', 'Encargado')
+                        if email:
+                            self.destinatarios[seccion] = [{
+                                'email': email,
+                                'nombre': nombre
+                            }]
+                        # También guardar para compatibilidad
+                        self.encargados_por_seccion[seccion] = nombre
+                
+                logger.debug(f"Destinatarios cargados desde encargados.json: {list(self.destinatarios.keys())}")
+        except Exception as e:
+            logger.warning(f"No se pudo cargar encargado.json: {e}")
+            # Fallback a config.json si no existe encargacos.json
+            self.destinatarios = email_config.get('destinatarios', {})
         
         # Plantillas -优先从 email.json 读取
         if 'plantillas' in email_json_config:
@@ -358,7 +401,7 @@ class EmailService:
                 'Sistema de Pedidos automáticos VIVEVERDE.'
             )
         
-        logger.debug("Configuración de email cargada desde email.json + config.json")
+        logger.debug("Configuración de email cargada desde email.json + encargados.json")
     
     def _cargar_encargados(self):
         """
@@ -677,8 +720,8 @@ class EmailService:
         """
         Obtiene la lista de destinatarios para una sección específica.
         
-        Los correos electrónicos se obtienen EXCLUSIVAMENTE desde config.json.
-        Los nombres se obtienen desde config/encargados.json.
+        Los correos electrónicos y nombres se obtienen EXCLUSIVAMENTE desde 
+        config/encargados.json (FUENTE ÚNICA).
         
         Args:
             seccion (str): Nombre de la sección
@@ -688,30 +731,29 @@ class EmailService:
         """
         seccion_normalizada = self._normalizar_seccion(seccion)
         
-        # Obtener correos desde config.json (única fuente)
-        correos = self.destinatarios.get(seccion_normalizada, [])
+        # Obtener destinatarios desde encargacos.json (FUENTE ÚNICA)
+        # La estructura ahora es: [{'email': 'x@x.com', 'nombre': 'Nombre'}, ...]
+        destinatarios_data = self.destinatarios.get(seccion_normalizada, [])
         
-        if isinstance(correos, str):
-            correos = [c.strip() for c in correos.split(',')]
-        
-        if not correos:
+        if not destinatarios_data:
             logger.warning(f"No hay destinatarios configurados para la sección: {seccion}")
             return []
         
-        # Obtener nombre del encargado desde config/encargados.json
-        nombre_encargado = self.encargados_por_seccion.get(seccion_normalizada, "")
-        
-        # Si no hay nombre en el JSON, usar un nombre genérico
-        if not nombre_encargado:
-            nombre_encargado = "Encargado"
-        
-        # Construir lista de destinatarios con nombres
+        # Normalizar al formato de salida esperado
         destinatarios = []
-        for correo in correos:
-            destinatarios.append({
-                'email': correo.strip(),
-                'nombre': nombre_encargado
-            })
+        for item in destinatarios_data:
+            if isinstance(item, dict):
+                # Nueva estructura con email y nombre
+                destinatarios.append({
+                    'email': item.get('email', '').strip(),
+                    'nombre': item.get('nombre', 'Encargado')
+                })
+            elif isinstance(item, str):
+                # Formato antiguo (solo email), usar nombre genérico
+                destinatarios.append({
+                    'email': item.strip(),
+                    'nombre': 'Encargado'
+                })
         
         logger.debug(f"Destinatarios para {seccion}: {destinatarios}")
         return destinatarios
@@ -858,25 +900,39 @@ class EmailService:
         
         # Verificar destinatarios
         secciones_configuradas = []
-        for seccion, correos in self.destinatarios.items():
-            if isinstance(correos, str):
-                correos = [c.strip() for c in correos.split(',') if c.strip()]
-            elif isinstance(correos, list):
-                correos = [c.strip() for c in correos if c.strip()]
-            else:
-                correos = []
+        for seccion, datos in self.destinatarios.items():
+            # La nueva estructura puede ser [{'email':..., 'nombre':...}, ...] o lista de strings
+            correos = []
+            nombres = []
+            
+            if isinstance(datos, str):
+                correos = [c.strip() for c in datos.split(',') if c.strip()]
+                nombres = ['Encargado'] * len(correos)
+            elif isinstance(datos, list):
+                for item in datos:
+                    if isinstance(item, dict):
+                        email = item.get('email', '').strip()
+                        nombre = item.get('nombre', 'Encargado')
+                        if email:
+                            correos.append(email)
+                            nombres.append(nombre)
+                    elif isinstance(item, str):
+                        email = item.strip()
+                        if email:
+                            correos.append(email)
+                            nombres.append('Encargado')
             
             if correos:
                 secciones_configuradas.append(seccion)
                 resultado['destinatarios'][seccion] = {
                     'correos': correos,
-                    'nombre_encargado': self.encargados_por_seccion.get(seccion, 'No definido')
+                    'nombre_encargado': ', '.join(nombres) if nombres else 'No definido'
                 }
         
         resultado['secciones_configuradas'] = len(secciones_configuradas)
         
         if not secciones_configuradas:
-            resultado['problemas'].append("No hay destinatarios configurados en config.json")
+            resultado['problemas'].append("No hay destinatarios configurados en encargados.json")
             resultado['valido'] = False
         
         # Verificar contraseña
@@ -916,7 +972,7 @@ def verificar_configuracion_email(config: dict) -> Dict[str, Any]:
     try:
         email_config = config.get('email', {})
         
-        # Verificar destinatarios desde config.json
+        # Verificar destinatarios desde encargacos.json
         destinatarios = email_config.get('destinatarios', {})
         secciones_con_correo = []
         
@@ -930,7 +986,7 @@ def verificar_configuracion_email(config: dict) -> Dict[str, Any]:
             'secciones': secciones_con_correo,
             'remitente': email_config.get('remitente', {}).get('email', 'No configurado'),
             'smtp': email_config.get('servidor', 'No configurado'),
-            'mensaje': ('Configuración verificada. Los correos se leen desde config.json. '
+            'mensaje': ('Configuración verificada. Los correos se leen desde encargacos.json. '
                        'Los nombres de encargados se leen desde config/encargados.json.')
         }
         
