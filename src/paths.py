@@ -33,6 +33,7 @@ DOCS_DIR = BASE_DIR / "docs"
 
 # Subdirectorios para organizar archivos de salida por tipo
 PEDIDOS_SEMANALES_DIR = OUTPUT_DIR / "Pedidos_semanales"
+PEDIDOS_SEMANALES_RESUMEN_DIR = OUTPUT_DIR / "Pedidos_semanales_resumen"  # Directorio específico para resúmenes consolidados de pedidos semanales
 INFORMES_DIR = OUTPUT_DIR / "Informes"
 PRESENTACIONES_DIR = OUTPUT_DIR / "Presentaciones"
 ANALISIS_DIR = OUTPUT_DIR / "Analisis"
@@ -323,7 +324,7 @@ def verificar_directorios() -> bool:
     """
     directorios = [
         INPUT_DIR, OUTPUT_DIR, CONFIG_DIR, LOGS_DIR,
-        PEDIDOS_SEMANALES_DIR, INFORMES_DIR, PRESENTACIONES_DIR,
+        PEDIDOS_SEMANALES_DIR, PEDIDOS_SEMANALES_RESUMEN_DIR, INFORMES_DIR, PRESENTACIONES_DIR,
         ANALISIS_DIR, ANALISIS_CATEGORIA_CD_DIR, COMPARACION_CATEGORIA_CD_DIR, RESUMENES_DIR, COMPRAS_SIN_AUTORIZACION_DIR,
         ARTICULOS_NO_COMPRADOS_DIR
     ]
@@ -338,6 +339,7 @@ def crear_directorios_si_no_existen():
     # Subdirectorios de salida
     subdirectorios_salida = [
         PEDIDOS_SEMANALES_DIR,
+        PEDIDOS_SEMANALES_RESUMEN_DIR,
         INFORMES_DIR,
         PRESENTACIONES_DIR,
         ANALISIS_DIR,
@@ -369,6 +371,7 @@ ARCHIVO_STOCK_ACTUAL_STR = str(ARCHIVO_STOCK_ACTUAL)
 
 # Strings de directorios de salida
 PEDIDOS_SEMANALES_DIR_STR = str(PEDIDOS_SEMANALES_DIR)
+PEDIDOS_SEMANALES_RESUMEN_DIR_STR = str(PEDIDOS_SEMANALES_RESUMEN_DIR)
 INFORMES_DIR_STR = str(INFORMES_DIR)
 PRESENTACIONES_DIR_STR = str(PRESENTACIONES_DIR)
 ANALISIS_DIR_STR = str(ANALISIS_DIR)

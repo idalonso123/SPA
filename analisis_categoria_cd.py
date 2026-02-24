@@ -13,6 +13,7 @@ Este script:
 
 import sys
 import os
+import re
 from pathlib import Path
 
 # Añadir el directorio del script al path para poder importar src
@@ -27,6 +28,13 @@ from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils.dataframe import dataframe_to_rows
 import glob
 import json
+import smtplib
+import ssl
+from email import encoders
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from email.mime.base import MIMEBase
+from email.utils import formatdate
 
 # Importar rutas centralizadas
 from src.paths import INPUT_DIR, OUTPUT_DIR, CONFIG_DIR, ARCHIVO_STOCK_ACTUAL, PATRON_CLASIFICACION_ABC, ANALISIS_CATEGORIA_CD_DIR
@@ -53,6 +61,24 @@ SECCIONES = [
 # Escenarios que corresponden a categoría C y D
 # Basado en el análisis: Escenario 3 y 7 tienen riesgo Medio y acciones preventivas
 CATEGORIA_C_D_ESCENARIOS = ["3", "7"]
+
+# ============================================================================
+# CONFIGURACIÓN DE EMAIL
+# ============================================================================
+
+# Destinatarios: Ivan y Sandra
+DESTINATARIOS = [
+    {'nombre': 'Ivan', 'email': 'ivan.delgado@viveverde.es'},
+    {'nombre': 'Sandra', 'email': 'ivan.delgado@viveverde.es'}
+]
+
+# Configuración del servidor SMTP
+SMTP_CONFIG = {
+    'servidor': 'smtp.serviciodecorreo.es',
+    'puerto': 465,
+    'remitente_email': 'ivan.delgado@viveverde.es',
+    'remitente_nombre': 'Sistema de Pedidos Viveverde'
+}
 
 
 def cargar_configuracion():
@@ -580,6 +606,111 @@ def comparar_con_semana_anterior(ruta_archivo_actual):
         return None
 
 
+# ============================================================================
+# FUNCIONES AUXILIARES PARA EMAIL
+# ============================================================================
+
+def obtener_periodo_año() -> str:
+    """
+    Obtiene el período y año del análisis actual.
+    
+    Returns:
+        str: Período y año (ej: 'P2_2025')
+    """
+    try:
+        datos_dinamicos = get_periodo_y_año_dinamico(tipo_calculo="actual")
+        periodo = datos_dinamicos['periodo']
+        año = datos_dinamicos['año']
+        return f"{periodo}_{año}"
+    except Exception as e:
+        print(f"  AVISO: No se pudo obtener el período: {e}")
+        return 'desconocido'
+
+
+def enviar_email_informe(archivo_informe: str, periodo: str = 'desconocido') -> bool:
+    """
+    Envía un email a Ivan y Sandra con el informe de categoría C y D adjunto.
+    
+    Args:
+        archivo_informe: Ruta del archivo Excel generado
+        periodo: Período del análisis (ej: 'P2_2025')
+    
+    Returns:
+        bool: True si el email fue enviado exitosamente, False en caso contrario
+    """
+    if not archivo_informe:
+        print("  AVISO: No hay informe para enviar. No se enviará email.")
+        return False
+    
+    # Verificar que el archivo existe
+    if not Path(archivo_informe).exists():
+        print(f"  AVISO: El archivo '{archivo_informe}' no existe. No se enviará email.")
+        return False
+    
+    # Verificar contraseña en variable de entorno
+    password = os.environ.get('EMAIL_PASSWORD')
+    if not password:
+        print(f"  AVISO: Variable de entorno 'EMAIL_PASSWORD' no configurada. No se enviará email.")
+        return False
+    
+    # Enviar email a cada destinatario
+    emails_enviados = 0
+    
+    for destinatario in DESTINATARIOS:
+        nombre_destinatario = destinatario['nombre']
+        email_destinatario = destinatario['email']
+        
+        try:
+            # Crear mensaje MIME
+            msg = MIMEMultipart()
+            msg['From'] = f"{SMTP_CONFIG['remitente_nombre']} <{SMTP_CONFIG['remitente_email']}>"
+            msg['To'] = email_destinatario
+            msg['Subject'] = f"Viveverde: Análisis Categoría C y D - Período {periodo}"
+            msg['Date'] = formatdate(localtime=True)
+            
+            # Cuerpo del email
+            cuerpo = f"""Buenos días {nombre_destinatario},
+
+Te adjunto en este correo el análisis de artículos de categoría C y D del período {periodo}.
+
+Este informe muestra los artículos que deberían eliminarse del stock pero todavía están presentes.
+
+Este informe te permitirá tomar decisiones sobre el inventario.
+
+Atentamente,
+
+Sistema de Pedidos Viveverde."""
+            
+            msg.attach(MIMEText(cuerpo, 'plain', 'utf-8'))
+            
+            # Adjuntar archivo Excel
+            filename = Path(archivo_informe).name
+            with open(archivo_informe, 'rb') as f:
+                part = MIMEBase('application', 'octet-stream')
+                part.set_payload(f.read())
+            
+            encoders.encode_base64(part)
+            part.add_header('Content-Disposition', f'attachment; filename= "{filename}"')
+            part.add_header('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+            msg.attach(part)
+            
+            # Enviar email mediante SSL
+            context = ssl.create_default_context()
+            with smtplib.SMTP_SSL(SMTP_CONFIG['servidor'], SMTP_CONFIG['puerto'], context=context) as server:
+                server.login(SMTP_CONFIG['remitente_email'], password)
+                server.sendmail(SMTP_CONFIG['remitente_email'], email_destinatario, msg.as_string())
+            
+            print(f"  Email enviado a {nombre_destinatario} ({email_destinatario})")
+            emails_enviados += 1
+            
+        except smtplib.SMTPException as e:
+            print(f"  ERROR SMTP al enviar email a {nombre_destinatario}: {e}")
+        except Exception as e:
+            print(f"  ERROR al enviar email a {nombre_destinatario}: {e}")
+    
+    return emails_enviados > 0
+
+
 if __name__ == "__main__":
     try:
         archivo_salida = generar_informe()
@@ -593,8 +724,20 @@ if __name__ == "__main__":
         if resultado_comparacion:
             print(f"\n✅ Comparación generada: {resultado_comparacion}")
         
+        # Obtener período para el email
+        periodo = obtener_periodo_año()
+        
+        # Enviar email con el informe adjunto
+        print("\n" + "=" * 60)
+        print("ENVIANDO EMAIL")
+        print("=" * 60)
+        
+        email_enviado = enviar_email_informe(archivo_salida, periodo)
+        
         print(f"\n🎉 Proceso completado exitosamente!")
         print(f"📄 Archivo principal: {archivo_salida}")
+        if email_enviado:
+            print(f"Email enviado a los destinatarios: Ivan y Sandra")
     except Exception as e:
         print(f"\n❌ Error durante la generación: {str(e)}")
         import traceback

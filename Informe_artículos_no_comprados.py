@@ -15,11 +15,20 @@ Estructura de datos de salida:
 
 import pandas as pd
 import json
+import re
 from datetime import datetime
 from pathlib import Path
 from src.paths import INPUT_DIR, OUTPUT_DIR, ARTICULOS_NO_COMPRADOS_DIR, PEDIDOS_SEMANALES_DIR
 import glob
 import warnings
+import smtplib
+import ssl
+import os
+from email import encoders
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from email.mime.base import MIMEBase
+from email.utils import formatdate
 
 # Ignorar warnings de openpyxl
 warnings.filterwarnings('ignore', category=UserWarning, module='openpyxl')
@@ -44,6 +53,60 @@ SECCIONES = [
     "vivero",
     "tierras_aridos"
 ]
+
+# ============================================================================
+# CONFIGURACIÓN DE EMAIL
+# ============================================================================
+
+# Destinatarios: Ivan y Sandra
+DESTINATARIOS = [
+    {'nombre': 'Ivan', 'email': 'ivan.delgado@viveverde.es'},
+    {'nombre': 'Sandra', 'email': 'ivan.delgado@viveverde.es'}
+]
+
+
+# ============================================================================
+# FUNCIONES AUXILIARES
+# ============================================================================
+
+def obtener_semana_desde_archivos() -> str:
+    """
+    Extrae el número de semana del archivo de pedido más reciente.
+    
+    Returns:
+        str: Número de semana (ej: '06') o 'desconocida' si no se encuentra
+    """
+    try:
+        # Buscar archivos de pedidos en el directorio de pedidos semanales
+        todos_archivos = list(PEDIDOS_SEMANALES_DIR.glob('Pedido_Semana_*'))
+        
+        if not todos_archivos:
+            return 'desconocida'
+        
+        # Ordenar por fecha y tomar el más reciente
+        todos_archivos.sort(key=lambda x: x.name, reverse=True)
+        archivo_mas_reciente = todos_archivos[0]
+        
+        # Extraer la semana del nombre del archivo (formato: Pedido_Semana_XX_...)
+        nombre = archivo_mas_reciente.name
+        # Buscar patrón: Pedido_Semana_XX_ donde XX es el número de semana
+        import re
+        match = re.search(r'Pedido_Semana_(\d+)_', nombre)
+        if match:
+            return match.group(1)
+        
+        return 'desconocida'
+    except Exception as e:
+        print(f"  AVISO: No se pudo extraer la semana: {e}")
+        return 'desconocida'
+
+# Configuración del servidor SMTP
+SMTP_CONFIG = {
+    'servidor': 'smtp.serviciodecorreo.es',
+    'puerto': 465,
+    'remitente_email': 'ivan.delgado@viveverde.es',
+    'remitente_nombre': 'Sistema de Pedidos Viveverde'
+}
 
 
 def normalizar_codigo_articulo(codigo):
@@ -371,6 +434,9 @@ def main():
         df_resultado = identificar_articulos_no_comprados(seccion)
         resultados_por_seccion[seccion] = df_resultado
     
+    # Extraer la semana del nombre del archivo de pedido más reciente
+    semana = obtener_semana_desde_archivos()
+    
     # Generar informe Excel
     print("\n" + "=" * 60)
     print("GENERANDO INFORME EXCEL")
@@ -378,10 +444,107 @@ def main():
     
     output_file = generar_informe_excel(resultados_por_seccion)
     
+    # Enviar email con el informe adjunto
+    print("\n" + "=" * 60)
+    print("ENVIANDO EMAIL")
+    print("=" * 60)
+    
+    email_enviado = enviar_email_informe(output_file, semana)
+    
     print("\n" + "=" * 60)
     print("PROCESO COMPLETADO")
     print("=" * 60)
     print(f"Archivo de salida: {output_file}")
+    if email_enviado:
+        print(f"Email enviado a los destinatarios: Ivan y Sandra")
+
+
+# ============================================================================
+# FUNCIÓN PARA ENVIAR EMAIL CON INFORME ADJUNTO
+# ============================================================================
+
+def enviar_email_informe(archivo_informe: str, semana: str = 'desconocida') -> bool:
+    """
+    Envía un email a Ivan y Sandra con el informe de artículos no comprados adjunto.
+    
+    Args:
+        archivo_informe: Ruta del archivo Excel generado
+        semana: Número de semana (ej: '06')
+    
+    Returns:
+        bool: True si el email fue enviado exitosamente, False en caso contrario
+    """
+    if not archivo_informe:
+        print("  AVISO: No hay informe para enviar. No se enviará email.")
+        return False
+    
+    # Verificar que el archivo existe
+    if not Path(archivo_informe).exists():
+        print(f"  AVISO: El archivo '{archivo_informe}' no existe. No se enviará email.")
+        return False
+    
+    # Verificar contraseña en variable de entorno
+    password = os.environ.get('EMAIL_PASSWORD')
+    if not password:
+        print(f"  AVISO: Variable de entorno 'EMAIL_PASSWORD' no configurada. No se enviará email.")
+        return False
+    
+    # Enviar email a cada destinatario
+    emails_enviados = 0
+    
+    for destinatario in DESTINATARIOS:
+        nombre_destinatario = destinatario['nombre']
+        email_destinatario = destinatario['email']
+        
+        try:
+            # Crear mensaje MIME
+            msg = MIMEMultipart()
+            msg['From'] = f"{SMTP_CONFIG['remitente_nombre']} <{SMTP_CONFIG['remitente_email']}>"
+            msg['To'] = email_destinatario
+            msg['Subject'] = f"Viveverde: Informe Artículos No Comprados - Semana {semana}"
+            msg['Date'] = formatdate(localtime=True)
+            
+            # Cuerpo del email
+            cuerpo = f"""Buenos días {nombre_destinatario},
+
+Te adjunto en este correo el informe de artículos no comprados de la semana {semana}. 
+
+Este informe muestra los artículos que aparecen en los pedidos semanales pero que no se han comprado (no aparecen en ventas ni en stock).
+
+Este informe te permitirá identificar posibles problemas en el proceso de compra.
+
+Atentamente,
+
+Sistema de Pedidos Viveverde."""
+            
+            msg.attach(MIMEText(cuerpo, 'plain', 'utf-8'))
+            
+            # Adjuntar archivo Excel
+            filename = Path(archivo_informe).name
+            with open(archivo_informe, 'rb') as f:
+                part = MIMEBase('application', 'octet-stream')
+                part.set_payload(f.read())
+            
+            encoders.encode_base64(part)
+            part.add_header('Content-Disposition', f'attachment; filename= "{filename}"')
+            part.add_header('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+            msg.attach(part)
+            
+            # Enviar email mediante SSL
+            context = ssl.create_default_context()
+            with smtplib.SMTP_SSL(SMTP_CONFIG['servidor'], SMTP_CONFIG['puerto'], context=context) as server:
+                server.login(SMTP_CONFIG['remitente_email'], password)
+                server.sendmail(SMTP_CONFIG['remitente_email'], email_destinatario, msg.as_string())
+            
+            print(f"  Email enviado a {nombre_destinatario} ({email_destinatario})")
+            emails_enviados += 1
+            
+        except smtplib.SMTPException as e:
+            print(f"  ERROR SMTP al enviar email a {nombre_destinatario}: {e}")
+        except Exception as e:
+            print(f"  ERROR al enviar email a {nombre_destinatario}: {e}")
+    
+    return emails_enviados > 0
 
 
 if __name__ == "__main__":

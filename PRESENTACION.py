@@ -35,6 +35,10 @@ warnings.filterwarnings('ignore')
 from src.paths import INPUT_DIR, OUTPUT_DIR, PATRON_CLASIFICACION_ABC, PRESENTACIONES_DIR
 from src.date_utils import get_periodo_y_año_dinamico, get_periodo_info_detallada
 
+# Crear directorios necesarios si no existen
+from src.paths import crear_directorios_si_no_existen
+crear_directorios_si_no_existen()
+
 # ============================================================================
 # VARIABLES PARA ARGUMENTOS DE LÍNEA DE COMANDOS
 # ============================================================================
@@ -59,7 +63,7 @@ SMTP_CONFIG = {
     'servidor': 'smtp.serviciodecorreo.es',
     'puerto': 465,
     'remitente_email': 'ivan.delgado@viveverde.es',
-    'remitente_nombre': 'Sistema de Pedidos automáticos VIVEVERDE'
+    'remitente_nombre': 'Sistema de Pedidos Viveverde'
 }
 
 # Configuración de fechas
@@ -109,24 +113,45 @@ def enviar_email_presentaciones(archivos_presentaciones: list) -> bool:
     # Verificar contraseña en variable de entorno
     password = os.environ.get('EMAIL_PASSWORD')
     if not password:
-        print(f"  AVISO: Variable de entorno 'EMAIL_PASSWORD' no configurada. No se enviará email a {nombre_destinatario}.")
+        print(f"  ERROR: Variable de entorno 'EMAIL_PASSWORD' no configurada.")
+        print(f"         Para configurar en PowerShell, usa:")
+        print(f"         $env:EMAIL_PASSWORD='tu_contraseña_aqui'")
+        print(f"         (Usa comillas SIMPLES si la contraseña tiene caracteres especiales)")
+        print(f"         No se enviará email a {nombre_destinatario}.")
         return False
+    
+    # Mostrar que la contraseña se leyó correctamente (solo primeros 4 caracteres)
+    print(f"  DEBUG: Contraseña detectada (primeros 4 chars): {password[:4]}***")
     
     try:
         # Crear mensaje MIME
         msg = MIMEMultipart()
         msg['From'] = f"{SMTP_CONFIG['remitente_nombre']} <{SMTP_CONFIG['remitente_email']}>"
         msg['To'] = email_destinatario
-        msg['Subject'] = f"VIVEVERDE: Presentacion de ClasificacionABC+D de cada sección del periodo {PERIODO_EMAIL}"
+        msg['Subject'] = f"Viveverde: Presentación de Clasificación ABC+D de cada sección del periodo {PERIODO_EMAIL}"
         
-        # Cuerpo del email
+        # Añadir cabeceras adicionales para evitar spam
+        import uuid
+        from email.utils import formatdate
+        msg['Date'] = formatdate(localtime=True)
+        msg['Message-ID'] = f"<{uuid.uuid4()}@viveverde.es>"
+        msg['X-Priority'] = '3'
+        msg['X-MSMail-Priority'] = 'Normal'
+        msg['Importance'] = 'Normal'
+        msg['X-Mailer'] = 'Python/Sistema-Pedidos-Viveverde'
+        msg['Reply-To'] = SMTP_CONFIG['remitente_email']
+        msg['List-Unsubscribe'] = f'<mailto:{SMTP_CONFIG["remitente_email"]}>'
+        msg['Precedence'] = 'bulk'
+        msg['Auto-Submitted'] = 'auto-generated'
+        
+        # Cuerpo del email (sin mayúsculas excesivas para evitar spam)
         cuerpo = f"""Buenos días {nombre_destinatario},
 
-Te adjunto en este correo las presentaciones de Clasificación ABC+D de cada sección.
+Te adjunto en este correo las presentaciones de Clasificación ABC+D de cada sección correspondientes al período {PERIODO_EMAIL}.
 
 Atentamente,
 
-Sistema de Pedidos automáticos VIVEVERDE."""
+Sistema de Pedidos Viveverde."""
         
         msg.attach(MIMEText(cuerpo, 'plain', 'utf-8'))
         

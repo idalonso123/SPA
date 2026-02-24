@@ -19,7 +19,7 @@ from typing import Optional, Dict, Any
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Border, Side, Alignment
 from openpyxl.utils.dataframe import dataframe_to_rows
-from src.paths import INPUT_DIR, OUTPUT_DIR, PEDIDOS_SEMANALES_DIR, RESUMENES_DIR
+from src.paths import INPUT_DIR, OUTPUT_DIR, PEDIDOS_SEMANALES_DIR, PEDIDOS_SEMANALES_RESUMEN_DIR, RESUMENES_DIR
 from openpyxl.worksheet.page import PageMargins
 
 # Configuración del logger
@@ -470,12 +470,15 @@ class OrderGenerator:
             logger.warning("No hay datos para generar resumen")
             return None
         
-        # Generar nombre del archivo
-        dir_salida = self.obtener_directorio_salida()
+        # Generar nombre del archivo - usar directorio específico para resúmenes
+        dir_salida = str(PEDIDOS_SEMANALES_RESUMEN_DIR)
         nombre_archivo = f"Resumen_Pedidos_{seccion}_{datetime.now().strftime('%d%m%Y')}.xlsx"
         ruta_completa = os.path.join(dir_salida, nombre_archivo)
         
         logger.info(f"Generando resumen: {ruta_completa}")
+        
+        # Crear directorio si no existe
+        os.makedirs(dir_salida, exist_ok=True)
         
         try:
             wb = Workbook()

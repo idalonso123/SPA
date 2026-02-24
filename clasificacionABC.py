@@ -1039,12 +1039,12 @@ def enviar_email_clasificacion(seccion: str, archivo: str, periodo: str) -> bool
             msg = MIMEMultipart()
             msg['From'] = f"{SMTP_CONFIG['remitente_nombre']} <{SMTP_CONFIG['remitente_email']}>"
             msg['To'] = email_destinatario
-            msg['Subject'] = f"VIVEVERDE: listado ClasificacionABC+D de {seccion} del periodo {periodo}"
+            msg['Subject'] = f"Viveverde: listado ClasificacionABC+D de {seccion} - Periodo {PERIODO}"
             
             # Cuerpo del email
             cuerpo = f"""Buenos días {nombre_encargado},
 
-Te adjunto en este correo el listado Clasificación ABC+D de {seccion} para que lo analices y te aprendas cuales son los artículos de cada categoría:
+Te adjunto en este correo el listado Clasificación ABC+D de {seccion} del período {PERIODO} para que lo analices y te aprendas cuales son los artículos de cada categoría:
 
 - Artículos que no te deben faltar nunca (Categoria A).
 - Artículos que confeccionan el complemento de gama (Categoría B).
@@ -1055,7 +1055,7 @@ Pon en práctica el listado.
 
 Atentamente,
 
-Sistema de Pedidos automáticos VIVEVERDE."""
+Sistema de Pedidos automáticos Viveverde."""
             
             msg.attach(MIMEText(cuerpo, 'plain', 'utf-8'))
             
