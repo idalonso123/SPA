@@ -3,7 +3,7 @@
         "version": "2.0.0",
         "fecha_creacion": "2026-01-31T00:00:00",
         "ultima_actualizacion": null,
-        "ultima_ejecucion_exitosa": "2026-02-23T01:24:47.461737",
+        "ultima_ejecucion_exitosa": "2026-02-24T01:40:45.104593",
         "ultima_semana_procesada": 7,
         "año_en_curso": 2026
     },
@@ -2699,7 +2699,7 @@
         "2101040010|         |        ": 0,
         "2101040007|         |        ": 0,
         "2101040009|         |        ": 0,
-        "2101030002|         |        ": 1,
+        "2101030002|         |        ": 0,
         "2203020003|         |        ": 1,
         "2401010309|         |        ": 0,
         "2301010053|         |        ": 0,
@@ -5061,6 +5061,15 @@
             "importe": 8993.59,
             "exitosa": true,
             "notas": "Procesadas 11 secciones - 802 artículos corregidos en FASE 2"
+        },
+        {
+            "semana": 7,
+            "fecha_ejecucion": "2026-02-24T01:40:45.104543",
+            "archivo_generado": "D:\\ALMACENAMIENTO\\Ivan\\viveverde\\Trabajos\\IA\\PROGRAMA_COMPRAS_AUTOMATICAS\\SPA\\data\\output\\Pedidos_semanales\\Pedido_Semana_07_24022026_interior.xlsx",
+            "num_articulos": 352,
+            "importe": 8993.59,
+            "exitosa": true,
+            "notas": "Procesadas 11 secciones - 801 artículos corregidos en FASE 2"
         }
     ],
     "pedidos_generados": [
@@ -5915,12 +5924,18 @@
             "archivo": "D:\\ALMACENAMIENTO\\Ivan\\viveverde\\Trabajos\\IA\\PROGRAMA_COMPRAS_AUTOMATICAS\\PRUEBA1\\SPA\\data\\output\\Pedidos_semanales\\Pedido_Semana_07_23022026_interior.xlsx",
             "fecha": "2026-02-23",
             "importe": 8993.59
+        },
+        {
+            "semana": 7,
+            "archivo": "D:\\ALMACENAMIENTO\\Ivan\\viveverde\\Trabajos\\IA\\PROGRAMA_COMPRAS_AUTOMATICAS\\SPA\\data\\output\\Pedidos_semanales\\Pedido_Semana_07_24022026_interior.xlsx",
+            "fecha": "2026-02-24",
+            "importe": 8993.59
         }
     ],
     "metricas": {
-        "total_ejecuciones": 142,
-        "total_articulos_procesados": 84058,
-        "total_importe_pedidos": 2538556.699999997,
+        "total_ejecuciones": 143,
+        "total_articulos_procesados": 84410,
+        "total_importe_pedidos": 2547550.289999997,
         "ultima_semana_procesada_exitosamente": 7
     },
     "errores_pendientes": [],

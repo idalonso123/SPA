@@ -325,7 +325,7 @@ class EmailService:
         if 'remitente' in email_json_config:
             remitente = email_json_config['remitente']
             self.remitente = {
-                'email': remitente.get('email', 'sistema@viveverde.es'),
+                'email': remitente.get('email', 'ivan.delgado@viveverde.es'),
                 'nombre': remitente.get('nombre', 'Sistema de Pedidos VIVEVERDE')
             }
         else:

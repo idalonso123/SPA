@@ -729,7 +729,7 @@ class AlertService:
         # Remitente - leer desde email.json
         remitente_data = email_json.get('remitente', {})
         self.remitente = {
-            'email': remitente_data.get('email', 'sistema@viveverde.es'),
+            'email': remitente_data.get('email', 'ivan.delgado@viveverde.es'),
             'nombre': remitente_data.get('nombre', 'Sistema de Alertas VIVEVERDE')
         }
         

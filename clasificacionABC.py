@@ -959,7 +959,7 @@ def cargar_configuracion_smtp():
             return {
                 'servidor': smtp.get('servidor', 'smtp.serviciodecorreo.es'),
                 'puerto': smtp.get('puerto', 465),
-                'remitente_email': remitente.get('email', 'sistema@viveverde.es'),
+                'remitente_email': remitente.get('email', 'ivan.delgado@viveverde.es'),
                 'remitente_nombre': remitente.get('nombre', 'Sistema de Pedidos VIVEVERDE')
             }
         else:
@@ -967,7 +967,7 @@ def cargar_configuracion_smtp():
             return {
                 'servidor': 'smtp.serviciodecorreo.es',
                 'puerto': 465,
-                'remitente_email': 'sistema@viveverde.es',
+                'remitente_email': 'ivan.delgado@viveverde.es',
                 'remitente_nombre': 'Sistema de Pedidos VIVEVERDE'
             }
     except Exception as e:
@@ -975,7 +975,7 @@ def cargar_configuracion_smtp():
         return {
             'servidor': 'smtp.serviciodecorreo.es',
             'puerto': 465,
-            'remitente_email': 'sistema@viveverde.es',
+            'remitente_email': 'ivan.delgado@viveverde.es',
             'remitente_nombre': 'Sistema de Pedidos VIVEVERDE'
         }
 

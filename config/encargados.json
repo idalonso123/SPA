@@ -2,53 +2,53 @@
     "encargados": {
         "interior": {
             "nombre": "Iris",
-            "email": "iris@viveverde.es"
+            "email": "ivan.delgado@viveverde.es"
         },
         "maf": {
             "nombre": "Jose",
-            "email": "jose@viveverde.es"
+            "email": "ivan.delgado@viveverde.es"
         },
         "deco_interior": [
             {
                 "nombre": "Sandra",
-                "email": "sandra@viveverde.es"
+                "email": "ivan.delgado@viveverde.es"
             },
             {
                 "nombre": "Rocío",
-                "email": "rocio@viveverde.es"
+                "email": "ivan.delgado@viveverde.es"
             }
         ],
         "deco_exterior": {
             "nombre": "Pablo",
-            "email": "pablo@viveverde.es"
+            "email": "ivan.delgado@viveverde.es"
         },
         "semillas": {
             "nombre": "Ivan",
-            "email": "ivan@viveverde.es"
+            "email": "ivan.delgado@viveverde.es"
         },
         "mascotas_vivo": {
             "nombre": "María",
-            "email": "maria@viveverde.es"
+            "email": "ivan.delgado@viveverde.es"
         },
         "mascotas_manufacturado": {
             "nombre": "María",
-            "email": "maria@viveverde.es"
+            "email": "ivan.delgado@viveverde.es"
         },
         "fitos": {
             "nombre": "Ivan",
-            "email": "ivan@viveverde.es"
+            "email": "ivan.delgado@viveverde.es"
         },
         "vivero": {
             "nombre": "Jose",
-            "email": "jose@viveverde.es"
+            "email": "ivan.delgado@viveverde.es"
         },
         "utiles_jardin": {
             "nombre": "Ivan",
-            "email": "ivan@viveverde.es"
+            "email": "ivan.delgado@viveverde.es"
         },
         "tierras_aridos": {
             "nombre": "Pablo",
-            "email": "pablo@viveverde.es"
+            "email": "ivan.delgado@viveverde.es"
         }
     },
     "administrador": {
@@ -56,9 +56,9 @@
         "email": "ivan.delgado@viveverde.es"
     },
     "responsables_gestion": [
-        {"nombre": "Sandra", "email": "sandra@viveverde.es"},
+        {"nombre": "Sandra", "email": "ivan.delgado@viveverde.es"},
         {"nombre": "Ivan", "email": "ivan.delgado@viveverde.es"},
-        {"nombre": "Pedro", "email": "pedro@viveverde.es"}
+        {"nombre": "Pedro", "email": "ivan.delgado@viveverde.es"}
     ],
     "meta": {
         "version": "1.1",

@@ -741,7 +741,7 @@ def procesar_pedido_semana(
             logger.debug(f"No se pudo actualizar contexto de alertas: {e}")
         
         try:
-            abc_df, ventas_df, costes_df = data_loader.leer_datos_seccion(seccion)
+            abc_df, ventas_df, costes_df = data_loader.leer_datos_seccion(seccion, semana)
             
             logger.debug(f"[DEBUG] abc_df: {len(abc_df) if abc_df is not None else 0} registros")
             logger.debug(f"[DEBUG] ventas_df: {len(ventas_df) if ventas_df is not None else 0} registros")

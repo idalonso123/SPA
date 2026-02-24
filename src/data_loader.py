@@ -15,6 +15,7 @@ import pandas as pd
 import numpy as np
 import os
 import glob
+import json
 import logging
 import unicodedata
 from typing import Optional, Dict, List, Tuple, Any
@@ -624,7 +625,80 @@ class DataLoader:
         logger.info(f"Costes cargados: {len(df)} registros")
         return df
     
-    def buscar_archivo_abc_seccion(self, seccion: str) -> Optional[str]:
+    def cargar_configuracion_periodos(self) -> Dict[str, Any]:
+        """
+        Carga la configuración de períodos desde config_comun.json.
+
+        Returns:
+            Dict[str, Any]: Diccionario con la configuración de períodos
+        """
+        try:
+            # Intentar cargar desde config_comun.json
+            config_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'config', 'config_comun.json')
+            if os.path.exists(config_path):
+                with open(config_path, 'r', encoding='utf-8') as f:
+                    config_comun = json.load(f)
+                    return config_comun.get('configuracion_periodo_clasificacion', {}).get('periodos', {})
+        except Exception as e:
+            logger.warning(f"No se pudo cargar configuración de períodos: {e}")
+
+        # Valores por defecto si no se puede cargar
+        return {
+            "P1": {"mes_inicio": 1, "dia_inicio": 1, "mes_fin": 2, "dia_fin": 28},
+            "P2": {"mes_inicio": 3, "dia_inicio": 1, "mes_fin": 5, "dia_fin": 31},
+            "P3": {"mes_inicio": 6, "dia_inicio": 1, "mes_fin": 8, "dia_fin": 31},
+            "P4": {"mes_inicio": 9, "dia_inicio": 1, "mes_fin": 12, "dia_fin": 31}
+        }
+
+    def obtener_periodo_desde_semana(self, semana: int, año: int = None) -> str:
+        """
+        Determina el período (P1, P2, P3, P4) al que pertenece una semana dada.
+
+        Args:
+            semana (int): Número de semana del año (1-53)
+            año (int): Año (si es None, usa el año actual)
+
+        Returns:
+            str: Período al que pertenece la semana (P1, P2, P3, P4)
+        """
+        if año is None:
+            año = datetime.now().year
+
+        # Calcular la fecha del lunes de la semana dada
+        # Usamos el método isocalendar: (año, semana, día)
+        try:
+            # La semana 1 es la semana que contiene el primer jueves del año
+            # Esto asegura que la semana 1 siempre tenga al menos 4 días
+            fecha = datetime.strptime(f'{año}-W{semana:02d}-1', '%Y-W%W-%w')
+        except ValueError:
+            # Si falla, intentamos con otro método
+            from datetime import timedelta
+            # Encontrar el primer día del año
+            primer_dia_año = datetime(año, 1, 1)
+            # Calcular el número de días hasta el lunes de la semana 1
+            dias_hasta_lunes = (7 - primer_dia_año.weekday()) % 7
+            # Calcular la fecha del lunes de la semana dada
+            fecha = primer_dia_año + timedelta(weeks=semana-1, days=dias_hasta_lunes)
+
+        mes = fecha.month
+
+        # Cargar configuración de períodos
+        periodos = self.cargar_configuracion_periodos()
+
+        # Determinar el período según el mes de la fecha
+        for nombre_periodo, config_periodo in periodos.items():
+            mes_inicio = config_periodo.get('mes_inicio', 1)
+            mes_fin = config_periodo.get('mes_fin', 12)
+
+            if mes_inicio <= mes <= mes_fin:
+                logger.debug(f"Semana {semana} ({fecha.strftime('%Y-%m-%d')}) corresponde al período {nombre_periodo}")
+                return nombre_periodo
+
+        # Si no encuentra período, retornar P4 por defecto
+        logger.warning(f"No se pudo determinar período para semana {semana}, usando P4 por defecto")
+        return "P4"
+
+    def buscar_archivo_abc_seccion(self, seccion: str, semana: int = None) -> Optional[str]:
         """
         Busca el archivo CLASIFICACION ABC+D específico para la sección.
 
@@ -632,18 +706,23 @@ class DataLoader:
         'CLASIFICACION_ABC+D_' seguido del nombre de la sección, permitiendo
         también el nuevo formato con período y año (ej: CLASIFICACION_ABC+D_INTERIOR_P2_2025.xlsx).
 
+        Si se proporciona el parámetro semana, seleccionará el archivo correspondiente
+        al período (P1, P2, P3, P4) al que pertenece esa semana, basándose en la
+        configuración de períodos en config_comun.json.
+
         Args:
             seccion (str): Nombre de la sección a buscar
+            semana (int, optional): Número de semana del año para determinar el período
 
         Returns:
             Optional[str]: Ruta del archivo encontrado o None
         """
         dir_entrada = self.obtener_directorio_entrada()
         patron = self.archivos.get('clasificacion_abc', 'CLASIFICACION_ABC+D_*.xlsx')
-        
+
         # Normalizar nombre de sección para búsqueda
         seccion_normalizada = self.normalizar_texto(seccion)
-        
+
         # Mapeo especial para secciones con guiones bajos que deben preservarse en el nombre del archivo
         # Ejemplo: 'tierras_aridos' debe buscar 'TIERRA_ARIDOS' en el archivo
         mapeo_secciones = {
@@ -655,50 +734,76 @@ class DataLoader:
             'decoexterior': 'DECO_EXTERIOR',
             'utilesjardin': 'UTILES_JARDIN'
         }
-        
+
         # Usar el mapeo especial si existe, sinon usar la sección normalizada
         seccion_busqueda = mapeo_secciones.get(seccion_normalizada, seccion_normalizada.upper())
-        
+
+        # Determinar el período si se proporciona la semana
+        periodo_seleccionado = None
+        if semana is not None:
+            periodo_seleccionado = self.obtener_periodo_desde_semana(semana)
+            logger.info(f"Período determinado para semana {semana}: {periodo_seleccionado}")
+
         # Buscar archivos con el nuevo formato que incluye período y año
-        # Patrón: CLASIFICACION_ABC+D_{SECCION}_*.xlsx
+        # Patrón: CLASIFICACION_ABC+D_{SECCION}_P{N}_*.xlsx
         # Ejemplos: CLASIFICACION_ABC+D_INTERIOR_P1_2025.xlsx, CLASIFICACION_ABC+D_INTERIOR_P2_2026.xlsx
+
+        if periodo_seleccionado:
+            # Buscar específicamente el archivo del período seleccionado
+            patron_periodo = f"CLASIFICACION_ABC+D_{seccion_busqueda}_{periodo_seleccionado}_*.xlsx"
+            ruta_periodo = os.path.join(dir_entrada, patron_periodo)
+            archivos_periodo = glob.glob(ruta_periodo)
+
+            if archivos_periodo:
+                # Ordenar por fecha de modificación (más reciente primero)
+                archivos_periodo.sort(key=os.path.getmtime, reverse=True)
+                logger.info(f"Archivo ABC encontrado para '{seccion}' (período {periodo_seleccionado}): {archivos_periodo[0]}")
+                return archivos_periodo[0]
+            else:
+                logger.warning(f"No se encontró archivo para '{seccion}' con período {periodo_seleccionado}, buscando cualquier archivo disponible")
+
+        # Si no se especificó semana o no se encontró el archivo del período, buscar todos los archivos nuevos
         nuevo_patron = f"CLASIFICACION_ABC+D_{seccion_busqueda}_*.xlsx"
         ruta_nueva = os.path.join(dir_entrada, nuevo_patron)
         archivos_nuevos = glob.glob(ruta_nueva)
-        
+
         if archivos_nuevos:
+            # Si tenemos semana pero no encontramos archivo del período, usar el más reciente
+            if semana is not None and periodo_seleccionado:
+                logger.warning(f"No existe archivo para período {periodo_seleccionado}, usando el más reciente")
+
             # Ordenar por fecha de modificación (más reciente primero)
             archivos_nuevos.sort(key=os.path.getmtime, reverse=True)
             logger.info(f"Archivo ABC encontrado (nuevo formato) para '{seccion}': {archivos_nuevos[0]}")
             return archivos_nuevos[0]
-        
+
         # Si no encuentra el nuevo formato, buscar el formato antiguo
         # Patrón: CLASIFICACION_ABC+D_{SECCION}.xlsx (sin período)
         antiguo_patron = f"CLASIFICACION_ABC+D_{seccion_busqueda}.xlsx"
         ruta_antigua = os.path.join(dir_entrada, antiguo_patron)
-        
+
         if os.path.exists(ruta_antigua):
             logger.info(f"Archivo ABC encontrado (formato antiguo) para '{seccion}': {ruta_antigua}")
             return ruta_antigua
-        
+
         # Búsqueda amplia por sección (formato genérico)
         patron_generico = os.path.join(dir_entrada, f'*{seccion_busqueda}*.xlsx')
         archivos_genericos = glob.glob(patron_generico)
-        
+
         if archivos_genericos:
             archivos_genericos.sort(key=os.path.getmtime, reverse=True)
             logger.warning(f"No se encontró archivo con patrón estándar para '{seccion}', usando: {archivos_genericos[0]}")
             return archivos_genericos[0]
-        
+
         # Búsqueda genérica de cualquier archivo CLASIFICACION_ABC+D
         patron_catchall = os.path.join(dir_entrada, 'CLASIFICACION_ABC+D*.xlsx')
         archivos_catchall = glob.glob(patron_catchall)
-        
+
         if archivos_catchall:
             archivos_catchall.sort(key=os.path.getmtime, reverse=True)
             logger.warning(f"No se encontró archivo específico para '{seccion}', usando: {archivos_catchall[0]}")
             return archivos_catchall[0]
-        
+
         logger.error(f"No se encontró ningún archivo ABC+D para sección '{seccion}'")
         # Enviar alerta específica
         alert_svc = get_alert_service()
@@ -710,20 +815,21 @@ class DataLoader:
             }, clave_unica=f"abc_{seccion}")
         return None
     
-    def leer_clasificacion_abc(self, seccion: str) -> Optional[pd.DataFrame]:
+    def leer_clasificacion_abc(self, seccion: str, semana: int = None) -> Optional[pd.DataFrame]:
         """
         Lee el archivo de clasificación ABC para una sección específica.
-        
+
         El archivo debe contener hojas separadas por categoría (A, B, C, D)
         con las acciones sugeridas y datos de rotación para cada artículo.
-        
+
         Args:
             seccion (str): Nombre de la sección a procesar
-        
+            semana (int, optional): Número de semana del año para determinar el período del archivo
+
         Returns:
             Optional[pd.DataFrame]: DataFrame con la clasificación ABC o None
         """
-        ruta_archivo = self.buscar_archivo_abc_seccion(seccion)
+        ruta_archivo = self.buscar_archivo_abc_seccion(seccion, semana)
         
         if ruta_archivo is None:
             return None
@@ -771,24 +877,25 @@ class DataLoader:
         logger.info(f"Clasificación ABC cargada para '{seccion}': {len(df_resultado)} registros")
         return df_resultado
     
-    def leer_datos_seccion(self, seccion: str) -> Tuple[Optional[pd.DataFrame], Optional[pd.DataFrame], Optional[pd.DataFrame]]:
+    def leer_datos_seccion(self, seccion: str, semana: int = None) -> Tuple[Optional[pd.DataFrame], Optional[pd.DataFrame], Optional[pd.DataFrame]]:
         """
         Lee todos los datos necesarios para procesar una sección.
-        
+
         Args:
             seccion (str): Nombre de la sección a procesar
-        
+            semana (int, optional): Número de semana del año para determinar el período del archivo ABC
+
         Returns:
             Tuple: (abc_df, ventas_df, costes_df) o (None, None, None) si hay error
         """
         logger.info(f"=== LEYENDO DATOS PARA SECCIÓN: {seccion.upper()} ===")
-        
+
         # DEBUG: Mostrar información de secciones activas
         logger.debug(f"[DEBUG] Secciones activas configuradas: {self.secciones}")
-        
+
         # Leer clasificación ABC
         logger.debug(f"[DEBUG] Intentando leer clasificación ABC para sección: {seccion}")
-        abc_df = self.leer_clasificacion_abc(seccion)
+        abc_df = self.leer_clasificacion_abc(seccion, semana)
         
         logger.debug(f"[DEBUG] ABC leído: {len(abc_df) if abc_df is not None else 0} registros")
         if abc_df is not None and len(abc_df) > 0:
