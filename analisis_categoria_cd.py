@@ -600,6 +600,21 @@ def comparar_con_semana_anterior(ruta_archivo_actual):
     try:
         from comparar_analisis_cd import comparar_archivos
         resultado = comparar_archivos(ruta_archivo_actual, archivo_anterior)
+        
+        # También enviar email con la comparación
+        if resultado:
+            try:
+                from comparar_analisis_cd import enviar_email_informe as enviar_email_comparacion
+                periodo = obtener_periodo_año()
+                print("\n" + "=" * 60)
+                print("ENVIANDO EMAIL DE COMPARACIÓN")
+                print("=" * 60)
+                email_enviado = enviar_email_comparacion(resultado, periodo)
+                if email_enviado:
+                    print(f"\n📧 Email de comparación enviado a los destinatarios: Ivan y Sandra")
+            except Exception as e:
+                print(f"  AVISO: No se pudo enviar el email de comparación: {e}")
+        
         return resultado
     except Exception as e:
         print(f"⚠️ Error al comparar: {e}")
@@ -651,7 +666,10 @@ def enviar_email_informe(archivo_informe: str, periodo: str = 'desconocido') -> 
     password = os.environ.get('EMAIL_PASSWORD')
     if not password:
         print(f"  AVISO: Variable de entorno 'EMAIL_PASSWORD' no configurada. No se enviará email.")
+        print(f"  DEBUG: Variables de entorno disponibles: {list(os.environ.keys())}")
         return False
+    else:
+        print(f"  DEBUG: EMAIL_PASSWORD detectada (longitud: {len(password)})")
     
     # Enviar email a cada destinatario
     emails_enviados = 0
