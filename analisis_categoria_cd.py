@@ -432,8 +432,8 @@ def crear_excel(df_en_stock, metricas, seccion, workbook, stock_anterior=None):
                         # Gris - sin cambios
                         cell.font = Font(bold=True, color="808080", size=14)
                     elif valor == "NEW":
-                        # Azul - nuevo artículo
-                        cell.font = Font(bold=True, color="0000FF", size=14)
+                        # Rojo - nuevo artículo
+                        cell.font = Font(bold=True, color="FF0000", size=14)
                     else:
                         cell.font = Font(color="808080", size=14)
     else:
@@ -487,7 +487,7 @@ def crear_excel(df_en_stock, metricas, seccion, workbook, stock_anterior=None):
     
     # Leyenda de evolución
     if stock_anterior:
-        ws[f'A{fila_nota}'] = "LEYENDA DE EVOLUCIÓN: ↓ = Stock disminuyendo (deseado) | ↑ = Stock aumentando | = = Sin cambios | NEW = Nuevo artículo"
+        ws[f'A{fila_nota}'] = "LEYENDA DE EVOLUCIÓN: ↓ = Stock disminuyendo (deseado) | ↑ = Stock aumentando | = = Sin cambios | NEW = Nuevo artículo (en rojo)"
         ws[f'A{fila_nota}'].font = Font(italic=True, size=9, color="008000")
         ws.merge_cells(f'A{fila_nota}:G{fila_nota}')
         fila_nota += 1
