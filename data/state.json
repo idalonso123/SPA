@@ -3,7 +3,7 @@
         "version": "2.0.0",
         "fecha_creacion": "2026-01-31T00:00:00",
         "ultima_actualizacion": null,
-        "ultima_ejecucion_exitosa": "2026-02-25T00:50:12.311794",
+        "ultima_ejecucion_exitosa": "2026-02-25T02:50:37.190134",
         "ultima_semana_procesada": 7,
         "año_en_curso": 2026
     },
@@ -2699,7 +2699,7 @@
         "2101040010|         |        ": 0,
         "2101040007|         |        ": 0,
         "2101040009|         |        ": 0,
-        "2101030002|         |        ": 1,
+        "2101030002|         |        ": 0,
         "2203020003|         |        ": 1,
         "2401010309|         |        ": 0,
         "2301010053|         |        ": 0,
@@ -5011,7 +5011,7 @@
         {
             "semana": 7,
             "fecha_ejecucion": "2026-02-21T16:24:33.480455",
-            "archivo_generado": "D:\\ALMACENAMIENTO\\Ivan\\viveverde\\Trabajos\\IA\\PROGRAMA_COMPRAS_AUTOMATICAS\\PRUEBA\\SPA\\data\\output\\Pedidos_semanales\\Pedido_Semana_07_21022026_interior.xlsx",
+            "archivo_generado": "./data/output/Pedidos_semanales/Pedido_Semana_07_21022026_interior.xlsx",
             "num_articulos": 352,
             "importe": 8993.59,
             "exitosa": true,
@@ -5020,7 +5020,7 @@
         {
             "semana": 7,
             "fecha_ejecucion": "2026-02-22T20:45:32.033404",
-            "archivo_generado": "D:\\ALMACENAMIENTO\\Ivan\\viveverde\\Trabajos\\IA\\PROGRAMA_COMPRAS_AUTOMATICAS\\PRUEBA1\\SPA\\data\\output\\Pedidos_semanales\\Pedido_Semana_07_22022026_interior.xlsx",
+            "archivo_generado": "./data/output/Pedidos_semanales/Pedido_Semana_07_22022026_interior.xlsx",
             "num_articulos": 352,
             "importe": 8993.59,
             "exitosa": true,
@@ -5029,7 +5029,7 @@
         {
             "semana": 7,
             "fecha_ejecucion": "2026-02-22T22:39:14.859859",
-            "archivo_generado": "D:\\ALMACENAMIENTO\\Ivan\\viveverde\\Trabajos\\IA\\PROGRAMA_COMPRAS_AUTOMATICAS\\PRUEBA1\\SPA\\data\\output\\Pedidos_semanales\\Pedido_Semana_07_22022026_interior.xlsx",
+            "archivo_generado": "./data/output/Pedidos_semanales/Pedido_Semana_07_22022026_interior.xlsx",
             "num_articulos": 353,
             "importe": 9020.79,
             "exitosa": true,
@@ -5038,7 +5038,7 @@
         {
             "semana": 7,
             "fecha_ejecucion": "2026-02-22T22:59:43.027729",
-            "archivo_generado": "D:\\ALMACENAMIENTO\\Ivan\\viveverde\\Trabajos\\IA\\PROGRAMA_COMPRAS_AUTOMATICAS\\PRUEBA1\\SPA\\data\\output\\Pedidos_semanales\\Pedido_Semana_07_22022026_interior.xlsx",
+            "archivo_generado": "./data/output/Pedidos_semanales/Pedido_Semana_07_22022026_interior.xlsx",
             "num_articulos": 353,
             "importe": 9020.79,
             "exitosa": true,
@@ -5047,7 +5047,7 @@
         {
             "semana": 7,
             "fecha_ejecucion": "2026-02-23T00:31:39.748378",
-            "archivo_generado": "D:\\ALMACENAMIENTO\\Ivan\\viveverde\\Trabajos\\IA\\PROGRAMA_COMPRAS_AUTOMATICAS\\SPA\\data\\output\\Pedidos_semanales\\Pedido_Semana_07_23022026_interior.xlsx",
+            "archivo_generado": "./data/output/Pedidos_semanales/Pedido_Semana_07_23022026_interior.xlsx",
             "num_articulos": 352,
             "importe": 8993.59,
             "exitosa": true,
@@ -5056,7 +5056,7 @@
         {
             "semana": 7,
             "fecha_ejecucion": "2026-02-23T01:24:47.461685",
-            "archivo_generado": "D:\\ALMACENAMIENTO\\Ivan\\viveverde\\Trabajos\\IA\\PROGRAMA_COMPRAS_AUTOMATICAS\\PRUEBA1\\SPA\\data\\output\\Pedidos_semanales\\Pedido_Semana_07_23022026_interior.xlsx",
+            "archivo_generado": "./data/output/Pedidos_semanales/Pedido_Semana_07_23022026_interior.xlsx",
             "num_articulos": 352,
             "importe": 8993.59,
             "exitosa": true,
@@ -5065,7 +5065,7 @@
         {
             "semana": 7,
             "fecha_ejecucion": "2026-02-24T01:40:45.104543",
-            "archivo_generado": "D:\\ALMACENAMIENTO\\Ivan\\viveverde\\Trabajos\\IA\\PROGRAMA_COMPRAS_AUTOMATICAS\\SPA\\data\\output\\Pedidos_semanales\\Pedido_Semana_07_24022026_interior.xlsx",
+            "archivo_generado": "./data/output/Pedidos_semanales/Pedido_Semana_07_24022026_interior.xlsx",
             "num_articulos": 352,
             "importe": 8993.59,
             "exitosa": true,
@@ -5074,11 +5074,20 @@
         {
             "semana": 7,
             "fecha_ejecucion": "2026-02-25T00:50:12.311382",
-            "archivo_generado": "D:\\ALMACENAMIENTO\\Ivan\\viveverde\\Trabajos\\IA\\PROGRAMA_COMPRAS_AUTOMATICAS\\SPA\\data\\output\\Pedidos_semanales\\Pedido_Semana_07_25022026_interior.xlsx",
+            "archivo_generado": "./data/output/Pedidos_semanales/Pedido_Semana_07_25022026_interior.xlsx",
             "num_articulos": 353,
             "importe": 9020.79,
             "exitosa": true,
             "notas": "Procesadas 11 secciones - 804 artículos corregidos en FASE 2"
+        },
+        {
+            "semana": 7,
+            "fecha_ejecucion": "2026-02-25T02:50:37.190081",
+            "archivo_generado": "data/output/Pedidos_semanales/Pedido_Semana_07_25022026_interior.xlsx",
+            "num_articulos": 353,
+            "importe": 9020.79,
+            "exitosa": true,
+            "notas": "Procesadas 11 secciones - 803 artículos corregidos en FASE 2"
         }
     ],
     "pedidos_generados": [
@@ -5102,151 +5111,151 @@
         },
         {
             "semana": 14,
-            "archivo": ".\\./data/output\\Pedido_Semana_14_2026-01-30_maf.xlsx",
+            "archivo": "./data/output/Pedido_Semana_14_2026-01-30_maf.xlsx",
             "fecha": "2026-01-30",
             "importe": 47966.89
         },
         {
             "semana": 15,
-            "archivo": ".\\./data/output\\Pedido_Semana_15_2026-02-01_maf.xlsx",
+            "archivo": "./data/output/Pedido_Semana_15_2026-02-01_maf.xlsx",
             "fecha": "2026-02-01",
             "importe": 33919.86
         },
         {
             "semana": 14,
-            "archivo": ".\\./data/output\\Pedido_Semana_14_2026-02-03_maf.xlsx",
+            "archivo": "./data/output/Pedido_Semana_14_2026-02-03_maf.xlsx",
             "fecha": "2026-02-03",
             "importe": 47966.89
         },
         {
             "semana": 14,
-            "archivo": ".\\./data/output\\Pedido_Semana_14_2026-02-03_maf.xlsx",
+            "archivo": "./data/output/Pedido_Semana_14_2026-02-03_maf.xlsx",
             "fecha": "2026-02-03",
             "importe": 48113.87
         },
         {
             "semana": 14,
-            "archivo": ".\\./data/output\\Pedido_Semana_14_2026-02-04_maf.xlsx",
+            "archivo": "./data/output/Pedido_Semana_14_2026-02-04_maf.xlsx",
             "fecha": "2026-02-04",
             "importe": 48113.87
         },
         {
             "semana": 14,
-            "archivo": ".\\./data/output\\Pedido_Semana_14_2026-02-04_maf.xlsx",
+            "archivo": "./data/output/Pedido_Semana_14_2026-02-04_maf.xlsx",
             "fecha": "2026-02-04",
             "importe": 48113.87
         },
         {
             "semana": 14,
-            "archivo": ".\\./data/output\\Pedido_Semana_14_2026-02-04_maf.xlsx",
+            "archivo": "./data/output/Pedido_Semana_14_2026-02-04_maf.xlsx",
             "fecha": "2026-02-04",
             "importe": 48113.87
         },
         {
             "semana": 14,
-            "archivo": ".\\./data/output\\Pedido_Semana_14_2026-02-04_maf.xlsx",
+            "archivo": "./data/output/Pedido_Semana_14_2026-02-04_maf.xlsx",
             "fecha": "2026-02-04",
             "importe": 48113.87
         },
         {
             "semana": 14,
-            "archivo": ".\\./data/output\\Pedido_Semana_14_2026-02-04_maf.xlsx",
+            "archivo": "./data/output/Pedido_Semana_14_2026-02-04_maf.xlsx",
             "fecha": "2026-02-04",
             "importe": 48113.87
         },
         {
             "semana": 14,
-            "archivo": ".\\./data/output\\Pedido_Semana_14_2026-02-04_maf.xlsx",
+            "archivo": "./data/output/Pedido_Semana_14_2026-02-04_maf.xlsx",
             "fecha": "2026-02-04",
             "importe": 48113.87
         },
         {
             "semana": 14,
-            "archivo": ".\\./data/output\\Pedido_Semana_14_2026-02-04_maf.xlsx",
+            "archivo": "./data/output/Pedido_Semana_14_2026-02-04_maf.xlsx",
             "fecha": "2026-02-04",
             "importe": 48113.87
         },
         {
             "semana": 14,
-            "archivo": ".\\./data/output\\Pedido_Semana_14_2026-02-04_maf.xlsx",
+            "archivo": "./data/output/Pedido_Semana_14_2026-02-04_maf.xlsx",
             "fecha": "2026-02-04",
             "importe": 48113.87
         },
         {
             "semana": 14,
-            "archivo": ".\\./data/output\\Pedido_Semana_14_2026-02-04_maf.xlsx",
+            "archivo": "./data/output/Pedido_Semana_14_2026-02-04_maf.xlsx",
             "fecha": "2026-02-04",
             "importe": 48113.87
         },
         {
             "semana": 14,
-            "archivo": ".\\./data/output\\Pedido_Semana_14_2026-02-04_maf.xlsx",
+            "archivo": "./data/output/Pedido_Semana_14_2026-02-04_maf.xlsx",
             "fecha": "2026-02-04",
             "importe": 48113.87
         },
         {
             "semana": 14,
-            "archivo": ".\\./data/output\\Pedido_Semana_14_2026-02-04_maf.xlsx",
+            "archivo": "./data/output/Pedido_Semana_14_2026-02-04_maf.xlsx",
             "fecha": "2026-02-04",
             "importe": 48113.87
         },
         {
             "semana": 14,
-            "archivo": ".\\./data/output\\Pedido_Semana_14_2026-02-04_maf.xlsx",
+            "archivo": "./data/output/Pedido_Semana_14_2026-02-04_maf.xlsx",
             "fecha": "2026-02-04",
             "importe": 48113.87
         },
         {
             "semana": 14,
-            "archivo": ".\\./data/output\\Pedido_Semana_14_2026-02-04_maf.xlsx",
+            "archivo": "./data/output/Pedido_Semana_14_2026-02-04_maf.xlsx",
             "fecha": "2026-02-04",
             "importe": 48113.87
         },
         {
             "semana": 14,
-            "archivo": ".\\./data/output\\Pedido_Semana_14_2026-02-04_maf.xlsx",
+            "archivo": "./data/output/Pedido_Semana_14_2026-02-04_maf.xlsx",
             "fecha": "2026-02-04",
             "importe": 48113.87
         },
         {
             "semana": 14,
-            "archivo": ".\\./data/output\\Pedido_Semana_14_2026-02-04_maf.xlsx",
+            "archivo": "./data/output/Pedido_Semana_14_2026-02-04_maf.xlsx",
             "fecha": "2026-02-04",
             "importe": 48113.87
         },
         {
             "semana": 14,
-            "archivo": ".\\./data/output\\Pedido_Semana_14_2026-02-04_maf.xlsx",
+            "archivo": "./data/output/Pedido_Semana_14_2026-02-04_maf.xlsx",
             "fecha": "2026-02-04",
             "importe": 48113.87
         },
         {
             "semana": 14,
-            "archivo": ".\\./data/output\\Pedido_Semana_14_2026-02-04_maf.xlsx",
+            "archivo": "./data/output/Pedido_Semana_14_2026-02-04_maf.xlsx",
             "fecha": "2026-02-04",
             "importe": 48113.87
         },
         {
             "semana": 14,
-            "archivo": ".\\./data/output\\Pedido_Semana_14_2026-02-04_maf.xlsx",
+            "archivo": "./data/output/Pedido_Semana_14_2026-02-04_maf.xlsx",
             "fecha": "2026-02-04",
             "importe": 48113.87
         },
         {
             "semana": 14,
-            "archivo": ".\\./data/output\\Pedido_Semana_14_2026-02-04_maf.xlsx",
+            "archivo": "./data/output/Pedido_Semana_14_2026-02-04_maf.xlsx",
             "fecha": "2026-02-04",
             "importe": 48113.87
         },
         {
             "semana": 14,
-            "archivo": ".\\./data/output\\Pedido_Semana_14_2026-02-04_maf.xlsx",
+            "archivo": "./data/output/Pedido_Semana_14_2026-02-04_maf.xlsx",
             "fecha": "2026-02-04",
             "importe": 48113.87
         },
         {
             "semana": 14,
-            "archivo": ".\\./data/output\\Pedido_Semana_14_2026-02-06_maf.xlsx",
+            "archivo": "./data/output/Pedido_Semana_14_2026-02-06_maf.xlsx",
             "fecha": "2026-02-06",
             "importe": 48127.3
         },
@@ -5258,13 +5267,13 @@
         },
         {
             "semana": 14,
-            "archivo": ".\\./data/output\\Pedido_Semana_14_06022026_maf.xlsx",
+            "archivo": "./data/output/Pedido_Semana_14_06022026_maf.xlsx",
             "fecha": "2026-02-06",
             "importe": 48115.81
         },
         {
             "semana": 14,
-            "archivo": ".\\./data/output\\Pedido_Semana_14_07022026_maf.xlsx",
+            "archivo": "./data/output/Pedido_Semana_14_07022026_maf.xlsx",
             "fecha": "2026-02-07",
             "importe": 48115.81
         },
@@ -5276,415 +5285,415 @@
         },
         {
             "semana": 8,
-            "archivo": ".\\./data/output\\Pedido_Semana_08_07022026_maf.xlsx",
+            "archivo": "./data/output/Pedido_Semana_08_07022026_maf.xlsx",
             "fecha": "2026-02-07",
             "importe": 21452.22
         },
         {
             "semana": 8,
-            "archivo": ".\\./data/output\\Pedido_Semana_08_07022026_maf.xlsx",
+            "archivo": "./data/output/Pedido_Semana_08_07022026_maf.xlsx",
             "fecha": "2026-02-07",
             "importe": 21452.22
         },
         {
             "semana": 8,
-            "archivo": ".\\./data/output\\Pedido_Semana_08_08022026_maf.xlsx",
+            "archivo": "./data/output/Pedido_Semana_08_08022026_maf.xlsx",
             "fecha": "2026-02-08",
             "importe": 21447.84
         },
         {
             "semana": 8,
-            "archivo": ".\\./data/output\\Pedido_Semana_08_08022026_maf.xlsx",
+            "archivo": "./data/output/Pedido_Semana_08_08022026_maf.xlsx",
             "fecha": "2026-02-08",
             "importe": 21452.22
         },
         {
             "semana": 8,
-            "archivo": ".\\./data/output\\Pedido_Semana_08_08022026_maf.xlsx",
+            "archivo": "./data/output/Pedido_Semana_08_08022026_maf.xlsx",
             "fecha": "2026-02-08",
             "importe": 21447.84
         },
         {
             "semana": 8,
-            "archivo": ".\\./data/output\\Pedido_Semana_08_08022026_maf.xlsx",
+            "archivo": "./data/output/Pedido_Semana_08_08022026_maf.xlsx",
             "fecha": "2026-02-08",
             "importe": 21447.84
         },
         {
             "semana": 8,
-            "archivo": ".\\./data/output\\Pedido_Semana_08_08022026_maf.xlsx",
+            "archivo": "./data/output/Pedido_Semana_08_08022026_maf.xlsx",
             "fecha": "2026-02-08",
             "importe": 21447.84
         },
         {
             "semana": 8,
-            "archivo": ".\\./data/output\\Pedido_Semana_08_08022026_maf.xlsx",
+            "archivo": "./data/output/Pedido_Semana_08_08022026_maf.xlsx",
             "fecha": "2026-02-08",
             "importe": 21452.22
         },
         {
             "semana": 8,
-            "archivo": ".\\./data/output\\Pedido_Semana_08_08022026_maf.xlsx",
+            "archivo": "./data/output/Pedido_Semana_08_08022026_maf.xlsx",
             "fecha": "2026-02-08",
             "importe": 21452.22
         },
         {
             "semana": 8,
-            "archivo": ".\\./data/output\\Pedido_Semana_08_08022026_maf.xlsx",
+            "archivo": "./data/output/Pedido_Semana_08_08022026_maf.xlsx",
             "fecha": "2026-02-08",
             "importe": 21452.22
         },
         {
             "semana": 7,
-            "archivo": ".\\./data/output\\Pedido_Semana_07_09022026_maf.xlsx",
+            "archivo": "./data/output/Pedido_Semana_07_09022026_maf.xlsx",
             "fecha": "2026-02-09",
             "importe": 20630.46
         },
         {
             "semana": 8,
-            "archivo": ".\\./data/output\\Pedido_Semana_08_09022026_maf.xlsx",
+            "archivo": "./data/output/Pedido_Semana_08_09022026_maf.xlsx",
             "fecha": "2026-02-09",
             "importe": 21452.22
         },
         {
             "semana": 8,
-            "archivo": ".\\./data/output\\Pedido_Semana_08_09022026_maf.xlsx",
+            "archivo": "./data/output/Pedido_Semana_08_09022026_maf.xlsx",
             "fecha": "2026-02-09",
             "importe": 21452.22
         },
         {
             "semana": 8,
-            "archivo": ".\\./data/output\\Pedido_Semana_08_09022026_maf.xlsx",
+            "archivo": "./data/output/Pedido_Semana_08_09022026_maf.xlsx",
             "fecha": "2026-02-09",
             "importe": 21452.22
         },
         {
             "semana": 5,
-            "archivo": ".\\./data/output\\Pedido_Semana_05_09022026_maf.xlsx",
+            "archivo": "./data/output/Pedido_Semana_05_09022026_maf.xlsx",
             "fecha": "2026-02-09",
             "importe": 16425.38
         },
         {
             "semana": 6,
-            "archivo": ".\\./data/output\\Pedido_Semana_06_09022026_maf.xlsx",
+            "archivo": "./data/output/Pedido_Semana_06_09022026_maf.xlsx",
             "fecha": "2026-02-09",
             "importe": 16391.48
         },
         {
             "semana": 6,
-            "archivo": ".\\./data/output\\Resumen_Pedidos_CONSOLIDADO_10022026.xlsx",
+            "archivo": "./data/output/Resumen_Pedidos_CONSOLIDADO_10022026.xlsx",
             "fecha": "2026-02-10",
             "importe": 0.0
         },
         {
             "semana": 6,
-            "archivo": ".\\./data/output\\Resumen_Pedidos_CONSOLIDADO_10022026.xlsx",
+            "archivo": "./data/output/Resumen_Pedidos_CONSOLIDADO_10022026.xlsx",
             "fecha": "2026-02-10",
             "importe": 0.0
         },
         {
             "semana": 6,
-            "archivo": ".\\./data/output\\Pedido_Semana_06_10022026_maf.xlsx",
+            "archivo": "./data/output/Pedido_Semana_06_10022026_maf.xlsx",
             "fecha": "2026-02-10",
             "importe": 16391.48
         },
         {
             "semana": 6,
-            "archivo": ".\\./data/output\\Pedido_Semana_06_10022026_maf.xlsx",
+            "archivo": "./data/output/Pedido_Semana_06_10022026_maf.xlsx",
             "fecha": "2026-02-10",
             "importe": 16391.48
         },
         {
             "semana": 6,
-            "archivo": ".\\./data/output\\Pedido_Semana_06_10022026_maf.xlsx",
+            "archivo": "./data/output/Pedido_Semana_06_10022026_maf.xlsx",
             "fecha": "2026-02-10",
             "importe": 16391.48
         },
         {
             "semana": 6,
-            "archivo": "././data/output/Pedido_Semana_06_11022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_06_11022026_interior.xlsx",
             "fecha": "2026-02-11",
             "importe": 1655.05
         },
         {
             "semana": 6,
-            "archivo": "././data/output/Pedido_Semana_06_11022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_06_11022026_interior.xlsx",
             "fecha": "2026-02-11",
             "importe": 1655.05
         },
         {
             "semana": 6,
-            "archivo": "././data/output/Pedido_Semana_06_11022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_06_11022026_interior.xlsx",
             "fecha": "2026-02-11",
             "importe": 1655.05
         },
         {
             "semana": 6,
-            "archivo": "././data/output/Pedido_Semana_06_11022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_06_11022026_interior.xlsx",
             "fecha": "2026-02-11",
             "importe": 1655.05
         },
         {
             "semana": 6,
-            "archivo": "././data/output/Pedido_Semana_06_11022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_06_11022026_interior.xlsx",
             "fecha": "2026-02-11",
             "importe": 1655.05
         },
         {
             "semana": 6,
-            "archivo": "././data/output/Pedido_Semana_06_11022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_06_11022026_interior.xlsx",
             "fecha": "2026-02-11",
             "importe": 1655.05
         },
         {
             "semana": 6,
-            "archivo": "././data/output/Pedido_Semana_06_11022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_06_11022026_interior.xlsx",
             "fecha": "2026-02-11",
             "importe": 1655.05
         },
         {
             "semana": 6,
-            "archivo": "././data/output/Pedido_Semana_06_11022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_06_11022026_interior.xlsx",
             "fecha": "2026-02-11",
             "importe": 1655.05
         },
         {
             "semana": 6,
-            "archivo": "././data/output/Pedido_Semana_06_11022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_06_11022026_interior.xlsx",
             "fecha": "2026-02-11",
             "importe": 1362.24
         },
         {
             "semana": 6,
-            "archivo": "././data/output/Pedido_Semana_06_11022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_06_11022026_interior.xlsx",
             "fecha": "2026-02-11",
             "importe": 1362.24
         },
         {
             "semana": 7,
-            "archivo": "././data/output/Pedido_Semana_07_11022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_07_11022026_interior.xlsx",
             "fecha": "2026-02-11",
             "importe": 3429.2
         },
         {
             "semana": 7,
-            "archivo": "././data/output/Pedido_Semana_07_11022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_07_11022026_interior.xlsx",
             "fecha": "2026-02-11",
             "importe": 3429.2
         },
         {
             "semana": 7,
-            "archivo": "././data/output/Pedido_Semana_07_11022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_07_11022026_interior.xlsx",
             "fecha": "2026-02-11",
             "importe": 3429.2
         },
         {
             "semana": 7,
-            "archivo": "././data/output/Pedido_Semana_07_11022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_07_11022026_interior.xlsx",
             "fecha": "2026-02-11",
             "importe": 3429.2
         },
         {
             "semana": 7,
-            "archivo": "././data/output/Pedido_Semana_07_11022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_07_11022026_interior.xlsx",
             "fecha": "2026-02-11",
             "importe": 3429.2
         },
         {
             "semana": 7,
-            "archivo": "././data/output/Pedido_Semana_07_11022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_07_11022026_interior.xlsx",
             "fecha": "2026-02-11",
             "importe": 3429.2
         },
         {
             "semana": 7,
-            "archivo": "././data/output/Pedido_Semana_07_12022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_07_12022026_interior.xlsx",
             "fecha": "2026-02-12",
             "importe": 3429.2
         },
         {
             "semana": 7,
-            "archivo": "././data/output/Pedido_Semana_07_12022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_07_12022026_interior.xlsx",
             "fecha": "2026-02-12",
             "importe": 3429.2
         },
         {
             "semana": 7,
-            "archivo": "././data/output/Pedido_Semana_07_12022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_07_12022026_interior.xlsx",
             "fecha": "2026-02-12",
             "importe": 3429.2
         },
         {
             "semana": 7,
-            "archivo": "././data/output/Pedido_Semana_07_12022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_07_12022026_interior.xlsx",
             "fecha": "2026-02-12",
             "importe": 3429.2
         },
         {
             "semana": 7,
-            "archivo": "././data/output/Pedido_Semana_07_12022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_07_12022026_interior.xlsx",
             "fecha": "2026-02-12",
             "importe": 3429.2
         },
         {
             "semana": 7,
-            "archivo": "././data/output/Pedido_Semana_07_12022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_07_12022026_interior.xlsx",
             "fecha": "2026-02-12",
             "importe": 4328.98
         },
         {
             "semana": 7,
-            "archivo": "././data/output/Pedido_Semana_07_12022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_07_12022026_interior.xlsx",
             "fecha": "2026-02-12",
             "importe": 4328.98
         },
         {
             "semana": 7,
-            "archivo": "././data/output/Pedido_Semana_07_12022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_07_12022026_interior.xlsx",
             "fecha": "2026-02-12",
             "importe": 4328.98
         },
         {
             "semana": 7,
-            "archivo": "././data/output/Pedido_Semana_07_12022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_07_12022026_interior.xlsx",
             "fecha": "2026-02-12",
             "importe": 4328.98
         },
         {
             "semana": 7,
-            "archivo": "././data/output/Pedido_Semana_07_12022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_07_12022026_interior.xlsx",
             "fecha": "2026-02-12",
             "importe": 4328.98
         },
         {
             "semana": 7,
-            "archivo": "././data/output/Pedido_Semana_07_12022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_07_12022026_interior.xlsx",
             "fecha": "2026-02-12",
             "importe": 4328.98
         },
         {
             "semana": 7,
-            "archivo": "././data/output/Pedido_Semana_07_12022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_07_12022026_interior.xlsx",
             "fecha": "2026-02-12",
             "importe": 4328.98
         },
         {
             "semana": 7,
-            "archivo": "././data/output/Pedido_Semana_07_12022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_07_12022026_interior.xlsx",
             "fecha": "2026-02-12",
             "importe": 4328.98
         },
         {
             "semana": 7,
-            "archivo": "././data/output/Pedido_Semana_07_12022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_07_12022026_interior.xlsx",
             "fecha": "2026-02-12",
             "importe": 3429.2
         },
         {
             "semana": 7,
-            "archivo": "././data/output/Pedido_Semana_07_12022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_07_12022026_interior.xlsx",
             "fecha": "2026-02-12",
             "importe": 3429.2
         },
         {
             "semana": 7,
-            "archivo": "././data/output/Pedido_Semana_07_12022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_07_12022026_interior.xlsx",
             "fecha": "2026-02-12",
             "importe": 4328.98
         },
         {
             "semana": 6,
-            "archivo": ".\\./data/output\\Pedido_Semana_06_11022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_06_11022026_interior.xlsx",
             "fecha": "2026-02-11",
             "importe": 13236.11
         },
         {
             "semana": 6,
-            "archivo": ".\\./data/output\\Pedido_Semana_06_11022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_06_11022026_interior.xlsx",
             "fecha": "2026-02-11",
             "importe": 13461.85
         },
         {
             "semana": 6,
-            "archivo": ".\\./data/output\\Pedido_Semana_06_11022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_06_11022026_interior.xlsx",
             "fecha": "2026-02-11",
             "importe": 13461.85
         },
         {
             "semana": 6,
-            "archivo": ".\\./data/output\\Pedido_Semana_06_11022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_06_11022026_interior.xlsx",
             "fecha": "2026-02-11",
             "importe": 13461.85
         },
         {
             "semana": 6,
-            "archivo": ".\\./data/output\\Pedido_Semana_06_11022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_06_11022026_interior.xlsx",
             "fecha": "2026-02-11",
             "importe": 13461.85
         },
         {
             "semana": 6,
-            "archivo": ".\\./data/output\\Pedido_Semana_06_11022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_06_11022026_interior.xlsx",
             "fecha": "2026-02-11",
             "importe": 13461.85
         },
         {
             "semana": 6,
-            "archivo": ".\\./data/output\\Pedido_Semana_06_11022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_06_11022026_interior.xlsx",
             "fecha": "2026-02-11",
             "importe": 21743.15
         },
         {
             "semana": 6,
-            "archivo": ".\\./data/output\\Pedido_Semana_06_12022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_06_12022026_interior.xlsx",
             "fecha": "2026-02-12",
             "importe": 21743.15
         },
         {
             "semana": 6,
-            "archivo": ".\\./data/output\\Pedido_Semana_06_12022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_06_12022026_interior.xlsx",
             "fecha": "2026-02-12",
             "importe": 21743.15
         },
         {
             "semana": 6,
-            "archivo": ".\\./data/output\\Pedido_Semana_06_12022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_06_12022026_interior.xlsx",
             "fecha": "2026-02-12",
             "importe": 21743.15
         },
         {
             "semana": 6,
-            "archivo": ".\\./data/output\\Pedido_Semana_06_12022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_06_12022026_interior.xlsx",
             "fecha": "2026-02-12",
             "importe": 21743.15
         },
         {
             "semana": 6,
-            "archivo": ".\\./data/output\\Pedido_Semana_06_12022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_06_12022026_interior.xlsx",
             "fecha": "2026-02-12",
             "importe": 21743.15
         },
         {
             "semana": 6,
-            "archivo": ".\\./data/output\\Pedido_Semana_06_12022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_06_12022026_interior.xlsx",
             "fecha": "2026-02-12",
             "importe": 21743.15
         },
         {
             "semana": 6,
-            "archivo": ".\\./data/output\\Pedido_Semana_06_12022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_06_12022026_interior.xlsx",
             "fecha": "2026-02-12",
             "importe": 21743.15
         },
         {
             "semana": 6,
-            "archivo": ".\\./data/output\\Pedido_Semana_06_12022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_06_12022026_interior.xlsx",
             "fecha": "2026-02-12",
             "importe": 21743.15
         },
         {
             "semana": 6,
-            "archivo": ".\\./data/output\\Pedido_Semana_06_12022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_06_12022026_interior.xlsx",
             "fecha": "2026-02-12",
             "importe": 21743.15
         },
@@ -5696,261 +5705,267 @@
         },
         {
             "semana": 6,
-            "archivo": ".\\./data/output\\Pedido_Semana_06_12022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_06_12022026_interior.xlsx",
             "fecha": "2026-02-12",
             "importe": 21743.15
         },
         {
             "semana": 6,
-            "archivo": ".\\./data/output\\Pedido_Semana_06_12022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_06_12022026_interior.xlsx",
             "fecha": "2026-02-12",
             "importe": 21743.15
         },
         {
             "semana": 6,
-            "archivo": ".\\./data/output\\Pedido_Semana_06_12022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_06_12022026_interior.xlsx",
             "fecha": "2026-02-12",
             "importe": 21743.15
         },
         {
             "semana": 6,
-            "archivo": ".\\./data/output\\Pedido_Semana_06_12022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_06_12022026_interior.xlsx",
             "fecha": "2026-02-12",
             "importe": 21743.15
         },
         {
             "semana": 6,
-            "archivo": ".\\./data/output\\Pedido_Semana_06_13022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_06_13022026_interior.xlsx",
             "fecha": "2026-02-13",
             "importe": 21777.03
         },
         {
             "semana": 7,
-            "archivo": ".\\./data/output\\Pedido_Semana_07_13022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_07_13022026_interior.xlsx",
             "fecha": "2026-02-13",
             "importe": 27696.21
         },
         {
             "semana": 6,
-            "archivo": ".\\./data/output\\Pedido_Semana_06_13022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_06_13022026_interior.xlsx",
             "fecha": "2026-02-13",
             "importe": 16512.57
         },
         {
             "semana": 7,
-            "archivo": ".\\./data/output\\Pedido_Semana_07_13022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_07_13022026_interior.xlsx",
             "fecha": "2026-02-13",
             "importe": 21397.74
         },
         {
             "semana": 6,
-            "archivo": ".\\./data/output\\Pedido_Semana_06_13022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_06_13022026_interior.xlsx",
             "fecha": "2026-02-13",
             "importe": 11625.84
         },
         {
             "semana": 7,
-            "archivo": ".\\./data/output\\Pedido_Semana_07_13022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_07_13022026_interior.xlsx",
             "fecha": "2026-02-13",
             "importe": 13450.0
         },
         {
             "semana": 6,
-            "archivo": ".\\./data/output\\Pedido_Semana_06_13022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_06_13022026_interior.xlsx",
             "fecha": "2026-02-13",
             "importe": 11629.84
         },
         {
             "semana": 7,
-            "archivo": ".\\./data/output\\Pedido_Semana_07_13022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_07_13022026_interior.xlsx",
             "fecha": "2026-02-13",
             "importe": 13453.94
         },
         {
             "semana": 6,
-            "archivo": ".\\./data/output\\Pedido_Semana_06_15022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_06_15022026_interior.xlsx",
             "fecha": "2026-02-15",
             "importe": 8109.21
         },
         {
             "semana": 6,
-            "archivo": ".\\./data/output\\Pedido_Semana_06_15022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_06_15022026_interior.xlsx",
             "fecha": "2026-02-15",
             "importe": 7900.88
         },
         {
             "semana": 7,
-            "archivo": ".\\./data/output\\Pedido_Semana_07_15022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_07_15022026_interior.xlsx",
             "fecha": "2026-02-15",
             "importe": 9060.64
         },
         {
             "semana": 7,
-            "archivo": ".\\./data/output\\Pedido_Semana_07_15022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_07_15022026_interior.xlsx",
             "fecha": "2026-02-15",
             "importe": 8957.94
         },
         {
             "semana": 7,
-            "archivo": ".\\./data/output\\Pedido_Semana_07_15022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_07_15022026_interior.xlsx",
             "fecha": "2026-02-15",
             "importe": 9020.79
         },
         {
             "semana": 7,
-            "archivo": ".\\./data/output\\Pedido_Semana_07_15022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_07_15022026_interior.xlsx",
             "fecha": "2026-02-15",
             "importe": 9020.79
         },
         {
             "semana": 7,
-            "archivo": ".\\./data/output\\Pedido_Semana_07_15022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_07_15022026_interior.xlsx",
             "fecha": "2026-02-15",
             "importe": 9020.79
         },
         {
             "semana": 7,
-            "archivo": ".\\./data/output\\Pedido_Semana_07_15022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_07_15022026_interior.xlsx",
             "fecha": "2026-02-15",
             "importe": 9020.79
         },
         {
             "semana": 7,
-            "archivo": ".\\./data/output\\Pedido_Semana_07_15022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_07_15022026_interior.xlsx",
             "fecha": "2026-02-15",
             "importe": 9020.79
         },
         {
             "semana": 7,
-            "archivo": ".\\./data/output\\Pedido_Semana_07_15022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_07_15022026_interior.xlsx",
             "fecha": "2026-02-15",
             "importe": 9018.82
         },
         {
             "semana": 7,
-            "archivo": "./data/output\\Pedido_Semana_7_2026-02-16_interior_CORREGIDO.xlsx",
+            "archivo": "./data/output/Pedido_Semana_7_2026-02-16_interior_CORREGIDO.xlsx",
             "fecha": "2026-02-15",
             "importe": 9018.82
         },
         {
             "semana": 7,
-            "archivo": ".\\./data/output\\Pedido_Semana_07_15022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_07_15022026_interior.xlsx",
             "fecha": "2026-02-15",
             "importe": 9018.82
         },
         {
             "semana": 7,
-            "archivo": "./data/output\\Pedido_Semana_7_2026-02-16_interior_CORREGIDO.xlsx",
+            "archivo": "./data/output/Pedido_Semana_7_2026-02-16_interior_CORREGIDO.xlsx",
             "fecha": "2026-02-15",
             "importe": 9018.82
         },
         {
             "semana": 7,
-            "archivo": ".\\./data/output\\Pedido_Semana_07_15022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_07_15022026_interior.xlsx",
             "fecha": "2026-02-15",
             "importe": 9018.82
         },
         {
             "semana": 7,
-            "archivo": ".\\./data/output\\Pedido_Semana_07_15022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_07_15022026_interior.xlsx",
             "fecha": "2026-02-15",
             "importe": 9018.82
         },
         {
             "semana": 7,
-            "archivo": ".\\./data/output\\Pedido_Semana_07_16022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_07_16022026_interior.xlsx",
             "fecha": "2026-02-16",
             "importe": 9020.79
         },
         {
             "semana": 7,
-            "archivo": ".\\./data/output\\Pedido_Semana_07_16022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_07_16022026_interior.xlsx",
             "fecha": "2026-02-16",
             "importe": 9018.82
         },
         {
             "semana": 7,
-            "archivo": ".\\./data/output\\Pedido_Semana_07_17022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_07_17022026_interior.xlsx",
             "fecha": "2026-02-17",
             "importe": 9020.79
         },
         {
             "semana": 7,
-            "archivo": ".\\./data/output\\Pedido_Semana_07_17022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_07_17022026_interior.xlsx",
             "fecha": "2026-02-17",
             "importe": 9020.79
         },
         {
             "semana": 7,
-            "archivo": ".\\./data/output\\Pedido_Semana_07_17022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_07_17022026_interior.xlsx",
             "fecha": "2026-02-17",
             "importe": 9020.79
         },
         {
             "semana": 7,
-            "archivo": ".\\./data/output\\Pedido_Semana_07_21022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_07_21022026_interior.xlsx",
             "fecha": "2026-02-21",
             "importe": 9114.79
         },
         {
             "semana": 7,
-            "archivo": ".\\./data/output\\Pedido_Semana_07_21022026_interior.xlsx",
+            "archivo": "./data/output/Pedido_Semana_07_21022026_interior.xlsx",
             "fecha": "2026-02-21",
             "importe": 8993.59
         },
         {
             "semana": 7,
-            "archivo": "D:\\ALMACENAMIENTO\\Ivan\\viveverde\\Trabajos\\IA\\PROGRAMA_COMPRAS_AUTOMATICAS\\PRUEBA\\SPA\\data\\output\\Pedidos_semanales\\Pedido_Semana_07_21022026_interior.xlsx",
+            "archivo": "./data/output/Pedidos_semanales/Pedido_Semana_07_21022026_interior.xlsx",
             "fecha": "2026-02-21",
             "importe": 8993.59
         },
         {
             "semana": 7,
-            "archivo": "D:\\ALMACENAMIENTO\\Ivan\\viveverde\\Trabajos\\IA\\PROGRAMA_COMPRAS_AUTOMATICAS\\PRUEBA1\\SPA\\data\\output\\Pedidos_semanales\\Pedido_Semana_07_22022026_interior.xlsx",
+            "archivo": "./data/output/Pedidos_semanales/Pedido_Semana_07_22022026_interior.xlsx",
             "fecha": "2026-02-22",
             "importe": 8993.59
         },
         {
             "semana": 7,
-            "archivo": "D:\\ALMACENAMIENTO\\Ivan\\viveverde\\Trabajos\\IA\\PROGRAMA_COMPRAS_AUTOMATICAS\\PRUEBA1\\SPA\\data\\output\\Pedidos_semanales\\Pedido_Semana_07_22022026_interior.xlsx",
-            "fecha": "2026-02-22",
-            "importe": 9020.79
-        },
-        {
-            "semana": 7,
-            "archivo": "D:\\ALMACENAMIENTO\\Ivan\\viveverde\\Trabajos\\IA\\PROGRAMA_COMPRAS_AUTOMATICAS\\PRUEBA1\\SPA\\data\\output\\Pedidos_semanales\\Pedido_Semana_07_22022026_interior.xlsx",
+            "archivo": "./data/output/Pedidos_semanales/Pedido_Semana_07_22022026_interior.xlsx",
             "fecha": "2026-02-22",
             "importe": 9020.79
         },
         {
             "semana": 7,
-            "archivo": "D:\\ALMACENAMIENTO\\Ivan\\viveverde\\Trabajos\\IA\\PROGRAMA_COMPRAS_AUTOMATICAS\\SPA\\data\\output\\Pedidos_semanales\\Pedido_Semana_07_23022026_interior.xlsx",
+            "archivo": "./data/output/Pedidos_semanales/Pedido_Semana_07_22022026_interior.xlsx",
+            "fecha": "2026-02-22",
+            "importe": 9020.79
+        },
+        {
+            "semana": 7,
+            "archivo": "./data/output/Pedidos_semanales/Pedido_Semana_07_23022026_interior.xlsx",
             "fecha": "2026-02-23",
             "importe": 8993.59
         },
         {
             "semana": 7,
-            "archivo": "D:\\ALMACENAMIENTO\\Ivan\\viveverde\\Trabajos\\IA\\PROGRAMA_COMPRAS_AUTOMATICAS\\PRUEBA1\\SPA\\data\\output\\Pedidos_semanales\\Pedido_Semana_07_23022026_interior.xlsx",
+            "archivo": "./data/output/Pedidos_semanales/Pedido_Semana_07_23022026_interior.xlsx",
             "fecha": "2026-02-23",
             "importe": 8993.59
         },
         {
             "semana": 7,
-            "archivo": "D:\\ALMACENAMIENTO\\Ivan\\viveverde\\Trabajos\\IA\\PROGRAMA_COMPRAS_AUTOMATICAS\\SPA\\data\\output\\Pedidos_semanales\\Pedido_Semana_07_24022026_interior.xlsx",
+            "archivo": "./data/output/Pedidos_semanales/Pedido_Semana_07_24022026_interior.xlsx",
             "fecha": "2026-02-24",
             "importe": 8993.59
         },
         {
             "semana": 7,
-            "archivo": "D:\\ALMACENAMIENTO\\Ivan\\viveverde\\Trabajos\\IA\\PROGRAMA_COMPRAS_AUTOMATICAS\\SPA\\data\\output\\Pedidos_semanales\\Pedido_Semana_07_25022026_interior.xlsx",
+            "archivo": "./data/output/Pedidos_semanales/Pedido_Semana_07_25022026_interior.xlsx",
+            "fecha": "2026-02-25",
+            "importe": 9020.79
+        },
+        {
+            "semana": 7,
+            "archivo": "data/output/Pedidos_semanales/Pedido_Semana_07_25022026_interior.xlsx",
             "fecha": "2026-02-25",
             "importe": 9020.79
         }
     ],
     "metricas": {
-        "total_ejecuciones": 144,
-        "total_articulos_procesados": 84763,
-        "total_importe_pedidos": 2556571.079999997,
+        "total_ejecuciones": 145,
+        "total_articulos_procesados": 85116,
+        "total_importe_pedidos": 2565591.869999997,
         "ultima_semana_procesada_exitosamente": 7
     },
     "errores_pendientes": [],
