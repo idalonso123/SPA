@@ -6,11 +6,25 @@ Script para generar presentaciones HTML del análisis ABC+D de Vivero Aranjuez.
 Versión CORREGIDA: Lee SOLO los archivos de clasificación ABC+D y genera presentaciones por sección.
 NO utiliza los archivos individuales (SPA_ventas.xlsx, SPA_stock.xlsx, SPA_compras.xlsx).
 Envía automáticamente un email con todas las presentaciones generadas a Ivan.
+
+INTEGRACIÓN DE ALERTAS: Este script está integrado con el sistema de alertas.
+Los errores y advertencias se enviarán por email automáticamente.
+
+Autor: Sistema de Pedidos VIVEVERDE
+Fecha: 2026-02-25
 """
 
 import sys
 import os
 from pathlib import Path
+import logging
+
+# Configuración de logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 # Añadir el directorio del script al path para poder importar src
 _script_dir = Path(__file__).resolve().parent
@@ -38,6 +52,24 @@ from src.date_utils import get_periodo_y_año_dinamico, get_periodo_info_detalla
 # Crear directorios necesarios si no existen
 from src.paths import crear_directorios_si_no_existen
 crear_directorios_si_no_existen()
+
+# ============================================================================
+# INTEGRACIÓN DE ALERTAS - IMPORTS Y INICIALIZACIÓN
+# ============================================================================
+
+# Importar el módulo de integración de alertas
+try:
+    from src.integracion_alertas import crear_integrador
+    from src.alert_service import crear_alert_service, iniciar_sistema_alertas
+    from src.config_loader import cargar_configuracion
+    
+    # Variable global para el integrador de alertas
+    INTEGRADOR_ALERTAS = None
+    ALERTAS_DISPONIBLES = True
+    logger.info("Módulo de alertas importado correctamente")
+except ImportError as e:
+    ALERTAS_DISPONIBLES = False
+    logger.warning(f"No se pudo importar módulo de alertas: {e}. Continuando sin alertas.")
 
 # ============================================================================
 # VARIABLES PARA ARGUMENTOS DE LÍNEA DE COMANDOS
@@ -1513,4 +1545,41 @@ Ejemplos de uso:
         ARG_AÑO = args.año
         print(f"\n*** MODO MANUAL: Usando valores especificados por el usuario ***")
     
-    main()
+    # ============================================================================
+    # INTEGRACIÓN DE ALERTAS - INICIALIZACIÓN Y EJECUCIÓN
+    # ============================================================================
+    
+    alert_service = None
+    
+    if ALERTAS_DISPONIBLES:
+        try:
+            # Inicializar el sistema de alertas
+            alert_service = crear_integrador("PRESENTACION")
+            if alert_service:
+                logger.info("Sistema de alertas inicializado correctamente")
+            else:
+                logger.warning("No se pudo crear el integrador de alertas")
+        except Exception as e:
+            logger.error(f"Error al inicializar alertas: {e}")
+            alert_service = None
+    
+    try:
+        # Ejecutar el proceso principal
+        main()
+        logger.info("Proceso de generación de presentaciones completado exitosamente.")
+    except Exception as e:
+        logger.critical(f"Error crítico en el script PRESENTACION: {e}", exc_info=True)
+        if alert_service:
+            alert_service.reportar_error("ERROR_EJECUCION", {
+                "script": "PRESENTACION",
+                "error": str(e),
+                "traceback": traceback.format_exc()
+            })
+        sys.exit(1)
+    finally:
+        # Enviar resumen de alertas si el servicio está disponible
+        if alert_service:
+            try:
+                alert_service.enviar_resumen_alertas("PRESENTACION")
+            except Exception as e:
+                logger.error(f"Error al enviar resumen de alertas: {e}")

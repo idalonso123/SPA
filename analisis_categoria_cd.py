@@ -9,12 +9,26 @@ Este script:
 2. Compara con el archivo de stock actual
 3. Identifica artículos de categoría C y D que todavía están en stock
 4. Genera un archivo Excel con el análisis por sección
+
+INTEGRACIÓN DE ALERTAS: Este script está integrado con el sistema de alertas.
+Los errores y advertencias se enviarán por email automáticamente.
+
+Autor: Sistema de Pedidos VIVEVERDE
+Fecha: 2026-02-25
 """
 
 import sys
 import os
 import re
 from pathlib import Path
+import logging
+
+# Configuración de logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 # Añadir el directorio del script al path para poder importar src
 _script_dir = Path(__file__).resolve().parent
@@ -30,6 +44,7 @@ import glob
 import json
 import smtplib
 import ssl
+import traceback
 from email import encoders
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -39,6 +54,24 @@ from email.utils import formatdate
 # Importar rutas centralizadas
 from src.paths import INPUT_DIR, OUTPUT_DIR, CONFIG_DIR, ARCHIVO_STOCK_ACTUAL, PATRON_CLASIFICACION_ABC, ANALISIS_CATEGORIA_CD_DIR
 from src.date_utils import get_periodo_y_año_dinamico, get_periodo_info_detallada
+
+# ============================================================================
+# INTEGRACIÓN DE ALERTAS - IMPORTS Y INICIALIZACIÓN
+# ============================================================================
+
+# Importar el módulo de integración de alertas
+try:
+    from src.integracion_alertas import crear_integrador
+    from src.alert_service import crear_alert_service, iniciar_sistema_alertas
+    from src.config_loader import cargar_configuracion
+    
+    # Variable global para el integrador de alertas
+    INTEGRADOR_ALERTAS = None
+    ALERTAS_DISPONIBLES = True
+    logger.info("Módulo de alertas importado correctamente")
+except ImportError as e:
+    ALERTAS_DISPONIBLES = False
+    logger.warning(f"No se pudo importar módulo de alertas: {e}. Continuando sin alertas.")
 
 # Color de encabezado RGB[0,128,0] (verde)
 HEADER_COLOR = "FF008000"  # Verde en formato hex para openpyxl
@@ -287,9 +320,10 @@ def calcular_metricas(df_en_stock, df_stock, seccion):
     return metricas
 
 
-def crear_excel(df_en_stock, metricas, seccion, workbook):
+def crear_excel(df_en_stock, metricas, seccion, workbook, stock_anterior=None):
     """
     Crea una hoja en el workbook con los datos de la sección.
+    Incluye columnas de evolución comparando con la semana anterior.
     """
     ws = workbook.create_sheet(title=seccion)
     
@@ -308,18 +342,27 @@ def crear_excel(df_en_stock, metricas, seccion, workbook):
     # Título de la sección
     ws['A1'] = f"ARTÍCULOS DE CATEGORÍA C Y D PENDIENTES DE ELIMINAR - {seccion}"
     ws['A1'].font = Font(bold=True, size=14, color="FF008000")
-    ws.merge_cells('A1:E1')
+    ws.merge_cells('A1:G1')
     ws['A1'].alignment = Alignment(horizontal="center", vertical="center")
     
     # Fecha de generación
     ws['A2'] = f"Fecha de generación: {datetime.now().strftime('%d/%m/%Y %H:%M')}"
     ws['A2'].font = Font(italic=True, size=10)
-    ws.merge_cells('A2:E2')
+    ws.merge_cells('A2:G2')
     
-    # Encabezados de la tabla
-    headers = ['Artículo', 'Nombre artículo', 'Talla', 'Color', 'unidades']
+    # Indicador de si hay comparación disponible
+    if stock_anterior:
+        ws['A3'] = "Comparación con semana anterior: SÍ disponible"
+        ws['A3'].font = Font(italic=True, size=9, color="008000")
+    else:
+        ws['A3'] = "Comparación con semana anterior: NO disponible (primer informe o sin archivo anterior)"
+        ws['A3'].font = Font(italic=True, size=9, color="808080")
+    ws.merge_cells('A3:G3')
+    
+    # Encabezados de la tabla - Ahora con 7 columnas
+    headers = ['Artículo', 'Nombre artículo', 'Talla', 'Color', 'unidades', 'Stock Sem. Ant.', 'Evolución']
     for col_idx, header in enumerate(headers, start=1):
-        cell = ws.cell(row=4, column=col_idx, value=header)
+        cell = ws.cell(row=5, column=col_idx, value=header)
         cell.font = header_font
         cell.fill = header_fill
         cell.alignment = header_alignment
@@ -339,38 +382,80 @@ def crear_excel(df_en_stock, metricas, seccion, workbook):
             unidades = obtener_unidades_stock(articulo, talla, color, 
                                              df_stock_global[seccion])
             
+            # FILTRO: No incluir artículos con 0 unidades en el informe
+            if unidades == 0:
+                continue
+            
+            # Obtener datos de la semana anterior y calcular evolución
+            stock_anterior_val = 0
+            evolucion = "N/A"
+            
+            if stock_anterior:
+                # Buscar en el diccionario de la semana anterior
+                clave = (articulo, str(talla) if pd.notna(talla) else "", 
+                       str(color) if pd.notna(color) else "")
+                
+                if clave in stock_anterior:
+                    stock_anterior_val = stock_anterior[clave].get('unidades', 0)
+                    evolucion = calcular_evolucion(unidades, stock_anterior_val)
+                else:
+                    # Artículo no encontrado - es nuevo
+                    evolucion = "NEW"
+            
             datos_tabla.append({
                 'Artículo': articulo,
                 'Nombre artículo': nombre,
                 'Talla': '' if pd.isna(talla) else str(talla),
                 'Color': '' if pd.isna(color) else str(color),
-                'unidades': unidades
+                'unidades': unidades,
+                'Stock Sem. Ant.': stock_anterior_val if stock_anterior else None,
+                'Evolución': evolucion
             })
         
         # Escribir datos
-        for row_idx, datos in enumerate(datos_tabla, start=5):
+        for row_idx, datos in enumerate(datos_tabla, start=6):
             for col_idx, header in enumerate(headers, start=1):
-                cell = ws.cell(row=row_idx, column=col_idx, value=datos[header])
+                valor = datos[header]
+                cell = ws.cell(row=row_idx, column=col_idx, value=valor)
                 cell.border = thin_border
                 cell.alignment = Alignment(horizontal="left", vertical="center")
+                
+                # Aplicar formato condicional a la columna de evolución
+                if header == 'Evolución' and valor:
+                    if valor == "↓":
+                        # Verde - stock decreasing (good for C and D)
+                        cell.font = Font(bold=True, color="008000", size=14)
+                    elif valor == "↑":
+                        # Rojo - stock increasing (bad for C and D)
+                        cell.font = Font(bold=True, color="FF0000", size=14)
+                    elif valor == "=":
+                        # Gris - sin cambios
+                        cell.font = Font(bold=True, color="808080", size=14)
+                    elif valor == "NEW":
+                        # Azul - nuevo artículo
+                        cell.font = Font(bold=True, color="0000FF", size=14)
+                    else:
+                        cell.font = Font(color="808080", size=14)
     else:
-        ws['A6'] = "No hay artículos de categoría C y D pendientes de eliminar"
-        ws['A6'].font = Font(italic=True, color="808080")
-        ws.merge_cells('A6:E6')
+        ws['A7'] = "No hay artículos de categoría C y D pendientes de eliminar"
+        ws['A7'].font = Font(italic=True, color="808080")
+        ws.merge_cells('A7:G7')
     
     # Ajustar anchos de columna
     ws.column_dimensions['A'].width = 15
     ws.column_dimensions['B'].width = 50
-    ws.column_dimensions['C'].width = 15
-    ws.column_dimensions['D'].width = 15
+    ws.column_dimensions['C'].width = 12
+    ws.column_dimensions['D'].width = 12
     ws.column_dimensions['E'].width = 12
+    ws.column_dimensions['F'].width = 15
+    ws.column_dimensions['G'].width = 12
     
     # Sección de Métricas de Resumen
     fila_metricas = 6 + len(df_en_stock) + 2
     
     ws[f'A{fila_metricas}'] = "MÉTRICAS DE RESUMEN"
     ws[f'A{fila_metricas}'].font = Font(bold=True, size=12, color="FF008000")
-    ws.merge_cells(f'A{fila_metricas}:E{fila_metricas}')
+    ws.merge_cells(f'A{fila_metricas}:G{fila_metricas}')
     
     # Encabezados de métricas
     fila_metricas += 1
@@ -397,15 +482,23 @@ def crear_excel(df_en_stock, metricas, seccion, workbook):
         ws.cell(row=row_idx, column=1).alignment = Alignment(horizontal="left", vertical="center")
         ws.cell(row=row_idx, column=2).alignment = Alignment(horizontal="center", vertical="center")
     
-    # Añadir nota explicativa
+    # Añadir nota explicativa y leyenda de evolución
     fila_nota = fila_metricas + len(metricas_data) + 2
+    
+    # Leyenda de evolución
+    if stock_anterior:
+        ws[f'A{fila_nota}'] = "LEYENDA DE EVOLUCIÓN: ↓ = Stock disminuyendo (deseado) | ↑ = Stock aumentando | = = Sin cambios | NEW = Nuevo artículo"
+        ws[f'A{fila_nota}'].font = Font(italic=True, size=9, color="008000")
+        ws.merge_cells(f'A{fila_nota}:G{fila_nota}')
+        fila_nota += 1
+    
     ws[f'A{fila_nota}'] = "Nota: Estos artículos deberían haber sido eliminados del stock según el análisis de clasificación ABC+D,"
     ws[f'A{fila_nota}'].font = Font(italic=True, size=9, color="808080")
-    ws.merge_cells(f'A{fila_nota}:E{fila_nota}')
+    ws.merge_cells(f'A{fila_nota}:G{fila_nota}')
     
     ws[f'A{fila_nota + 1}'] = "pero todavía están presentes en el inventario actual."
     ws[f'A{fila_nota + 1}'].font = Font(italic=True, size=9, color="808080")
-    ws.merge_cells(f'A{fila_nota + 1}:E{fila_nota + 1}')
+    ws.merge_cells(f'A{fila_nota + 1}:G{fila_nota + 1}')
 
 
 # Variable global para almacenar el stock por sección
@@ -427,6 +520,9 @@ def generar_informe():
     print("\n📊 Cargando stock actual...")
     df_stock = cargar_stock_actual()
     print(f"  ✓ Stock cargado: {len(df_stock)} registros")
+    
+    # Cargar datos de la semana anterior para comparación
+    stock_semana_anterior = cargar_datos_semana_anterior()
     
     # Cargar archivos de clasificación y procesar cada sección
     resultados = {}
@@ -473,12 +569,12 @@ def generar_informe():
     if 'Sheet' in workbook.sheetnames:
         del workbook['Sheet']
     
-    # Crear hojas para cada sección
+    # Crear hojas para cada sección (pasando los datos de la semana anterior)
     for seccion in SECCIONES:
         if seccion in resultados:
             df_en_stock = resultados[seccion]['en_stock']
             metricas = resultados[seccion]['metricas']
-            crear_excel(df_en_stock, metricas, seccion, workbook)
+            crear_excel(df_en_stock, metricas, seccion, workbook, stock_semana_anterior)
     
     # Generar nombre de archivo con fecha
     fecha_actual = datetime.now().strftime("%d%m%Y")
@@ -514,6 +610,149 @@ def generar_informe():
     print(f"Total unidades en stock: {total_unidades}")
     
     return ruta_salida
+
+
+# ============================================================================
+# FUNCIONES PARA COMPARACIÓN CON SEMANA ANTERIOR
+# ============================================================================
+
+def cargar_datos_semana_anterior():
+    """
+    Carga los datos del archivo de la semana anterior para obtener el stock de cada artículo.
+    Returns:
+        dict: Diccionario con clave = (articulo, talla, color) y valor = unidades
+    """
+    print("\n📊 Buscando archivo de la semana anterior...")
+    
+    archivo_anterior = buscar_archivo_semana_anterior(datetime.now())
+    
+    if archivo_anterior is None:
+        print("  ⚠️ No se encontró archivo de la semana anterior")
+        return None
+    
+    print(f"  ✓ Archivo anterior encontrado: {archivo_anterior}")
+    
+    try:
+        from openpyxl import load_workbook
+        
+        wb = load_workbook(archivo_anterior, data_only=True)
+        
+        # Diccionario para almacenar el stock de cada artículo por sección
+        stock_anterior = {}
+        
+        for nombre_hoja in wb.sheetnames:
+            # Solo procesar hojas que sean secciones válidas
+            if nombre_hoja in SECCIONES:
+                ws = wb[nombre_hoja]
+                
+                # Buscar dónde empiezan los datos (después del encabezado en fila 4)
+                # Encabezados: Artículo, Nombre artículo, Talla, Color, unidades
+                fila_datos = 5  # Los datos empiezan en la fila 5
+                
+                # Leer datos hasta encontrar celdas vacías
+                while True:
+                    celda_articulo = ws.cell(row=fila_datos, column=1).value
+                    if celda_articulo is None or celda_articulo == "":
+                        break
+                    
+                    articulo = str(celda_articulo).strip()
+                    nombre = ws.cell(row=fila_datos, column=2).value or ""
+                    talla = ws.cell(row=fila_datos, column=3).value or ""
+                    color = ws.cell(row=fila_datos, column=4).value or ""
+                    unidades = ws.cell(row=fila_datos, column=5).value or 0
+                    
+                    # Normalizar valores
+                    if pd.notna(talla):
+                        talla = str(talla).strip()
+                    else:
+                        talla = ""
+                    
+                    if pd.notna(color):
+                        color = str(color).strip()
+                    else:
+                        color = ""
+                    
+                    try:
+                        unidades = int(unidades) if unidades else 0
+                    except:
+                        unidades = 0
+                    
+                    # Guardar en el diccionario
+                    clave = (articulo, talla, color)
+                    stock_anterior[clave] = {
+                        'articulo': articulo,
+                        'nombre': nombre,
+                        'talla': talla,
+                        'color': color,
+                        'unidades': unidades
+                    }
+                    
+                    fila_datos += 1
+        
+        print(f"  ✓ Stock cargado: {len(stock_anterior)} artículos de la semana anterior")
+        return stock_anterior
+        
+    except Exception as e:
+        print(f"  ⚠️ Error al cargar archivo anterior: {e}")
+        return None
+
+
+def obtener_evolucion_stock(articulo, talla, color, stock_anterior):
+    """
+    Compara el stock actual con el de la semana anterior y devuelve la evolución.
+    
+    Returns:
+        tuple: (stock_anterior, evolucion)
+            - stock_anterior: int, unidades de la semana anterior
+            - evolucion: str, flecha indicating (↑, ↓, =, NEW)
+    """
+    if stock_anterior is None:
+        return None, "N/A"
+    
+    # Normalizar talla y color para la búsqueda
+    if pd.isna(talla):
+        talla = ""
+    else:
+        talla = str(talla).strip()
+    
+    if pd.isna(color):
+        color = ""
+    else:
+        color = str(color).strip()
+    
+    # Buscar en el diccionario de la semana anterior
+    clave = (articulo, talla, color)
+    
+    if clave in stock_anterior:
+        unidades_anteriores = stock_anterior[clave]['unidades']
+        
+        # Obtener stock actual (ya calculado previamente)
+        # Esto se pasará como parámetro en la función principal
+        return unidades_anteriores, None  # None indica que se calculará después
+    else:
+        # Artículo no encontrado en la semana anterior - es nuevo o fue eliminado
+        return 0, "NEW"
+
+
+def calcular_evolucion(unidades_actuales, unidades_anteriores):
+    """
+    Calcula la evolución basada en las unidades actuales y anteriores.
+    
+    Returns:
+        str: Flecha indicating (↑, ↓, =)
+    """
+    if unidades_anteriores is None or unidades_anteriores == 0:
+        if unidades_actuales > 0:
+            return "NEW"
+        else:
+            return "N/A"
+    
+    if unidades_actuales > unidades_anteriores:
+        return "↑"  # Aumentando stock (no deseado para C y D)
+    elif unidades_actuales < unidades_anteriores:
+        return "↓"  # Disminuyendo stock (deseado para C y D)
+    else:
+        return "="   # Sin cambios
 
 
 def buscar_archivo_semana_anterior(fecha_actual=None):
@@ -577,6 +816,10 @@ def buscar_archivo_semana_anterior(fecha_actual=None):
             return ruta
     
     return None
+
+
+# Variable global para almacenar datos de la semana anterior
+stock_semana_anterior = None
 
 
 def comparar_con_semana_anterior(ruta_archivo_actual):
@@ -730,6 +973,24 @@ Sistema de Pedidos Viveverde."""
 
 
 if __name__ == "__main__":
+    # ============================================================================
+    # INTEGRACIÓN DE ALERTAS - INICIALIZACIÓN Y EJECUCIÓN
+    # ============================================================================
+    
+    alert_service = None
+    
+    if ALERTAS_DISPONIBLES:
+        try:
+            # Inicializar el sistema de alertas
+            alert_service = crear_integrador("analisis_categoria_cd")
+            if alert_service:
+                logger.info("Sistema de alertas inicializado correctamente")
+            else:
+                logger.warning("No se pudo crear el integrador de alertas")
+        except Exception as e:
+            logger.error(f"Error al inicializar alertas: {e}")
+            alert_service = None
+    
     try:
         archivo_salida = generar_informe()
         
@@ -756,7 +1017,24 @@ if __name__ == "__main__":
         print(f"📄 Archivo principal: {archivo_salida}")
         if email_enviado:
             print(f"Email enviado a los destinatarios: Ivan y Sandra")
+        
+        logger.info("Proceso de análisis de categoría C y D completado exitosamente.")
     except Exception as e:
+        logger.critical(f"Error crítico en el script analisis_categoria_cd: {e}", exc_info=True)
+        if alert_service:
+            alert_service.reportar_error("ERROR_EJECUCION", {
+                "script": "analisis_categoria_cd",
+                "error": str(e),
+                "traceback": traceback.format_exc()
+            })
         print(f"\n❌ Error durante la generación: {str(e)}")
         import traceback
         traceback.print_exc()
+        sys.exit(1)
+    finally:
+        # Enviar resumen de alertas si el servicio está disponible
+        if alert_service:
+            try:
+                alert_service.enviar_resumen_alertas("analisis_categoria_cd")
+            except Exception as e:
+                logger.error(f"Error al enviar resumen de alertas: {e}")

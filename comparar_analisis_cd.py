@@ -3,6 +3,12 @@
 """
 Script para comparar dos archivos de análisis de categoría C y D.
 Compara las métricas de resumen entre el archivo actual y el de la semana pasada.
+
+INTEGRACIÓN DE ALERTAS: Este script está integrado con el sistema de alertas.
+Los errores y advertencias se enviarán por email automáticamente.
+
+Autor: Sistema de Pedidos VIVEVERDE
+Fecha: 2026-02-25
 """
 
 import pandas as pd
@@ -14,11 +20,38 @@ import glob
 import smtplib
 import ssl
 import os
+import logging
+import traceback
 from email import encoders
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
 from email.utils import formatdate
+
+# Configuración de logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
+# ============================================================================
+# INTEGRACIÓN DE ALERTAS - IMPORTS Y INICIALIZACIÓN
+# ============================================================================
+
+# Importar el módulo de integración de alertas
+try:
+    from src.integracion_alertas import crear_integrador
+    from src.alert_service import crear_alert_service, iniciar_sistema_alertas
+    from src.config_loader import cargar_configuracion
+    
+    # Variable global para el integrador de alertas
+    INTEGRADOR_ALERTAS = None
+    ALERTAS_DISPONIBLES = True
+    logger.info("Módulo de alertas importado correctamente")
+except ImportError as e:
+    ALERTAS_DISPONIBLES = False
+    logger.warning(f"No se pudo importar módulo de alertas: {e}. Continuando sin alertas.")
 
 # Importar rutas centralizadas
 from src.paths import OUTPUT_DIR, ANALISIS_CATEGORIA_CD_DIR, COMPARACION_CATEGORIA_CD_DIR
@@ -582,7 +615,24 @@ if __name__ == "__main__":
             
             if email_enviado:
                 print(f"\n📧 Email enviado a los destinatarios: Ivan y Sandra")
+            
+            logger.info("Proceso de comparación de análisis C y D completado exitosamente.")
     except Exception as e:
+        logger.critical(f"Error crítico en el script comparar_analisis_cd: {e}", exc_info=True)
+        if alert_service:
+            alert_service.reportar_error("ERROR_EJECUCION", {
+                "script": "comparar_analisis_cd",
+                "error": str(e),
+                "traceback": traceback.format_exc()
+            })
         print(f"\n❌ Error: {e}")
         import traceback
         traceback.print_exc()
+        sys.exit(1)
+    finally:
+        # Enviar resumen de alertas si el servicio está disponible
+        if alert_service:
+            try:
+                alert_service.enviar_resumen_alertas("comparar_analisis_cd")
+            except Exception as e:
+                logger.error(f"Error al enviar resumen de alertas: {e}")

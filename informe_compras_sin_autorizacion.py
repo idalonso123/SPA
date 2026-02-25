@@ -4,6 +4,9 @@ Script para generar informe semanal de compras sin pedido
 Este script identifica artículos que han sido comprados pero no estaban
 en el pedido semanal. Compara el stock histórico con el actual y los pedidos.
 
+INTEGRACIÓN DE ALERTAS: Este script está integrado con el sistema de alertas.
+Los errores y advertencias se enviarán por email automáticamente.
+
 Estructura de datos de entrada:
 - SPA_stock_P1.xlsx, SPA_stock_P2.xlsx, SPA_stock_P3.xlsx, SPA_stock_P4.xlsx
 - SPA_stock_actual.xlsx
@@ -12,6 +15,9 @@ Estructura de datos de entrada:
 Estructura de datos de salida:
 - Excel con 11 hojas (una por sección)
 - JSON histórico para seguimiento dinámico de stock
+
+Autor: Sistema de Pedidos VIVEVERDE
+Fecha: 2026-02-25
 """
 
 import pandas as pd
@@ -25,6 +31,8 @@ import glob
 import warnings
 import smtplib
 import ssl
+import logging
+import traceback
 from email import encoders
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -33,6 +41,31 @@ from email.utils import formatdate
 
 # Ignorar warnings de openpyxl
 warnings.filterwarnings('ignore', category=UserWarning, module='openpyxl')
+
+# Configuración de logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
+# ============================================================================
+# INTEGRACIÓN DE ALERTAS - IMPORTS Y INICIALIZACIÓN
+# ============================================================================
+
+# Importar el módulo de integración de alertas
+try:
+    from src.integracion_alertas import crear_integrador
+    from src.alert_service import crear_alert_service, iniciar_sistema_alertas
+    from src.config_loader import cargar_configuracion
+    
+    # Variable global para el integrador de alertas
+    INTEGRADOR_ALERTAS = None
+    ALERTAS_DISPONIBLES = True
+    logger.info("Módulo de alertas importado correctamente")
+except ImportError as e:
+    ALERTAS_DISPONIBLES = False
+    logger.warning(f"No se pudo importar módulo de alertas: {e}. Continuando sin alertas.")
 
 # Configuración
 BASE_PATH = Path(__file__).parent
@@ -706,4 +739,41 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    # ============================================================================
+    # INTEGRACIÓN DE ALERTAS - INICIALIZACIÓN Y EJECUCIÓN
+    # ============================================================================
+    
+    alert_service = None
+    
+    if ALERTAS_DISPONIBLES:
+        try:
+            # Inicializar el sistema de alertas
+            alert_service = crear_integrador("informe_compras_sin_autorizacion")
+            if alert_service:
+                logger.info("Sistema de alertas inicializado correctamente")
+            else:
+                logger.warning("No se pudo crear el integrador de alertas")
+        except Exception as e:
+            logger.error(f"Error al inicializar alertas: {e}")
+            alert_service = None
+    
+    try:
+        # Ejecutar el proceso principal
+        main()
+        logger.info("Proceso de informe de compras sin autorización completado exitosamente.")
+    except Exception as e:
+        logger.critical(f"Error crítico en el script informe_compras_sin_autorizacion: {e}", exc_info=True)
+        if alert_service:
+            alert_service.reportar_error("ERROR_EJECUCION", {
+                "script": "informe_compras_sin_autorizacion",
+                "error": str(e),
+                "traceback": traceback.format_exc()
+            })
+        sys.exit(1)
+    finally:
+        # Enviar resumen de alertas si el servicio está disponible
+        if alert_service:
+            try:
+                alert_service.enviar_resumen_alertas("informe_compras_sin_autorizacion")
+            except Exception as e:
+                logger.error(f"Error al enviar resumen de alertas: {e}")

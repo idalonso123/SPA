@@ -12,6 +12,9 @@ Este script combina:
 - Procesamiento de múltiples secciones
 - Envío automático de emails a los encargados de cada sección
 
+INTEGRACIÓN DE ALERTAS: Este script está integrado con el sistema de alertas.
+Los errores y advertencias se enviarán por email automáticamente.
+
 MODO DE USO:
 - Sin parámetros: Procesa automáticamente según la fecha actual
   * Detecta el período y año actual
@@ -41,6 +44,9 @@ Los datos se leen de archivos con datos de TODO el año:
 El script filtra automáticamente los datos según las fechas del período indicado.
 Al generar cada archivo de clasificación, se envía automáticamente un email
 al encargado de la sección con el archivo adjunto.
+
+Autor: Sistema de Pedidos VIVEVERDE
+Fecha: 2026-02-25
 """
 
 import pandas as pd
@@ -57,12 +63,39 @@ import ssl
 import os
 import json
 import unicodedata
+import logging
+import traceback
 from email import encoders
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
 from pathlib import Path
 warnings.filterwarnings('ignore')
+
+# Configuración de logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
+# ============================================================================
+# INTEGRACIÓN DE ALERTAS - IMPORTS Y INICIALIZACIÓN
+# ============================================================================
+
+# Importar el módulo de integración de alertas
+try:
+    from src.integracion_alertas import crear_integrador
+    from src.alert_service import crear_alert_service, iniciar_sistema_alertas
+    from src.config_loader import cargar_configuracion
+    
+    # Variable global para el integrador de alertas
+    INTEGRADOR_ALERTAS = None
+    ALERTAS_DISPONIBLES = True
+    logger.info("Módulo de alertas importado correctamente")
+except ImportError as e:
+    ALERTAS_DISPONIBLES = False
+    logger.warning(f"No se pudo importar módulo de alertas: {e}. Continuando sin alertas.")
 
 # ============================================================================
 # CONFIGURACIÓN DE RUTAS - DIRECTORIO BASE DEL SCRIPT
@@ -2345,4 +2378,41 @@ def main():
 # ============================================================================
 
 if __name__ == "__main__":
-    main()
+    # ============================================================================
+    # INTEGRACIÓN DE ALERTAS - INICIALIZACIÓN Y EJECUCIÓN
+    # ============================================================================
+    
+    alert_service = None
+    
+    if ALERTAS_DISPONIBLES:
+        try:
+            # Inicializar el sistema de alertas
+            alert_service = crear_integrador("clasificacionABC")
+            if alert_service:
+                logger.info("Sistema de alertas inicializado correctamente")
+            else:
+                logger.warning("No se pudo crear el integrador de alertas")
+        except Exception as e:
+            logger.error(f"Error al inicializar alertas: {e}")
+            alert_service = None
+    
+    try:
+        # Ejecutar el proceso principal
+        main()
+        logger.info("Proceso de clasificación ABC completado exitosamente.")
+    except Exception as e:
+        logger.critical(f"Error crítico en el script clasificacionABC: {e}", exc_info=True)
+        if alert_service:
+            alert_service.reportar_error("ERROR_EJECUCION", {
+                "script": "clasificacionABC",
+                "error": str(e),
+                "traceback": traceback.format_exc()
+            })
+        sys.exit(1)
+    finally:
+        # Enviar resumen de alertas si el servicio está disponible
+        if alert_service:
+            try:
+                alert_service.enviar_resumen_alertas("clasificacionABC")
+            except Exception as e:
+                logger.error(f"Error al enviar resumen de alertas: {e}")

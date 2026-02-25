@@ -4,9 +4,14 @@ Módulo EmailService - Servicio de envío de correos electrónicos
 Este módulo gestiona el envío de correos electrónicos con archivos adjuntos
 utilizando SMTP. Los destinatarios se leen EXCLUSIVAMENTE desde 
 config/encargados.json (FUENTE ÚNICA).
+
+INTEGRACIÓN DE ALERTAS: Este módulo está integrado con el sistema de alertas.
+Los errores y advertencias se enviarán por email automáticamente.
+
 Autor: Sistema de Pedidos Vivero V2
 Fecha: 2026-02-05
 """
+
 import smtplib
 import ssl
 import os
@@ -14,6 +19,7 @@ import json
 import logging
 import unicodedata
 import pandas as pd
+import traceback
 from email import encoders
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -23,6 +29,24 @@ from pathlib import Path
 
 # Configuración del logger
 logger = logging.getLogger(__name__)
+
+# ============================================================================
+# INTEGRACIÓN DE ALERTAS - IMPORTS Y INICIALIZACIÓN
+# ============================================================================
+
+# Importar el módulo de integración de alertas
+try:
+    from src.integracion_alertas import crear_integrador
+    from src.alert_service import crear_alert_service, iniciar_sistema_alertas
+    from src.config_loader import cargar_configuracion
+    
+    # Variable global para el integrador de alertas
+    INTEGRADOR_ALERTAS = None
+    ALERTAS_DISPONIBLES = True
+    logger.info("Módulo de alertas importado correctamente en email_service")
+except ImportError as e:
+    ALERTAS_DISPONIBLES = False
+    logger.warning(f"No se pudo importar módulo de alertas: {e}. Continuando sin alertas.")
 
 # ============================================================================
 # FUNCIONES DE NORMALIZACIÓN PARA BÚSQUEDAS INTELIGENTES
@@ -1064,3 +1088,40 @@ if __name__ == "__main__":
     destinatarios = email_service.obtener_destinatarios_seccion('maf')
     for d in destinatarios:
         print(f"  - Email: {d['email']}, Nombre: {d['nombre']}")
+    
+    # ============================================================================
+    # INTEGRACIÓN DE ALERTAS - INICIALIZACIÓN Y EJECUCIÓN
+    # ============================================================================
+    
+    alert_service = None
+    
+    if ALERTAS_DISPONIBLES:
+        try:
+            # Inicializar el sistema de alertas
+            alert_service = crear_integrador("email_service")
+            if alert_service:
+                logger.info("Sistema de alertas inicializado correctamente")
+            else:
+                logger.warning("No se pudo crear el integrador de alertas")
+        except Exception as e:
+            logger.error(f"Error al inicializar alertas: {e}")
+            alert_service = None
+    
+    try:
+        # El código de ejemplo ya se ejecutó arriba
+        logger.info("Ejemplo de EmailService completado exitosamente.")
+    except Exception as e:
+        logger.critical(f"Error crítico en el módulo email_service: {e}", exc_info=True)
+        if alert_service:
+            alert_service.reportar_error("ERROR_EJECUCION", {
+                "script": "email_service",
+                "error": str(e),
+                "traceback": traceback.format_exc()
+            })
+    finally:
+        # Enviar resumen de alertas si el servicio está disponible
+        if alert_service:
+            try:
+                alert_service.enviar_resumen_alertas("email_service")
+            except Exception as e:
+                logger.error(f"Error al enviar resumen de alertas: {e}")
