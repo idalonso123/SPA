@@ -1,4 +1,10 @@
 {
+    "notas": {
+        "proposito": "Configuración operativa del sistema de pedidos",
+        "descripcion": "Este archivo contiene la configuración que cambia con más frecuencia: objetivos semanales por sección, parámetros de ejecución, scheduler y settings de corrección.",
+        "archivo_relacionado": "config_comun.json contiene definiciones estáticas (secciones, períodos, IVA, rotaciones)",
+        "version": "1.0"
+    },
     "secciones": {
         "maf": {
             "descripcion": "Planta de temporada y floristeria",
@@ -157,6 +163,7 @@
     },
     
     "festivos": {
+        "descripcion": "Factores de ajuste para semanas con festividades. La clave es el número de semana y el valor es el factor multiplicador (0 = sin ventas, 1 = normal, 0.25 = 25% de ventas)",
         "14": 0.25,
         "18": 0.00,
         "22": 0.00

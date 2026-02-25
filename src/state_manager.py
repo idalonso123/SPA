@@ -19,7 +19,7 @@ from datetime import datetime
 from typing import Optional, Dict, List, Any, Tuple
 from pathlib import Path
 
-from src.paths import DATA_DIR
+from src.paths import DATA_DIR, BASE_DIR
 
 # Configuración del logger
 logger = logging.getLogger(__name__)
@@ -42,6 +42,45 @@ try:
 except ImportError:
     def get_alert_service():
         return None
+
+
+def _convertir_a_ruta_relativa(ruta: str) -> str:
+    """
+    Convierte una ruta absoluta a una ruta relativa respecto al directorio base del proyecto.
+    
+    Esta función asegura que todas las rutas almacenadas en el estado sean relativas
+    al directorio base del proyecto, lo que mejora la portabilidad del archivo state.json
+    entre diferentes máquinas y ubicaciones.
+    
+    Args:
+        ruta (str): Ruta absoluta o relativa que se desea convertir
+        
+    Returns:
+        str: Ruta relativa si la entrada era absoluta, o la ruta original si ya era relativa
+    """
+    if not ruta:
+        return ruta
+    
+    try:
+        ruta_path = Path(ruta)
+        
+        # Si ya es una ruta relativa, devolverla sin cambios
+        if not ruta_path.is_absolute():
+            return ruta
+        
+        # Convertir a ruta relativa respecto al directorio base del proyecto
+        try:
+            ruta_relativa = ruta_path.relative_to(BASE_DIR)
+            # Devolver con formato de barras normales (no raw string)
+            return str(ruta_relativa).replace('\\', '/')
+        except ValueError:
+            # Si no se puede hacer relative_to (por ejemplo, está en un disco diferente)
+            # Devolver solo el nombre del archivo
+            return ruta_path.name
+            
+    except Exception:
+        # En caso de cualquier error, devolver la ruta original
+        return ruta
 
 
 class StateManager:
@@ -330,11 +369,12 @@ class StateManager:
         if self.estado is None:
             self.cargar_estado()
         
-        # Crear registro de ejecución
+        # Crear registro de ejecución (convertir ruta a relativa para portabilidad)
+        ruta_relativa = _convertir_a_ruta_relativa(archivo_generado)
         registro = {
             "semana": semana,
             "fecha_ejecucion": datetime.now().isoformat(),
-            "archivo_generado": archivo_generado,
+            "archivo_generado": ruta_relativa,
             "num_articulos": articulos,
             "importe": round(importe, 2),
             "exitosa": exitosa,
@@ -357,10 +397,10 @@ class StateManager:
             self.estado['informacion_sistema']['ultima_ejecucion_exitosa'] = datetime.now().isoformat()
             self.estado['informacion_sistema']['ultima_semana_procesada'] = semana
         
-        # Agregar a pedidos generados
+        # Agregar a pedidos generados (convertir ruta a relativa para portabilidad)
         pedido = {
             "semana": semana,
-            "archivo": archivo_generado,
+            "archivo": ruta_relativa,
             "fecha": datetime.now().strftime('%Y-%m-%d'),
             "importe": round(importe, 2)
         }
