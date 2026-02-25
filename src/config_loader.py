@@ -510,6 +510,7 @@ def get_iva_subfamilia(config=None):
 def obtener_configuracion_encargados(config=None):
     """
     Obtiene la configuración de encargados por sección.
+    NOTA: Ahora soporta arrays para permitir múltiples encargados por sección.
     
     Args:
         config: Diccionario de configuración (opcional)
@@ -523,12 +524,36 @@ def obtener_configuracion_encargados(config=None):
     encargado_config = config.get('configuracion_encargados', {})
     
     # Convertir claves de sección a minúsculas
+    # Ahora soporta arrays para múltiples encargados
     ENCARGADOS = {}
     for seccion, datos in encargado_config.items():
-        ENCARGADOS[seccion.lower()] = {
-            'nombre': datos.get('nombre', 'Ivan'),
-            'email': datos.get('email', 'ivan.delgado@viveverde.es')
-        }
+        if isinstance(datos, list):
+            # Es un array de encargados - tomar el primero para compatibilidad
+            if len(datos) > 0:
+                primero = datos[0]
+                ENCARGADOS[seccion.lower()] = {
+                    'nombre': primero.get('nombre', 'Ivan'),
+                    'email': primero.get('email', 'ivan.delgado@viveverde.es')
+                }
+                # También guardar la lista completa si se necesita
+                ENCARGADOS[seccion.lower() + '_lista'] = datos
+            else:
+                ENCARGADOS[seccion.lower()] = {
+                    'nombre': 'Ivan',
+                    'email': 'ivan.delgado@viveverde.es'
+                }
+        elif isinstance(datos, dict):
+            # Es un objeto individual (compatibilidad hacia atrás)
+            ENCARGADOS[seccion.lower()] = {
+                'nombre': datos.get('nombre', 'Ivan'),
+                'email': datos.get('email', 'ivan.delgado@viveverde.es')
+            }
+        else:
+            # Caso por defecto
+            ENCARGADOS[seccion.lower()] = {
+                'nombre': 'Ivan',
+                'email': 'ivan.delgado@viveverde.es'
+            }
     
     return {
         'ENCARGADOS': ENCARGADOS
@@ -537,26 +562,26 @@ def obtener_configuracion_encargados(config=None):
 
 def obtener_configuracion_email_textos(config=None):
     """
-    Obtiene los textos de emails.
+    Obtiene los textos de emails desde email.json.
+    NOTE: Esta función ahora usa email.json en lugar de config_comun.json.
     
     Args:
-        config: Diccionario de configuración (opcional)
+        config: Diccionario de configuración (ya no se usa, mantenido por compatibilidad)
     
     Returns:
         dict: Diccionario con asuntos y cuerpos de emails
     """
-    if config is None:
-        config = cargar_configuracion()
-    
-    texto_config = config.get('configuracion_texto_email', {})
+    # Cargar configuración de email.json
+    email_config = cargar_configuracion_email()
+    plantillas = email_config.get('plantillas', {})
     
     return {
-        'ASUNTO_INFORME': texto_config.get('asunto_informe', 'VIVEVERDE: Informes de ClasificacionABC+D de cada sección del periodo {periodo}'),
-        'CUERPO_INFORME': texto_config.get('cuerpo_informe', 'Buenos días {nombre},\n\nTe adjunto en este correo los informes de Clasificación ABC+D de cada sección.\n\nAtentamente,\n\nSistema de Pedidos automáticos VIVEVERDE.'),
-        'ASUNTO_PRESENTACION': texto_config.get('asunto_presentacion', 'VIVEVERDE: Presentacion de ClasificacionABC+D de cada sección del periodo {periodo}'),
-        'CUERPO_PRESENTACION': texto_config.get('cuerpo_presentacion', 'Buenos días {nombre},\n\nTe adjunto en este correo las presentaciones de Clasificación ABC+D de cada sección.\n\nAtentamente,\n\nSistema de Pedidos automáticos VIVEVERDE.'),
-        'ASUNTO_CLASIFICACION': texto_config.get('asunto_clasificacion', 'VIVEVERDE: listado ClasificacionABC+D de {seccion} del periodo {periodo}'),
-        'CUERPO_CLASIFICACION': texto_config.get('cuerpo_clasificacion', 'Buenos días {nombre},\n\nTe adjunto en este correo el listado Clasificación ABC+D de {seccion} para que lo analices y te aprendas cuales son los artículos de cada categoría:\n\n- Artículos que no te deben faltar nunca (Categoria A).\n- Artículos que confeccionan el complemento de gama (Categoría B).\n- Artículos que tienen una presencia mínima en las ventas de tu sección (Categoría C).\n- Artículos que no debemos tener en tienda (Categoria D).\n\nPon en práctica el listado.\n\nAtentamente,\n\nSistema de Pedidos automáticos VIVEVERDE.')
+        'ASUNTO_INFORME': plantillas.get('asunto_informe', 'VIVEVERDE: Informes de ClasificacionABC+D de cada sección del periodo {periodo}'),
+        'CUERPO_INFORME': plantillas.get('cuerpo_informe', 'Buenos días {nombre},\n\nTe adjunto en este correo los informes de Clasificación ABC+D de cada sección.\n\nAtentamente,\n\nSistema de Pedidos automáticos VIVEVERDE.'),
+        'ASUNTO_PRESENTACION': plantillas.get('asunto_presentacion', 'VIVEVERDE: Presentacion de ClasificacionABC+D de cada sección del periodo {periodo}'),
+        'CUERPO_PRESENTACION': plantillas.get('cuerpo_presentacion', 'Buenos días {nombre},\n\nTe adjunto en este correo las presentaciones de Clasificación ABC+D de cada sección.\n\nAtentamente,\n\nSistema de Pedidos automáticos VIVEVERDE.'),
+        'ASUNTO_CLASIFICACION': plantillas.get('asunto_clasificacion', 'VIVEVERDE: listado ClasificacionABC+D de {seccion} del periodo {periodo}'),
+        'CUERPO_CLASIFICACION': plantillas.get('cuerpo_clasificacion', 'Buenos días {nombre},\n\nTe adjunto en este correo el listado Clasificación ABC+D de {seccion} para que lo analices y te aprendas cuales son los artículos de cada categoría:\n\n- Artículos que no te deben faltar nunca (Categoria A).\n- Artículos que confeccionan el complemento de gama (Categoría B).\n- Artículos que tienen una presencia mínima en las ventas de tu sección (Categoría C).\n- Artículos que no debemos tener en tienda (Categoria D).\n\nPon en práctica el listado.\n\nAtentamente,\n\nSistema de Pedidos automáticos VIVEVERDE.')
     }
 
 

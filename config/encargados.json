@@ -1,13 +1,17 @@
 {
     "encargados": {
-        "interior": {
-            "nombre": "Iris",
-            "email": "ivan.delgado@viveverde.es"
-        },
-        "maf": {
-            "nombre": "Jose",
-            "email": "ivan.delgado@viveverde.es"
-        },
+        "interior": [
+            {
+                "nombre": "Iris",
+                "email": "ivan.delgado@viveverde.es"
+            }
+        ],
+        "maf": [
+            {
+                "nombre": "Jose",
+                "email": "ivan.delgado@viveverde.es"
+            }
+        ],
         "deco_interior": [
             {
                 "nombre": "Sandra",
@@ -18,38 +22,54 @@
                 "email": "ivan.delgado@viveverde.es"
             }
         ],
-        "deco_exterior": {
-            "nombre": "Pablo",
-            "email": "ivan.delgado@viveverde.es"
-        },
-        "semillas": {
-            "nombre": "Ivan",
-            "email": "ivan.delgado@viveverde.es"
-        },
-        "mascotas_vivo": {
-            "nombre": "María",
-            "email": "ivan.delgado@viveverde.es"
-        },
-        "mascotas_manufacturado": {
-            "nombre": "María",
-            "email": "ivan.delgado@viveverde.es"
-        },
-        "fitos": {
-            "nombre": "Ivan",
-            "email": "ivan.delgado@viveverde.es"
-        },
-        "vivero": {
-            "nombre": "Jose",
-            "email": "ivan.delgado@viveverde.es"
-        },
-        "utiles_jardin": {
-            "nombre": "Ivan",
-            "email": "ivan.delgado@viveverde.es"
-        },
-        "tierras_aridos": {
-            "nombre": "Pablo",
-            "email": "ivan.delgado@viveverde.es"
-        }
+        "deco_exterior": [
+            {
+                "nombre": "Pablo",
+                "email": "ivan.delgado@viveverde.es"
+            }
+        ],
+        "semillas": [
+            {
+                "nombre": "Ivan",
+                "email": "ivan.delgado@viveverde.es"
+            }
+        ],
+        "mascotas_vivo": [
+            {
+                "nombre": "María",
+                "email": "ivan.delgado@viveverde.es"
+            }
+        ],
+        "mascotas_manufacturado": [
+            {
+                "nombre": "María",
+                "email": "ivan.delgado@viveverde.es"
+            }
+        ],
+        "fitos": [
+            {
+                "nombre": "Ivan",
+                "email": "ivan.delgado@viveverde.es"
+            }
+        ],
+        "vivero": [
+            {
+                "nombre": "Jose",
+                "email": "ivan.delgado@viveverde.es"
+            }
+        ],
+        "utiles_jardin": [
+            {
+                "nombre": "Ivan",
+                "email": "ivan.delgado@viveverde.es"
+            }
+        ],
+        "tierras_aridos": [
+            {
+                "nombre": "Pablo",
+                "email": "ivan.delgado@viveverde.es"
+            }
+        ]
     },
     "administrador": {
         "nombre": "Ivan",
@@ -61,8 +81,8 @@
         {"nombre": "Pedro", "email": "ivan.delgado@viveverde.es"}
     ],
     "meta": {
-        "version": "1.1",
-        "ultima_actualizacion": "2026-02-23",
-        "notas": "Este archivo es la FUENTE ÚNICA de verdad para datos de encargados. Una sección puede tener UNO (objeto) o VARIOS encargado (array). NO debe haber duplicación en otros archivos de configuración."
+        "version": "1.2",
+        "ultima_actualizacion": "2026-02-25",
+        "notas": "Este archivo es la FUENTE ÚNICA de verdad para datos de encargados. Todas las secciones usan arrays para permitir uno o varios encargados. El código debe manejar siempre arrays."
     }
 }

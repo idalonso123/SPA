@@ -189,7 +189,8 @@
         "directorio_estado": "./data",
         "directorio_logs": "./logs",
         "archivo_estado": "state.json",
-        "archivo_config": "config.json"
+        "archivo_config": "config.json",
+        "nota": "directorio_entrada y directorio_salida son null. El código usa rutas por defecto: data/input para entrada y data/output para salida."
     },
     
     "archivos_entrada": {
@@ -219,8 +220,6 @@
         "prefijo_archivo": "Pedido_Semana",
         "incluir_fecha_en_nombre": true
     },
-    
-    "email": {},
     
     "env_email": {
         "password_var": "EMAIL_PASSWORD",

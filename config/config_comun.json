@@ -260,25 +260,15 @@
         "2906": 21
     },
     
-    "configuracion_texto_email": {
-        "asunto_informe": "VIVEVERDE: Informes de ClasificacionABC+D de cada sección del periodo {periodo}",
-        "cuerpo_informe": "Buenos días {nombre},\n\nTe adjunto en este correo los informes de Clasificación ABC+D de cada sección.\n\nAtentamente,\n\nSistema de Pedidos automáticos VIVEVERDE.",
-        "asunto_presentacion": "VIVEVERDE: Presentacion de ClasificacionABC+D de cada sección del periodo {periodo}",
-        "cuerpo_presentacion": "Buenos días {nombre},\n\nTe adjunto en este correo las presentaciones de Clasificación ABC+D de cada sección.\n\nAtentamente,\n\nSistema de Pedidos automáticos VIVEVERDE.",
-        "asunto_clasificacion": "VIVEVERDE: listado ClasificacionABC+D de {seccion} del periodo {periodo}",
-        "cuerpo_clasificacion": "Buenos días {nombre},\n\nTe adjunto en este correo el listado Clasificación ABC+D de {seccion} para que lo analices y te aprendas cuales son los artículos de cada categoría:\n\n- Artículos que no te deben faltar nunca (Categoria A).\n- Artículos que confeccionan el complemento de gama (Categoría B).\n- Artículos que tienen una presencia mínima en las ventas de tu sección (Categoría C).\n- Artículos que no debemos tener en tienda (Categoria D).\n\nPon en práctica el listado.\n\nAtentamente,\n\nSistema de Pedidos automáticos VIVEVERDE."
-    },
-    
     "notas": {
-        "version": "1.1 - Período calculado automáticamente",
+        "version": "1.2 - Período calculado automáticamente",
         "archivo_principal": "Este es el archivo de configuración unificado para todos los scripts del sistema.",
         "ubicacion": "Guardar en: config/config_comun.json",
         "uso": "Este archivo debe ser leído por src/config_loader.py para obtener todas las configuraciones.",
+        "nota_email": "NOTA: La configuración de email (plantillas, SMTP, remitente) está ahora UNICAMENTE en email.json. Este archivo ya no contiene plantillas de email.",
         "periodo_automatico": "NOTA IMPORTANTE: El período de análisis ya NO se configura aquí. Los tres scripts (INFORME.py, PRESENTACION.py, clasificacionABC.py) calculan automáticamente el período desde el archivo SPA_ventas.xlsx usando la fecha mínima y máxima de las ventas. Esto garantiza que los tres scripts usen exactamente el mismo período.",
         "variables_compartidas": [
-            "configuracion_email",
-            "configuracion_colores",
-            "smtp_config"
+            "configuracion_colores"
         ],
         "variables_especificas_informe": [
             "configuracion_periodo_informe",
