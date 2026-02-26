@@ -1,9 +1,9 @@
 @echo off
-REM Sistema de Pedidos de Compra - Vivero Aranjuez V2
+REM Sistema de Pedidos de Compra - Viveverde V2
 REM Script de ejecucion simple (doble clic para ejecutar)
 
 echo ============================================
-echo SISTEMA DE PEDIDOS DE COMPRA - VIVERO V2
+echo SISTEMA DE PEDIDOS DE COMPRA - VIVEVERDE V2
 echo ============================================
 echo.
 

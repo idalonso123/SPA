@@ -7,7 +7,7 @@ el estado del sistema entre diferentes ejecuciones del script. Almacena informac
 sobre qué semanas han sido procesadas, el stock acumulado por artículo, y métricas
 acumuladas de ejecución.
 
-Autor: Sistema de Pedidos Vivero V2
+Autor: Sistema de Pedidos Viveverde V2
 Fecha: 2026-01-31
 """
 

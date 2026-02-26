@@ -7,7 +7,7 @@ incluyendo la metodología de escalado proporcional, aplicación de factores de
 crecimiento, ajustes por festividades, y cálculo de stock mínimo dinámico.
 Toda la metodología está basada en el script original de pedido_compras.py.
 
-Autor: Sistema de Pedidos Vivero V2
+Autor: Sistema de Pedidos Viveverde V2
 Fecha: 2026-01-31
 """
 

@@ -5,7 +5,7 @@ Módulo AlertService - Sistema de notificaciones de alertas y errores
 Este módulo gestiona el envío de correos electrónicos ONLY cuando hay problemas reales.
 NO envía correos en ejecuciones exitosas - solo cuando hay errores, advertencias o problemas.
 
-Autor: Sistema de Pedidos Vivero V2
+Autor: Sistema de Pedidos Viveverde V2
 Fecha: 2026-02-12
 """
 

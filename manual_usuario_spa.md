@@ -2,7 +2,7 @@
 
 # SISTEMA DE PEDIDOS DE COMPRA (SPA)
 
-## Vivero Aranjuez V2
+## Viveverde V2
 
 ---
 
@@ -10,7 +10,7 @@
 
 **Fecha de creación:** Febrero 2026
 
-**Autor:** Sistema de Pedidos Vivero V2
+**Autor:** Sistema de Pedidos Viveverde V2
 
 ---
 
@@ -43,21 +43,21 @@
 
 ## 1.1 Propósito y Objetivos del Sistema
 
-El Sistema de Pedidos de Compra (SPA) es una aplicación desarrollada específicamente para Vivero Aranjuez con el propósito de automatizar completamente el proceso de generación de pedidos de compra semanales. Este sistema representa una solución integral que elimina la necesidad de realizar cálculos manuales tediosos y propensos a errores, permitiendo a los responsables del vivero enfocarse en tareas de mayor valor estratégico.
+El Sistema de Pedidos de Compra (SPA) es una aplicación desarrollada específicamente para Viveverde con el propósito de automatizar completamente el proceso de generación de pedidos de compra semanales. Este sistema representa una solución integral que elimina la necesidad de realizar cálculos manuales tediosos y propensos a errores, permitiendo a los responsables de la jardinería enfocarse en tareas de mayor valor estratégico.
 
 El objetivo principal del sistema consiste en calcular de manera precisa y automática las cantidades óptimas de pedido para cada artículo, basándose en múltiples factores como las ventas históricas, los objetivos de venta semanales, la clasificación ABC de los artículos, el stock actual disponible y diversos parámetros de configuración que permiten adaptar el sistema a las necesidades específicas del negocio.
 
-Además de la generación de pedidos, el sistema incluye múltiples módulos complementarios que proporcionan funcionalidades adicionales como la clasificación automática de artículos según su importancia relativa (análisis ABC+D), la generación de informes periódicos, el análisis de compras sin autorización, la identificación de artículos no comprados y análisis detallados por categoría. Todas estas funcionalidades trabajan de manera coordinada para proporcionar una visión completa de la gestión de inventarios del vivero.
+Además de la generación de pedidos, el sistema incluye múltiples módulos complementarios que proporcionan funcionalidades adicionales como la clasificación automática de artículos según su importancia relativa (análisis ABC+D), la generación de informes periódicos, el análisis de compras sin autorización, la identificación de artículos no comprados y análisis detallados por categoría. Todas estas funcionalidades trabajan de manera coordinada para proporcionar una visión completa de la gestión de inventarios de la jardinería.
 
 ## 1.2 Alcance del Software
 
-El alcance del sistema SPA abarca toda la cadena de procesos relacionados con la gestión de pedidos de compra, desde la obtención y procesamiento de datos de ventas históricas hasta la generación final de archivos de pedido listos para su envío a proveedores. El sistema procesa información de múltiples secciones del vivero, incluyendo planta de temporada y floristería, decoración interior y exterior, semillas y bulbos, mascotas (tanto animales vivos como productos manufacturados), plantas de interior, fitosanitarios y abonos, vivero y plantas de exterior, útiles de jardín, tierras y áridos.
+El alcance del sistema SPA abarca toda la cadena de procesos relacionados con la gestión de pedidos de compra, desde la obtención y procesamiento de datos de ventas históricas hasta la generación final de archivos de pedido listos para su envío a proveedores. El sistema procesa información de múltiples secciones de la jardinería, incluyendo planta de temporada y floristería, decoración interior y exterior, semillas y bulbos, mascotas (tanto animales vivos como productos manufacturados), plantas de interior, fitosanitarios y abonos, plantas de exterior, útiles de jardín, tierras y áridos.
 
 El software está diseñado para funcionar de manera completamente autónoma una vez instalado y configurado, ejecutando las tareas programadas de forma automática según el calendario predefinido. Sin embargo, también permite la ejecución manual de cualquiera de sus módulos para situaciones especiales o pruebas.
 
 ## 1.3 Beneficios Principales
 
-La implementación del sistema SPA proporciona múltiples beneficios tangibles para la gestión del vivero. En primer lugar, se logra una significativa reducción del tiempo dedicado a la elaboración de pedidos, pasando de varias horas de trabajo manual a unos pocos minutos de ejecución automática. Esta eficiencia permite a los empleados dedicar su tiempo a otras tareas importantes del día a día del negocio.
+La implementación del sistema SPA proporciona múltiples beneficios tangibles para la gestión de la jardinería. En primer lugar, se logra una significativa reducción del tiempo dedicado a la elaboración de pedidos, pasando de varias horas de trabajo manual a unos pocos minutos de ejecución automática. Esta eficiencia permite a los empleados dedicar su tiempo a otras tareas importantes del día a día del negocio.
 
 En segundo lugar, el sistema garantiza una mayor precisión en los cálculos, eliminando los errores humanos que pueden ocurrir al realizar cálculos manualmente, especialmente cuando se trabaja con grandes volúmenes de datos y múltiples artículos. Los algoritmos del sistema aplican de manera consistente todos los parámetros de configuración definidos, asegurando que cada pedido se calcule siguiendo los mismos criterios.
 
@@ -69,7 +69,7 @@ Finalmente, el sistema proporciona una trazabilidad completa de todas las ejecuc
 
 Para facilitar la comprensión del presente manual, a continuación se define una serie de términos técnicos utilizados frecuentemente en la documentación y el sistema:
 
-El término **Sección** se refiere a cada una de las áreas temáticas del vivero que se gestionan de manera independiente dentro del sistema, como pueden ser planta de temporada, decoración interior, mascotas, etc. Cada sección tiene sus propios objetivos de venta semanales y sus propios encargados responsables.
+El término **Sección** se refiere a cada una de las áreas temáticas de la jardinería que se gestionan de manera independiente dentro del sistema, como pueden ser planta de temporada, decoración interior, mascotas, etc. Cada sección tiene sus propios objetivos de venta semanales y sus propios encargados responsables.
 
 **Clasificación ABC** es una metodología de gestión de inventarios que clasifica los artículos en tres categorías según su importancia relativa, medida normalmente por su contribución al volumen de negocio o a las ventas. Los artículos de categoría A son los más importantes (normalmente representan el 80% del valor), los de categoría B tienen una importancia media, y los de categoría C son los menos importantes.
 
@@ -183,7 +183,7 @@ Las máquinas virtuales Windows que se ejecuten en entornos de virtualización (
 
 El sistema SPA requiere varios archivos de datos de entrada para poder funcionar correctamente. Estos archivos contienen la información histórica y actual que el sistema necesita para realizar los cálculos de pedidos. Es fundamental que todos estos archivos estén presentes en la ubicación correcta y con el formato adecuado.
 
-Los archivos de entrada principales que el sistema necesita son los siguientes. En primer lugar, el archivo SPA_ventas.xlsx que contiene el histórico de ventas de todos los artículos del vivero. Este archivo es fundamental ya que constituye la base para calcular las proyecciones de venta futuras y determinar las cantidades óptimas de pedido.
+Los archivos de entrada principales que el sistema necesita son los siguientes. En primer lugar, el archivo SPA_ventas.xlsx que contiene el histórico de ventas de todos los artículos de la jardinería. Este archivo es fundamental ya que constituye la base para calcular las proyecciones de venta futuras y determinar las cantidades óptimas de pedido.
 
 En segundo lugar, el archivo SPA_coste.xlsx que almacena la información de costes unitarios, precios de venta, proveedores y demás datos comerciales de cada artículo. Este archivo se utiliza para calcular el margen de beneficio y determinar la clasificación ABC de los artículos.
 
@@ -193,11 +193,11 @@ Finalmente, los archivos CLASIFICACION_ABC+D_*.xlsx que contienen la clasificaci
 
 ## 4.2 Origen y Obtención de los Archivos de Entrada
 
-Todos los archivos de entrada que necesita el sistema deben obtenerse del sistema de gestión del vivero o del programa de ventas utilizado. Estos archivos no son generados por el sistema SPA, sino que deben proporcionarse como entrada desde fuentes externas.
+Todos los archivos de entrada que necesita el sistema deben obtenerse del sistema de gestión de la jardinería o del programa de ventas utilizado. Estos archivos no son generados por el sistema SPA, sino que deben proporcionarse como entrada desde fuentes externas.
 
 ### 4.2.1 SPA_ventas.xlsx — Histórico de Ventas
 
-Este archivo debe exportarse desde el programa de gestión del vivero o desde el sistema de punto de venta. Debe contener registros de todas las ventas realizadas, incluyendo como mínimo la identificación del artículo, la fecha de venta, la cantidad vendida y el importe de la venta.
+Este archivo debe exportarse desde el programa de gestión de la jardinería o desde el sistema de punto de venta. Debe contener registros de todas las ventas realizadas, incluyendo como mínimo la identificación del artículo, la fecha de venta, la cantidad vendida y el importe de la venta.
 
 La estructura típica de este archivo incluye columnas como Código de artículo, Nombre del artículo, Fecha de venta, Cantidad, Importe, Sección a la que pertenece el artículo, y otras columnas adicionales que el sistema puede ignorar si no son relevantes para los cálculos.
 
@@ -213,7 +213,7 @@ La estructura típica incluye columnas como Código de artículo, Nombre del art
 
 ### 4.2.3 SPA_stock_actual.xlsx — Stock Actual
 
-Este archivo refleja el inventario disponible en el almacén del vivero en el momento de su lectura. Debe contener la cantidad actual de cada artículo en stock, información esencial para calcular las cantidades de pedido.
+Este archivo refleja el inventario disponible en el almacén de la jardinería en el momento de su lectura. Debe contener la cantidad actual de cada artículo en stock, información esencial para calcular las cantidades de pedido.
 
 El sistema utiliza estos datos para evitar sobrepedir artículos que ya tengan stock suficiente, y para calcular los pedidos de reposición necesarios para mantener niveles de inventario adecuados.
 
@@ -233,7 +233,7 @@ Debe contener datos como código del artículo, fecha de compra, cantidad compra
 
 ### 4.2.6 encargados.xlsx — Encargados de Secciones
 
-Este archivo contiene la información de los responsables de cada sección del vivero, incluyendo sus datos de contacto como correo electrónico. El sistema utiliza esta información para enviar automáticamente los informes de clasificación ABC a cada encargado.
+Este archivo contiene la información de los responsables de cada sección de la jardinería, incluyendo sus datos de contacto como correo electrónico. El sistema utiliza esta información para enviar automáticamente los informes de clasificación ABC a cada encargado.
 
 La estructura típica incluye columnas como Código de sección, Nombre de sección, Nombre del encargado, Correo electrónico, Teléfono de contacto, y otras informações relevantes.
 
@@ -249,7 +249,7 @@ Los archivos de costes (SPA_coste.xlsx) deben revisarse al inicio de cada año p
 
 El archivo de classification ABC (CLASIFICACION_ABC+D_*.xlsx) se genera automáticamente por el sistema, pero los parámetros utilizados para su cálculo pueden requerir revisión anual.
 
-El archivo de encargados (encargados.xlsx) debe actualizarse siempre que haya cambios en la organización del personal del vivero.
+El archivo de encargados (encargados.xlsx) debe actualizarse siempre que haya cambios en la organización del personal de la jardinería.
 
 ### 4.3.2 Datos Específicos de Cada Archivo
 
@@ -306,7 +306,7 @@ Es importante mantener esta estructura de carpetas o actualizar la configuració
 
 El sistema SPA divide el año en cuatro períodos de estudio, denominados P1, P2, P3 y P4, cada uno correspondiente a una estación del año. Esta división permite realizar análisis específicos de cada temporada y adaptar los cálculos de pedido a las particularidades de cada época del año.
 
-El propósito principal de esta división es reconocer que las ventas de un vivero varían significativamente según la estación del año. Por ejemplo, la demanda de plantas de temporada es mucho mayor en primavera que en invierno, mientras que los productos de fitosanitarios tienen su pico en los meses de verano.
+El propósito principal de esta división es reconocer que las ventas de una jardinería varían significativamente según la estación del año. Por ejemplo, la demanda de plantas de temporada es mucho mayor en primavera que en invierno, mientras que los productos de fitosanitarios tienen su pico en los meses de verano.
 
 Al dividir el año en períodos, el sistema puede aplicar objetivos de venta específicos para cada semana dentro del contexto de su período correspondiente, logrando así proyecciones más precisas que si se utilizara un objetivo uniforme para todo el año.
 
@@ -318,7 +318,7 @@ Cada período del sistema corresponde a un rango específico de fechas dentro de
 
 ### 5.2.1 Período P1 — Invierno (Enero-Febrero)
 
-El período P1 corresponde a los meses de enero y febrero, cubriendo aproximadamente las semanas 1 a 8 del año. Este es el período de menor actividad para un vivero, caracterizado por bajas ventas de planta de temporada y productos de jardín.
+El período P1 corresponde a los meses de enero y febrero, cubriendo aproximadamente las semanas 1 a 8 del año. Este es el período de menor actividad para una jardinería, caracterizado por bajas ventas de planta de temporada y productos de jardín.
 
 Durante este período, los productos más vendidos suelen ser los de interior (debido a que la gente passa más tiempo en casa), los alimentos y accesorios para mascotas, y los productos de decoración.
 
@@ -328,7 +328,7 @@ Los objetivos de venta para este período son generalmente los más bajos del a�
 
 El período P2 abarca desde marzo hasta mayo, cubriendo aproximadamente las semanas 9 a 22 del año. Este es el período de mayor crecimiento de ventas, especialmente para plantas de temporada, semillas y productos de jardín.
 
-La primavera marca el inicio de la temporada alta para el vivero, con un incremento significativo en la demanda de plantas de exterior, semillas, tierra, abonos y herramientas de jardín.
+La primavera marca el inicio de la temporada alta para la jardinería, con un incremento significativo en la demanda de plantas de exterior, semillas, tierra, abonos y herramientas de jardín.
 
 Los objetivos de venta para P2 son progresivamente crecientes, alcanzando los niveles más altos hacia finales de mayo. El sistema está configurado para reflejar este crecimiento en los cálculos de pedido.
 
@@ -405,7 +405,7 @@ La estructura de configuración de períodos en el archivo JSON tiene el siguien
 }
 ```
 
-Esta configuración puede ajustarse si el negocio requiere una definición diferente de los períodos, por ejemplo si la estacionalidad del vivero difiere del patrón general.
+Esta configuración puede ajustarse si el negocio requiere una definición diferente de los períodos, por ejemplo si la estacionalidad de la jardinería difiere del patrón general.
 
 ---
 
@@ -417,7 +417,7 @@ Antes de iniciar la instalación del sistema SPA, es necesario realizar una seri
 
 En primer lugar, debe verificarse que el equipo cumpla con los requisitos mínimos de hardware y software descritos en el capítulo 3 de este manual. Es importante disponer de suficiente espacio en disco y de los permisos necesarios para instalar software.
 
-En segundo lugar, debe decidirse la ubicación donde se instalará el sistema. Se recomienda utilizar una ruta que no contenga espacios ni caracteres especiales, como por ejemplo C:\Sistemas\SPA o D:\Vivero\SPA.
+En segundo lugar, debe decidirse la ubicación donde se instalará el sistema. Se recomienda utilizar una ruta que no contenga espacios ni caracteres especiales, como por ejemplo C:\Sistemas\SPA o D:\Jardineria\SPA.
 
 En tercer lugar, debe prepararse la estructura de carpetas necesaria para los datos de entrada. El sistema creará automáticamente las carpetas necesarias, pero es útil preparar los archivos de entrada antes de la primera ejecución.
 
@@ -539,7 +539,7 @@ A continuación se describen las principales secciones del archivo de configurac
 
 **Sección "notas"**: Contiene información descriptiva sobre el propósito del archivo de configuración y su versión.
 
-**Sección "secciones"**: Define los objetivos de venta semanales para cada sección del vivero. Cada sección tiene su propia subsección con los objetivos para cada semana del año (semanas 1 a 53).
+**Sección "secciones"**: Define los objetivos de venta semanales para cada sección de la jardinería. Cada sección tiene su propia subsección con los objetivos para cada semana del año (semanas 1 a 53).
 
 **Sección "parametros"**: Contiene los parámetros generales de cálculo, como el objetivo de crecimiento (porcentaje de incremento sobre ventas anteriores), el stock mínimo como porcentaje, y los pesos asignados a cada categoría ABC.
 
@@ -561,9 +561,9 @@ A continuación se describen las principales secciones del archivo de configurac
 
 ## 7.2 Configuración de Secciones y Objetivos de Venta
 
-Las secciones del vivero y sus objetivos de venta semanales constituyen la configuración más importante del sistema, ya que determinan directamente las cantidades de pedido calculadas.
+Las secciones de la jardinería y sus objetivos de venta semanales constituyen la configuración más importante del sistema, ya que determinan directamente las cantidades de pedido calculadas.
 
-Cada sección del vivero debe estar definida en la sección "secciones" del archivo de configuración. La estructura incluye:
+Cada sección de la jardinería debe estar definida en la sección "secciones" del archivo de configuración. La estructura incluye:
 
 ```json
 "secciones": {
@@ -585,7 +585,7 @@ Cada sección del vivero debe estar definida en la sección "secciones" del arch
 }
 ```
 
-Los objetivos de venta semanales representan el valor de ventas esperado para cada semana del año. Estos objetivos deben establecerse basándose en el historial de ventas del vivero y en las proyecciones de crecimiento.
+Los objetivos de venta semanales representan el valor de ventas esperado para cada semana del año. Estos objetivos deben establecerse basándose en el historial de ventas de la jardinería y en las proyecciones de crecimiento.
 
 Para modificar los objetivos de venta, se debe editar el archivo config.json directamente, cambiando los valores numéricos para cada semana de cada sección. Es importante mantener el formato JSON válido (comas entre valores, etc.).
 
@@ -749,7 +749,7 @@ Esta es la tarea principal del sistema, responsable de generar los pedidos de co
 
 **Script asociado:** main.py
 
-**Propósito:** Calcular y generar los pedidos de compra para todas las secciones activas del vivero basándose en los objetivos de venta semanales, el histórico de ventas, la clasificación ABC y el stock actual.
+**Propósito:** Calcular y generar los pedidos de compra para todas las secciones activas de la jardinería basándose en los objetivos de venta semanales, el histórico de ventas, la clasificación ABC y el stock actual.
 
 **Frecuencia:** Semanal
 
@@ -809,7 +809,7 @@ Esta tarea realiza un análisis específico de los artículos categorizados como
 
 ### 8.3.5 Vivero_ClasificacionABC (P1, P2, P3, P4)
 
-Estas tareas generan la clasificación ABC+D de todos los artículos del vivero para cada período.
+Estas tareas generan la clasificación ABC+D de todos los artículos de la jardinería para cada período.
 
 **Script asociado:** clasificacionABC.py con parámetros específicos
 
@@ -851,7 +851,7 @@ Estas tareas generan informes detallados del análisis ABC+D para cada período.
 
 **Script asociado:** INFORME.py
 
-**Propósito:** Crear informes HTML completos con el análisis ABC+D de todos los artículos del vivero, incluyendo métricas detalladas y recomendaciones.
+**Propósito:** Crear informes HTML completos con el análisis ABC+D de todos los artículos de la jardinería, incluyendo métricas detalladas y recomendaciones.
 
 **Frecuencia:** Mensual (período específico)
 
@@ -1102,7 +1102,7 @@ Python\python.exe main.py
 
 ## 10.2 clasificacionABC.py — Clasificación de Artículos
 
-El script clasificacionABC.py implementa el algoritmo de clasificación ABC+D para todos los artículos del catálogo del vivero. Este análisis clasifica los artículos según su importancia relativa basada en las ventas y el margen.
+El script clasificacionABC.py implementa el algoritmo de clasificación ABC+D para todos los artículos del catálogo de la jardinería. Este análisis clasifica los artículos según su importancia relativa basada en las ventas y el margen.
 
 **Funcionalidades principales:**
 
@@ -1146,7 +1146,7 @@ Python\python.exe PRESENTACION.py -P P2 -Y 2025
 
 ## 10.4 INFORME.py — Informes Generales
 
-El script INFORME.py genera informes HTML completos con el análisis ABC+D de todos los artículos del vivero.
+El script INFORME.py genera informes HTML completos con el análisis ABC+D de todos los artículos de la jardinería.
 
 **Funcionalidades principales:**
 
@@ -1217,7 +1217,7 @@ Python\python.exe analisis_categoria_cd.py
 
 ## 11.1 Introducción a los Informes del Sistema
 
-El sistema SPA genera diversos tipos de informes como resultado de sus diferentes módulos. Cada informe tiene un propósito específico y proporciona información valiosa para la gestión del vivero.
+El sistema SPA genera diversos tipos de informes como resultado de sus diferentes módulos. Cada informe tiene un propósito específico y proporciona información valiosa para la gestión de la jardinería.
 
 Los informes se generan automáticamente según la programación establecida y también pueden generarse manualmente cuando sea necesario. Todos los informes se almacenan en la carpeta de salida configurada.
 
@@ -1237,7 +1237,7 @@ Este es el informe principal generado por el sistema. Contiene los pedidos de co
 |---------|-------------|
 | Código artículo | Identificador único del producto |
 | Nombre artículo | Denominación del producto |
-| Sección | Sección del vivero a la que pertenece |
+| Sección | Sección de la jardinería a la que pertenece |
 | Proveedor | Nombre del proveedor |
 | Cantidad pedido | Unidades a pedir |
 | Coste unitario | Precio por unidad |
@@ -1245,7 +1245,7 @@ Este es el informe principal generado por el sistema. Contiene los pedidos de co
 
 ### 11.2.2 Pedidos por Sección
 
-Además del pedido consolidado, el sistema genera archivos separados para cada sección del vivero.
+Además del pedido consolidado, el sistema genera archivos separados para cada sección de la jardinería.
 
 **Propósito:** Facilitar la gestión por parte de los encargados de cada sección.
 
@@ -1381,7 +1381,7 @@ A continuación se presentan las tablas detalladas para cada tipo de archivo.
 | Fecha venta | Fecha en que se realizó la venta | Datos de entrada (no calculada) | data_loader.py |
 | Cantidad | Número de unidades vendidas | Datos de entrada (no calculada) | data_loader.py |
 | Importe | Valor monetario total de la venta | Datos de entrada (no calculada) | data_loader.py |
-| Sección | Sección del vivero a la que pertenece el artículo | Datos de entrada (no calculada) | data_loader.py |
+| Sección | Sección de la jardinería a la que pertenece el artículo | Datos de entrada (no calculada) | data_loader.py |
 | Familia | Agrupación adicional del artículo | Datos de entrada (no calculada) | data_loader.py |
 | Código barras | Código identificador del artículo | Datos de entrada (no calculada) | data_loader.py |
 
@@ -1405,7 +1405,7 @@ A continuación se presentan las tablas detalladas para cada tipo de archivo.
 |---------|-------------|---------|--------|
 | Código artículo | Identificador único del producto | Datos de entrada (no calculada) | order_generator.py |
 | Nombre artículo | Denominación comercial del producto | Datos de entrada (no calculada) | order_generator.py |
-| Sección | Sección del vivero | Datos de entrada (no calculada) | order_generator.py |
+| Sección | Sección de la jardinería | Datos de entrada (no calculada) | order_generator.py |
 | Proveedor | Nombre del proveedor principal | Datos de entrada (no calculada) | order_generator.py |
 | Stock actual | Cantidad en almacén actualmente | Datos de entrada (no calculada) | order_generator.py |
 | Stock mínimo | Stock mínimo de seguridad configurado | Datos de entrada (no calculada) | order_generator.py |
@@ -1424,7 +1424,7 @@ A continuación se presentan las tablas detalladas para cada tipo de archivo.
 |---------|-------------|---------|--------|
 | Código artículo | Identificador único del producto | Datos de entrada (no calculada) | clasificacionABC.py |
 | Nombre artículo | Denominación comercial del producto | Datos de entrada (no calculada) | clasificacionABC.py |
-| Sección | Sección del vivero | Datos de entrada (no calculada) | clasificacionABC.py |
+| Sección | Sección de la jardinería | Datos de entrada (no calculada) | clasificacionABC.py |
 | Ventas período actual | Ventas acumuladas en el período actual | SUM de ventas del período actual | clasificacionABC.py |
 | Ventas período anterior | Ventas acumuladas en el período anterior | SUM de ventas del período anterior | clasificacionABC.py |
 | Porcentaje ventas | Porcentaje sobre total de ventas | (Ventas artículo / Ventas totales) × 100 | clasificacionABC.py |
@@ -2053,4 +2053,4 @@ Para soporte técnico o consultas sobre el sistema:
 
 **FIN DEL MANUAL**
 
-*Manual de Usuario del Sistema de Pedidos de Compra (SPA) - Vivero Aranjuez V2*
+*Manual de Usuario del Sistema de Pedidos de Compra (SPA) - Viveverde V2*

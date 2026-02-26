@@ -15,7 +15,7 @@ Donde:
     - Stock_Real: Dato físico proveniente del archivo SPA_stock_actual.xlsx
     - max(0, ...): Función de corrección para evitar pedidos negativos
 
-Autor: Sistema de Pedidos Vivero V2 - FASE 2
+Autor: Sistema de Pedidos Viveverde V2 - FASE 2
 Fecha: 2026-02-03
 """
 

@@ -7,7 +7,7 @@ sistema. Determina cuándo debe ejecutarse el proceso de generación de pedidos
 según la configuración de horario (jueves a las 21:50), identifica qué semana
 procesar, y verifica si la semana ya ha sido procesada anteriormente.
 
-Autor: Sistema de Pedidos Vivero V2
+Autor: Sistema de Pedidos Viveverde V2
 Fecha: 2026-01-31
 """
 

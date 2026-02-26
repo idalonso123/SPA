@@ -1,4 +1,4 @@
-# Sistema de Pedidos de Compra - Vivero Aranjuez V2
+# Sistema de Pedidos de Compra - Viveverde V2
 # Dependencias de Python
 
 # Manipulacion de datos

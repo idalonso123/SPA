@@ -218,5 +218,5 @@ Para dudas o problemas con la implementación de FASE 2, revisar los logs en `./
 
 ---
 
-*Documento generado automáticamente para el Sistema de Pedidos de Compra - Vivero Aranjuez V2*
+*Documento generado automáticamente para el Sistema de Pedidos de Compra - Viveverde V2*
 *Fecha: 2026-02-03*

@@ -7,7 +7,7 @@ que alimentan el sistema de generación de pedidos. Implementa funciones para
 leer archivos de ventas, costes y clasificación ABC, con validación y limpieza
 de datos automática.
 
-Autor: Sistema de Pedidos Vivero V2
+Autor: Sistema de Pedidos Viveverde V2
 Fecha: 2026-01-31
 """
 

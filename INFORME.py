@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 INFORME_FINAL.py
-Script para generar el informe HTML completo del análisis ABC+D de Vivero Aranjuez.
+Script para generar el informe HTML completo del análisis ABC+D de Viveverde.
 Versión mejorada: Lee archivos CLASIFICACION_ABC+D_[SECCION].xlsx con datos ya clasificados.
 Envía automáticamente un email con todos los informes generados a Ivan.
 
@@ -1451,7 +1451,7 @@ def main():
     
     print("=" * 70)
     print("GENERADOR DE INFORMES ABC+D POR SECCIÓN")
-    print("Vivero Aranjuez")
+    print("Viveverde")
     print("=" * 70)
     
     # Mostrar información de filtros activos
@@ -1535,7 +1535,7 @@ def main():
 if __name__ == "__main__":
     # Configurar argumentos de línea de comandos
     parser = argparse.ArgumentParser(
-        description='Generador de Informes ABC+D por Sección - Vivero Aranjuez',
+        description='Generador de Informes ABC+D por Sección - Viveverde',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog='''
 Ejemplos de uso:

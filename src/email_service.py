@@ -8,7 +8,7 @@ config/encargados.json (FUENTE ÚNICA).
 INTEGRACIÓN DE ALERTAS: Este módulo está integrado con el sistema de alertas.
 Los errores y advertencias se enviarán por email automáticamente.
 
-Autor: Sistema de Pedidos Vivero V2
+Autor: Sistema de Pedidos Viveverde V2
 Fecha: 2026-02-05
 """
 

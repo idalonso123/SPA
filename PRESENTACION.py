@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 PRESENTACION.py
-Script para generar presentaciones HTML del análisis ABC+D de Vivero Aranjuez.
+Script para generar presentaciones HTML del análisis ABC+D de Viveverde.
 Versión CORREGIDA: Lee SOLO los archivos de clasificación ABC+D y genera presentaciones por sección.
 NO utiliza los archivos individuales (SPA_ventas.xlsx, SPA_stock.xlsx, SPA_compras.xlsx).
 Envía automáticamente un email con todas las presentaciones generadas a Ivan.
@@ -453,7 +453,7 @@ def generar_html_presentacion(datos_seccion, categorias, ventas_por_categoria, s
     Genera el HTML de la presentación interactiva.
     """
     fecha_actual = datetime.now().strftime("%d de %B de %Y")
-    nombre_seccion_titulo = nombre_seccion.upper() if nombre_seccion else "VIVERO ARANJUEZ"
+    nombre_seccion_titulo = nombre_seccion.upper() if nombre_seccion else "VIVEVERDE"
     
     # Obtener valores por categoría
     count_a = categorias.get('A', 0)
@@ -984,7 +984,7 @@ def generar_html_presentacion(datos_seccion, categorias, ventas_por_categoria, s
             <div class="section-badge">{nombre_seccion_titulo}</div>
             <h1>Clasificación ABC+D</h1>
             <p class="subtitle">Análisis de Inventario y Ventas</p>
-            <p class="meta">Vivero Aranjuez | {fecha_actual}</p>
+            <p class="meta">Viveverde | {fecha_actual}</p>
         </div>
         
         <!-- Slide 2: Agenda -->
@@ -1263,7 +1263,7 @@ def generar_html_presentacion(datos_seccion, categorias, ventas_por_categoria, s
             <div class="section-badge">{nombre_seccion_titulo}</div>
             <h1>¡Gracias!</h1>
             <p class="subtitle">¿Preguntas o comentarios?</p>
-            <p class="meta">Vivero Aranjuez | Análisis ABC+D</p>
+            <p class="meta">Viveverde | Análisis ABC+D</p>
         </div>
     </div>
     
@@ -1349,7 +1349,7 @@ def main():
     
     print("=" * 70)
     print("GENERADOR DE PRESENTACIONES ABC+D POR SECCIÓN")
-    print("Vivero Aranjuez")
+    print("Viveverde")
     print("=" * 70)
     print("\nMODO: Usando archivos de clasificación como fuente de datos")
     print("      (NO se procesan archivos individuales Ventas/stock/compras)")
@@ -1475,7 +1475,7 @@ def main():
 if __name__ == "__main__":
     # Configurar argumentos de línea de comandos
     parser = argparse.ArgumentParser(
-        description='Generador de Presentaciones ABC+D por Sección - Vivero Aranjuez',
+        description='Generador de Presentaciones ABC+D por Sección - Viveverde',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog='''
 Ejemplos de uso:

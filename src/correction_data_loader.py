@@ -10,7 +10,7 @@ La integración de estos datos permite ajustar las proyecciones teóricas de la
 FASE 1 contra la realidad operativa del almacén, corrigiendo el pedido generado
 en función de la diferencia entre el stock real y el stock mínimo configurado.
 
-Autor: Sistema de Pedidos Vivero V2 - FASE 2
+Autor: Sistema de Pedidos Viveverde V2 - FASE 2
 Fecha: 2026-02-03
 """
 

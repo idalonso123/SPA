@@ -438,7 +438,7 @@ def crear_tareas_programadas():
 def main():
     """Función principal"""
     print("\n" + "="*60)
-    print("CONFIGURADOR COMPLETO - VIVERO ARANJUEZ")
+    print("CONFIGURADOR COMPLETO - VIVEVERDE")
     print("="*60)
     print(f"Fecha: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print(f"Proyecto: {obtener_ruta_proyecto()}")

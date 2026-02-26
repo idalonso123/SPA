@@ -7,7 +7,7 @@ que contienen los pedidos de compra generados. Implementa toda la lógica de
 formateo, estilos, y estructuración de la información para facilitar su uso
 por parte de los responsables de compras.
 
-Autor: Sistema de Pedidos Vivero V2
+Autor: Sistema de Pedidos Viveverde V2
 Fecha: 2026-01-31
 """
 
@@ -560,7 +560,7 @@ class OrderGenerator:
             
             # Añadir título en fila 1
             ws.merge_cells('A1:P1')
-            titulo = f"RESUMEN DE PEDIDOS DE COMPRA - {seccion.upper()} - VIVERO ARANJUEZ 2026"
+            titulo = f"RESUMEN DE PEDIDOS DE COMPRA - {seccion.upper()} - VIVEVERDE 2026"
             ws['A1'] = titulo
             ws['A1'].font = Font(bold=True, size=14, color="FFFFFF")
             ws['A1'].fill = self.HEADER_FILL

@@ -488,7 +488,7 @@ def eliminar_todas_las_tareas():
 def mostrar_menu():
     """Muestra el menú de opciones"""
     print("\n" + "="*60)
-    print("MENÚ DE TAREAS PROGRAMADAS - VIVERO ARANJUEZ")
+    print("MENÚ DE TAREAS PROGRAMADAS - VIVEVERDE")
     print("="*60)
     print("1. Crear todas las tareas programadas")
     print("2. Crear tarea de Pedidos Semanales (main.py - jueves 21:00)")

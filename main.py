@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Sistema de Pedidos de Compra - Vivero Aranjuez V2
+Sistema de Pedidos de Compra - Viveverde V2
 
-Autor: Sistema de Pedidos Vivero V2
+Autor: Sistema de Pedidos Viveverde V2
 Fecha: 2026-02-05 (Actualizado con correcciones de bugs de email)
 """
 
@@ -1053,7 +1053,7 @@ def procesar_pedido_semana(
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Sistema de Generación de Pedidos de Compra - Vivero Aranjuez V2 (FASE 1 + FASE 2 + Email)',
+        description='Sistema de Generación de Pedidos de Compra - Viveverde V2 (FASE 1 + FASE 2 + Email)',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Ejemplos de uso:
@@ -1088,7 +1088,7 @@ Ejemplos de uso:
     logger = configurar_logging(nivel=nivel_log, log_file=args.log)
     
     logger.info("=" * 70)
-    logger.info("SISTEMA DE PEDIDOS DE COMPRA - VIVERO ARANJUEZ V2")
+    logger.info("SISTEMA DE PEDIDOS DE COMPRA - VIVEVERDE V2")
     logger.info(f"Fecha de ejecución: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     logger.info("=" * 70)
     

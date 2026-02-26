@@ -1,4 +1,4 @@
-# Sistema de Pedidos de Compra - Vivero Aranjuez V2
+# Sistema de Pedidos de Compra - Viveverde V2
 
 Sistema modular para la generación automática de pedidos de compra con generación semanal programada y persistencia de estado.
 
@@ -166,8 +166,8 @@ El archivo `data/state.json` mantiene:
 
 ## Licencia
 
-Sistema interno desarrollado para Vivero Aranjuez.
+Sistema interno desarrollado para Viveverde.
 
 ## Autor
 
-Sistema de Pedidos Vivero V2
+Sistema de Pedidos Viveverde V2
