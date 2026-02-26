@@ -1059,7 +1059,7 @@ def main():
 Ejemplos de uso:
   python main.py                      # Ejecución normal (jueves 21:50)
   python main.py --semana 15          # Forzar semana específica
-  python main.py --continuo           # Modo continuo (esperando horario)
+  python main.py --continuo           # Modo continuo (se ejecuta y espera la siguiente semana)
   python main.py --status             # Mostrar estado del sistema
   python main.py --reset              # Resetear estado del sistema
   python main.py --semana 15 --sin-correccion    # Solo FASE 1
@@ -1194,45 +1194,12 @@ Ejemplos de uso:
     scheduler = SchedulerService(config)
     ultima_procesada = state_manager.obtener_ultima_semana_procesada()
     
+    # Ejecución directa - sin verificación de horario
+    # El horario lo controla la tarea programada del sistema operativo
     if args.semana:
         semana = args.semana
         logger.info(f"Semana forzada por argumento: {semana}")
-    elif args.continuo:
-        logger.info("Modo continuo activado. Esperando horario de ejecución...")
-        
-        while True:
-            es_horario, mensaje = scheduler.verificar_horario_ejecucion()
-            if es_horario:
-                logger.info("¡Es el horario de ejecución!")
-                break
-            
-            logger.info(mensaje)
-            import time
-            time.sleep(60)
-            
-            semana_a_proc, _ = scheduler.calcular_semana_a_procesar(ultima_procesada)
-            if semana_a_proc is None:
-                logger.info("No hay semanas pendientes de procesamiento.")
-                sys.exit(0)
-        
-        semana = semana_a_proc
     else:
-        es_horario, mensaje = scheduler.verificar_horario_ejecucion()
-        
-        if not es_horario:
-            logger.warning(f"No es el horario de ejecución: {mensaje}")
-            logger.info(scheduler.simular_proxima_ejecucion())
-            
-            semana_a_proc, msg_semana = scheduler.calcular_semana_a_procesar(ultima_procesada)
-            
-            if semana_a_proc is None:
-                logger.info(msg_semana)
-                sys.exit(0)
-            
-            logger.info(f"pero hay semana pendiente: {msg_semana}")
-            logger.info("Use --continuo para esperar hasta el horario de ejecución.")
-            sys.exit(0)
-        
         semana, msg_semana = scheduler.calcular_semana_a_procesar(ultima_procesada)
         
         if semana is None:
