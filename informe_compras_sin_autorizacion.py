@@ -405,8 +405,8 @@ def cargar_pedido_semana_anterior(seccion):
     # El formato del nombre es: Pedido_Semana_{semana}_{fecha}_{seccion}.xlsx
     # Ejemplo: Pedido_Semana_07_26022026_maf.xlsx
     # Buscamos: Pedido_Semana_07_*_maf.xlsx (con _ antes de la sección)
-    archivo = PEDIDOS_DIR / f"Pedido_Semana_{semana_anterior}_*_{seccion}.xlsx"
-    archivos_encontrados = list(archivo.glob("*"))
+    # IMPORTANTE: El Path ya contiene wildcards, no usamos .glob("*") sino glob() directo
+    archivos_encontrados = list(PEDIDOS_DIR.glob(f"Pedido_Semana_{semana_anterior}_*_{seccion}.xlsx"))
     
     if not archivos_encontrados:
         print(f"  AVISO: No se encontró pedido de semana {semana_anterior} para {seccion}")
