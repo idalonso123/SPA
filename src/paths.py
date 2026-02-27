@@ -44,6 +44,14 @@ COMPRAS_SIN_AUTORIZACION_DIR = OUTPUT_DIR / "Compras_sin_autorizacion"
 ARTICULOS_NO_COMPRADOS_DIR = OUTPUT_DIR / "Articulos_no_comprados"
 
 # ==============================================================================
+# DIRECTORIO PARA STOCKS SEMANALES
+# ==============================================================================
+
+# Directorio para guardar stocks semanales (usados para comparaciones históricas)
+# Este directorio almacenará copias del stock al final de cada semana
+STOCKS_SEMANALES_DIR = DATA_DIR / "stocks_semanales"
+
+# ==============================================================================
 # ARCHIVOS DE DATOS COMUNES
 # ==============================================================================
 
@@ -326,7 +334,7 @@ def verificar_directorios() -> bool:
         INPUT_DIR, OUTPUT_DIR, CONFIG_DIR, LOGS_DIR,
         PEDIDOS_SEMANALES_DIR, PEDIDOS_SEMANALES_RESUMEN_DIR, INFORMES_DIR, PRESENTACIONES_DIR,
         ANALISIS_DIR, ANALISIS_CATEGORIA_CD_DIR, COMPARACION_CATEGORIA_CD_DIR, RESUMENES_DIR, COMPRAS_SIN_AUTORIZACION_DIR,
-        ARTICULOS_NO_COMPRADOS_DIR
+        ARTICULOS_NO_COMPRADOS_DIR, STOCKS_SEMANALES_DIR
     ]
     return all(d.exists() for d in directorios)
 
@@ -348,6 +356,7 @@ def crear_directorios_si_no_existen():
         RESUMENES_DIR,
         COMPRAS_SIN_AUTORIZACION_DIR,
         ARTICULOS_NO_COMPRADOS_DIR,
+        STOCKS_SEMANALES_DIR,
     ]
     
     for directorio in directorios + subdirectorios_salida:

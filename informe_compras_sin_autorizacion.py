@@ -2,22 +2,34 @@
 Script para generar informe semanal de compras sin pedido
 
 Este script identifica artículos que han sido comprados pero no estaban
-en el pedido semanal. Compara el stock histórico con el actual y los pedidos.
+en el pedido semanal de la semana anterior.
+
+NUEVA LÓGICA (Febrero 2026):
+1. Cargar el pedido de la semana anterior (artículos autorizados para compra)
+2. Cargar el stock de la semana anterior (artículos que existían antes)
+3. Cargar el stock actual
+
+Comparación:
+- Si el artículo ESTÁ en el pedido_semana_anterior → NO incluido (autorizado)
+- Si el artículo NO está en pedido Y SÍ está en stock_semana_anterior → 
+  NO incluido (ya existía antes, no es compra reciente)
+- Si el artículo NO está en pedido Y NO está en stock_semana_anterior → 
+  SÍ incluido (comprado sin autorización en esta semana)
 
 INTEGRACIÓN DE ALERTAS: Este script está integrado con el sistema de alertas.
 Los errores y advertencias se enviarán por email automáticamente.
 
 Estructura de datos de entrada:
-- SPA_stock_P1.xlsx, SPA_stock_P2.xlsx, SPA_stock_P3.xlsx, SPA_stock_P4.xlsx
-- SPA_stock_actual.xlsx
-- Pedido_Semana_{semana}_{sección}.xlsx
+- SPA_stock_actual.xlsx (stock actual)
+- SPA_stock_semana_{fecha}.xlsx (stock semanal guardado, en stocks_semanales/)
+- Pedido_Semana_{semana}_{sección}.xlsx (pedidos semanales)
 
 Estructura de datos de salida:
 - Excel con 11 hojas (una por sección)
-- JSON histórico para seguimiento dinámico de stock
+- Archivo de stock semanal guardado para uso futuro
 
 Autor: Sistema de Pedidos VIVEVERDE
-Fecha: 2026-02-25
+Fecha: 2026-02-28
 """
 
 import pandas as pd
@@ -70,8 +82,10 @@ except ImportError as e:
 # Configuración
 BASE_PATH = Path(__file__).parent
 DATA_INPUT_PATH = INPUT_DIR
-# Usar directorio centralizado para compras sin autorización
+# Directorio de salida para compras sin autorización
 DATA_OUTPUT_PATH = COMPRAS_SIN_AUTORIZACION_DIR
+# Directorio donde están los pedidos semanales
+PEDIDOS_DIR = PEDIDOS_SEMANALES_DIR
 HISTORY_FILE = HISTORICO_COMPRAS_SIN_PEDIDO
 
 # Secciones del sistema
@@ -311,7 +325,7 @@ def cargar_pedido_semana(seccion, semana=None):
     """
     if semana is None:
         # Buscar el archivo de pedido más reciente para la sección
-        patron = DATA_OUTPUT_PATH / f"Pedido_Semana_*_{seccion}.xlsx"
+        patron = PEDIDOS_DIR / f"Pedido_Semana_*_{seccion}.xlsx"
         archivos = list(patron.glob("*"))
         if not archivos:
             return pd.DataFrame()
@@ -319,7 +333,7 @@ def cargar_pedido_semana(seccion, semana=None):
         archivos.sort(key=lambda x: x.name, reverse=True)
         archivo = archivos[0]
     else:
-        archivo = DATA_OUTPUT_PATH / f"Pedido_Semana_{semana}_{seccion}.xlsx"
+        archivo = PEDIDOS_DIR / f"Pedido_Semana_{semana}_{seccion}.xlsx"
     
     if archivo.exists():
         # Los archivos de pedido tienen la primera fila como encabezados
@@ -329,6 +343,161 @@ def cargar_pedido_semana(seccion, semana=None):
         print(f"  - Cargado: {archivo.name}")
         return df
     return pd.DataFrame()
+
+
+def obtener_semana_anterior():
+    """
+    Obtiene el número de la semana anterior basándose en los archivos de pedido existentes.
+    
+    Returns:
+        str: Número de semana anterior (ej: '06') o None si no se encuentra
+    """
+    try:
+        # Buscar todos los archivos de pedido
+        todos_archivos = list(PEDIDOS_SEMANALES_DIR.glob('Pedido_Semana_*'))
+        
+        if not todos_archivos:
+            print("  AVISO: No se encontraron archivos de pedido para determinar la semana anterior")
+            return None
+        
+        # Extraer números de semana de los nombres de archivo
+        semanas = set()
+        for archivo in todos_archivos:
+            match = re.search(r'Pedido_Semana_(\d+)_', archivo.name)
+            if match:
+                semanas.add(int(match.group(1)))
+        
+        if not semanas:
+            return None
+        
+        # Obtener la semana máxima (la más reciente)
+        semana_mas_reciente = max(semanas)
+        
+        # La semana anterior es la semana actual - 1
+        # Si la semana más reciente es 7, entonces la semana anterior es 6
+        semana_anterior = semana_mas_reciente - 1
+        
+        # Formatear con cero a la izquierda
+        return str(semana_anterior).zfill(2)
+    
+    except Exception as e:
+        print(f"  AVISO: Error al obtener la semana anterior: {e}")
+        return None
+
+
+def cargar_pedido_semana_anterior(seccion):
+    """
+    Carga el archivo de pedido de la semana anterior para una sección específica.
+    
+    Args:
+        seccion: Nombre de la sección (ej: 'maf', 'interior')
+    
+    Returns:
+        DataFrame con los artículos del pedido de la semana anterior
+    """
+    semana_anterior = obtener_semana_anterior()
+    
+    if semana_anterior is None:
+        print(f"  AVISO: No se pudo determinar la semana anterior para {seccion}")
+        return pd.DataFrame()
+    
+    # Buscar archivo de pedido de la semana anterior
+    # El formato del nombre es: Pedido_Semana_{semana}_{fecha}_{seccion}.xlsx
+    # Ejemplo: Pedido_Semana_07_26022026_maf.xlsx
+    # Buscamos: Pedido_Semana_07_*_maf.xlsx (con _ antes de la sección)
+    archivo = PEDIDOS_DIR / f"Pedido_Semana_{semana_anterior}_*_{seccion}.xlsx"
+    archivos_encontrados = list(archivo.glob("*"))
+    
+    if not archivos_encontrados:
+        print(f"  AVISO: No se encontró pedido de semana {semana_anterior} para {seccion}")
+        return pd.DataFrame()
+    
+    # Tomar el primero (debería haber solo uno)
+    archivo_pedido = archivos_encontrados[0]
+    
+    try:
+        df = pd.read_excel(archivo_pedido, header=1)
+        df = fill_forward_blank_cells(df, ['Código artículo', 'Nombre Artículo', 'Nombre artículo'])
+        print(f"  - Cargado pedido semana {semana_anterior}: {archivo_pedido.name}")
+        return df
+    except Exception as e:
+        print(f"  ERROR al cargar pedido de semana {semana_anterior}: {e}")
+        return pd.DataFrame()
+
+
+def cargar_stock_semana_anterior():
+    """
+    Carga el archivo de stock de la semana anterior.
+    
+    Busca el archivo SPA_stock_semana_anterior.xlsx en el directorio data/input.
+    Si no existe, usa el archivo P más antiguo disponible como referencia.
+    
+    Returns:
+        DataFrame con los artículos del stock de la semana anterior
+    """
+    # Buscar el archivo固定 SPA_stock_semana_anterior.xlsx en data/input
+    archivo_stock_semana_anterior = DATA_INPUT_PATH / "SPA_stock_semana_anterior.xlsx"
+    
+    if archivo_stock_semana_anterior.exists():
+        try:
+            df = pd.read_excel(archivo_stock_semana_anterior)
+            df = fill_forward_blank_cells(df, ['Artículo', 'Nombre artículo'])
+            print(f"  - Cargado stock semana anterior: {archivo_stock_semana_anterior.name}")
+            return df
+        except Exception as e:
+            print(f"  AVISO: Error al cargar stock semana anterior: {e}")
+    
+    # Si no hay stock de semana anterior, usar el archivo P más antiguo disponible como referencia
+    # (esto es un fallback - idealmente debería haber un stock de semana anterior guardado)
+    print("  AVISO: No se encontró SPA_stock_semana_anterior.xlsx. Usando archivo P más antiguo como referencia.")
+    
+    for periodo in ["P1", "P2", "P3", "P4"]:
+        archivo = DATA_INPUT_PATH / f"SPA_stock_{periodo}.xlsx"
+        if archivo.exists():
+            try:
+                df = pd.read_excel(archivo)
+                df = fill_forward_blank_cells(df, ['Artículo', 'Nombre artículo'])
+                df['Periodo'] = periodo
+                print(f"  - Cargado stock histórico ({periodo}): {archivo.name}")
+                return df
+            except Exception as e:
+                print(f"  AVISO: Error al cargar {archivo.name}: {e}")
+                continue
+    
+    print("  ERROR: No se encontró ningún archivo de stock histórico")
+    return pd.DataFrame()
+
+
+def guardar_stock_semana_actual():
+    """
+    Guarda una copia del stock actual como SPA_stock_semana_anterior.xlsx en data/input.
+    Esto permite tener un registro del stock al final de cada semana para
+    compararlo en la próxima ejecución. Se sobrescribe en cada ejecución.
+    
+    Returns:
+        str: Ruta del archivo guardado o None si falló
+    """
+    try:
+        # Cargar stock actual
+        stock_actual = cargar_stock_actual()
+        
+        if stock_actual.empty:
+            print("  AVISO: No hay stock actual para guardar")
+            return None
+        
+        # Nombre固定 para el archivo de stock de semana anterior (en data/input)
+        nombre_archivo = "SPA_stock_semana_anterior.xlsx"
+        archivo_destino = DATA_INPUT_PATH / nombre_archivo
+        
+        # Guardar archivo (se sobrescribe en cada ejecución)
+        stock_actual.to_excel(archivo_destino, index=False)
+        print(f"  - Stock semana anterior guardado: {nombre_archivo}")
+        
+        return str(archivo_destino)
+    
+    except Exception as e:
+        print(f"  ERROR al guardar stock semana anterior: {e}")
+        return None
 
 
 def normalizar_codigo_articulo(codigo):
@@ -473,52 +642,76 @@ def identificar_compras_sin_pedido(seccion):
     """
     Identifica los artículos comprados sin estar en el pedido para una sección.
     
-    Lógica:
-    1. El artículo debe estar en SPA_stock_actual con stock > 0
-    2. El artículo NO debe estar en ningún período histórico (P1-P4)
-    3. El artículo NO debe estar en el pedido semanal
-    4. Si ya estaba en el histórico y el stock no ha cambiado, no aparece
-    5. Si el stock aumenta respecto al histórico, sí aparece (nueva compra)
+    NUEVA LÓGICA (según especificación del usuario):
+    1. Cargar el pedido de la semana anterior (artículos autorizados para compra)
+    2. Cargar el stock de la semana anterior (artículos que existían antes)
+    3. Cargar el stock actual
+    
+    Comparación:
+    - Si el artículo ESTÁ en el pedido_semana_anterior → NO incluido (autorizado)
+    - Si el artículo NO está en pedido_semana_anterior Y SÍ está en stock_semana_anterior → 
+      NO incluido (ya existía antes, no es compra reciente)
+    - Si el artículo NO está en pedido_semana_anterior Y NO está en stock_semana_anterior → 
+      SÍ incluido (comprado sin autorización en esta semana)
     """
     print(f"\nProcesando sección: {seccion}")
     
     # Cargar datos
     print("  Cargando archivos...")
-    stock_historico = cargar_stock_historico()
     stock_actual = cargar_stock_actual()
-    pedido = cargar_pedido_semana(seccion)
+    pedido_semana_anterior = cargar_pedido_semana_anterior(seccion)
+    stock_semana_anterior = cargar_stock_semana_anterior()
     
     if stock_actual.empty:
         print(f"  - No hay stock actual para {seccion}")
         return pd.DataFrame()
     
     # Normalizar columnas
-    stock_historico = normalizar_columnas(stock_historico, tipo='stock')
     stock_actual = normalizar_columnas(stock_actual, tipo='stock')
-    pedido = normalizar_columnas(pedido, tipo='pedido')
+    pedido_semana_anterior = normalizar_columnas(pedido_semana_anterior, tipo='pedido')
+    stock_semana_anterior = normalizar_columnas(stock_semana_anterior, tipo='stock')
     
-    # Obtener artículos del pedido (para exclusión)
-    if not pedido.empty and 'Artículo' in pedido.columns:
-        articulos_pedido = set(pedido['Artículo'].dropna().astype(str).str.strip())
-    else:
-        articulos_pedido = set()
-    
-    # Obtener artículos históricos
-    if not stock_historico.empty and 'Artículo' in stock_historico.columns:
-        # Crear clave única para histórico
-        stock_historico['clave'] = stock_historico.apply(
+    # ============================================================
+    # Paso 1: Obtener artículos autorizados (pedido semana anterior)
+    # ============================================================
+    if not pedido_semana_anterior.empty and 'Artículo' in pedido_semana_anterior.columns:
+        # Crear clave única para pedido
+        pedido_semana_anterior['clave'] = pedido_semana_anterior.apply(
             lambda x: crear_clave_articulo(
                 str(x.get('Artículo', '')), 
                 str(x.get('Talla', '')), 
                 str(x.get('Color', ''))
             ), axis=1
         )
-        articulos_historicos = set(stock_historico['clave'].dropna())
+        articulos_autorizados = set(pedido_semana_anterior['clave'].dropna())
+        print(f"  - Artículos autorizados (pedido semana anterior): {len(articulos_autorizados)}")
     else:
-        articulos_historicos = set()
+        articulos_autorizados = set()
+        print(f"  - No se encontró pedido de semana anterior (0 artículos autorizados)")
     
-    # Obtener artículos en stock actual
+    # ============================================================
+    # Paso 2: Obtener artículos que existían la semana pasada
+    # ============================================================
+    if not stock_semana_anterior.empty and 'Artículo' in stock_semana_anterior.columns:
+        # Crear clave única para stock semana anterior
+        stock_semana_anterior['clave'] = stock_semana_anterior.apply(
+            lambda x: crear_clave_articulo(
+                str(x.get('Artículo', '')), 
+                str(x.get('Talla', '')), 
+                str(x.get('Color', ''))
+            ), axis=1
+        )
+        articulos_stock_semana_anterior = set(stock_semana_anterior['clave'].dropna())
+        print(f"  - Artículos en stock semana anterior: {len(articulos_stock_semana_anterior)}")
+    else:
+        articulos_stock_semana_anterior = set()
+        print(f"  - No se encontró stock de semana anterior (0 artículos)")
+    
+    # ============================================================
+    # Paso 3: Procesar stock actual y aplicar lógica de comparación
+    # ============================================================
     if 'Artículo' in stock_actual.columns:
+        # Crear clave única para stock actual
         stock_actual['clave'] = stock_actual.apply(
             lambda x: crear_clave_articulo(
                 str(x.get('Artículo', '')), 
@@ -527,79 +720,56 @@ def identificar_compras_sin_pedido(seccion):
             ), axis=1
         )
         
-        # Filtrar: stock > 0 y no está en histórico
-        stock_actual_filtrado = stock_actual[
-            (stock_actual['Stock'].fillna(0) > 0) &
-            (~stock_actual['clave'].isin(articulos_historicos))
-        ].copy()
+        # Filtrar: solo artículos con stock > 0
+        stock_con_stock = stock_actual[stock_actual['Stock'].fillna(0) > 0].copy()
         
-        # Filtrar: no está en el pedido
-        stock_actual_filtrado = stock_actual_filtrado[
-            ~stock_actual_filtrado['Artículo'].isin(articulos_pedido)
-        ]
+        # Aplicar la lógica de comparación según el flujo especificado:
+        # 1. Si está en pedido_semana_anterior → NO incluir (autorizado)
+        # 2. Si NO está en pedido Y SÍ está en stock_semana_anterior → NO incluir (ya existía)
+        # 3. Si NO está en pedido Y NO está en stock_semana_anterior → SÍ incluir (compra sin autorización)
         
-        # NUEVO: Filtrar también por prefijo de sección para asegurar que
-        # solojamos artículos que pertenecen a esta sección
-        stock_actual_filtrado = stock_actual_filtrado[
-            stock_actual_filtrado['Artículo'].apply(lambda x: es_articulo_de_seccion(x, seccion))
-        ]
-        
-        # Cargar histórico JSON (estructura por sección)
-        historico_completo = cargar_historico_json()
-        historico_seccion = historico_completo.get(seccion, {})
-        
-        # Filtrar según el histórico (dinámico)
         resultados = []
-        for idx, row in stock_actual_filtrado.iterrows():
+        
+        for idx, row in stock_con_stock.iterrows():
             clave = row['clave']
             stock_actual_val = float(row.get('Stock', 0))
             
-            # Buscar en histórico de la sección
-            if clave in historico_seccion:
-                stock_anterior = float(historico_seccion[clave].get('stock', 0))
-                
-                # Solo incluir si el stock ha cambiado (aumentado o disminuido)
-                if stock_actual_val != stock_anterior:
-                    resultados.append({
-                        'Artículo': row.get('Artículo', ''),
-                        'Nombre Artículo': row.get('Nombre Artículo', ''),
-                        'Talla': row.get('Talla', ''),
-                        'Color': row.get('Color', ''),
-                        'Stock': stock_actual_val
-                    })
-                    
-                    # Actualizar histórico de la sección
-                    historico_seccion[clave] = {
-                        'stock': stock_actual_val,
-                        'fecha_actualizacion': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                    }
-            else:
-                # Es nuevo, incluirlo
-                resultados.append({
-                    'Artículo': row.get('Artículo', ''),
-                    'Nombre Artículo': row.get('Nombre Artículo', ''),
-                    'Talla': row.get('Talla', ''),
-                    'Color': row.get('Color', ''),
-                    'Stock': stock_actual_val
-                })
-                
-                # Agregar al histórico de la sección
-                historico_seccion[clave] = {
-                    'stock': stock_actual_val,
-                    'fecha_actualizacion': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                }
+            # Opción 1: ¿El artículo está en el pedido de la semana anterior?
+            if clave in articulos_autorizados:
+                # Artículo autorizado - NO incluir en el informe
+                continue
+            
+            # Opción 2: ¿El artículo NO está en pedido pero SÍ existía la semana pasada?
+            if clave in articulos_stock_semana_anterior:
+                # El artículo ya existía antes - NO incluir en el informe
+                continue
+            
+            # Opción 3: El artículo NO está en pedido Y NO estaba en stock semana anterior
+            # → ES UNA COMPRA SIN AUTORIZACIÓN - SÍ incluir
+            resultados.append({
+                'Artículo': row.get('Artículo', ''),
+                'Nombre Artículo': row.get('Nombre Artículo', ''),
+                'Talla': row.get('Talla', ''),
+                'Color': row.get('Color', ''),
+                'Stock': stock_actual_val
+            })
         
-        # Actualizar el histórico completo
-        historico_completo[seccion] = historico_seccion
-        
-        # Guardar histórico actualizado
-        guardar_historico_json(historico_completo)
-        
+        # Filtrar también por prefijo de sección para asegurar que
+        # solojamos artículos que pertenecen a esta sección
         if resultados:
-            print(f"  - Encontrados {len(resultados)} artículos comprados sin pedido")
-            return pd.DataFrame(resultados)
+            df_resultados = pd.DataFrame(resultados)
+            df_resultados = df_resultados[
+                df_resultados['Artículo'].apply(lambda x: es_articulo_de_seccion(x, seccion))
+            ]
+            
+            if not df_resultados.empty:
+                print(f"  - Encontrados {len(df_resultados)} artículos comprados sin autorización")
+                return df_resultados
+            else:
+                print(f"  - No hay compras sin autorización para {seccion}")
+                return pd.DataFrame()
         else:
-            print(f"  - No hay compras sin pedido para {seccion}")
+            print(f"  - No hay compras sin autorización para {seccion}")
             return pd.DataFrame()
     
     return pd.DataFrame()
@@ -728,6 +898,12 @@ def main():
     print("=" * 60)
     
     email_enviado = enviar_email_informe(output_file, semana)
+    
+    # Guardar stock actual para uso en próximas ejecuciones
+    print("\n" + "=" * 60)
+    print("GUARDANDO STOCK SEMANAL")
+    print("=" * 60)
+    guardar_stock_semana_actual()
     
     print("\n" + "=" * 60)
     print("PROCESO COMPLETADO")
