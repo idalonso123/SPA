@@ -8,6 +8,22 @@ import os
 import sys
 from datetime import datetime
 
+# Mapeo de números de mes a nombres de mes de Windows
+MESES_WINDOWS = {
+    1: "JAN",
+    2: "FEB",
+    3: "MAR",
+    4: "APR",
+    5: "MAY",
+    6: "JUN",
+    7: "JUL",
+    8: "AUG",
+    9: "SEP",
+    10: "OCT",
+    11: "NOV",
+    12: "DEC"
+}
+
 
 def obtener_ruta_proyecto():
     """Obtiene la ruta del directorio del proyecto"""
@@ -23,7 +39,7 @@ def obtener_python_ejecutable():
     ruta_proyecto = obtener_ruta_proyecto()
     
     # Verificar si existe Python portable
-    python_portable = os.path.join(ruta_proyecto, "python-portable", "python.exe")
+    python_portable = os.path.join(ruta_proyecto, "Python", "python.exe")
     
     if os.path.exists(python_portable):
         print(f"  Detectado Python portable: {python_portable}")
@@ -59,6 +75,8 @@ def crear_tarea_programada(nombre_tarea, nombre_script, parametros, dia, mes, ho
         comando_ejecutar = f'cmd /c "cd /d "{ruta_proyecto}" && "{ruta_python}" "{nombre_script}""'
     
     # Crear el comando de schtasks para tarea mensual
+    # Usar nombre del mes en inglés para Windows
+    mes_windows = MESES_WINDOWS.get(mes, str(mes).zfill(2))
     schtasks_comando = [
         "schtasks",
         "/create",
@@ -66,7 +84,7 @@ def crear_tarea_programada(nombre_tarea, nombre_script, parametros, dia, mes, ho
         "/tr", comando_ejecutar,
         "/sc", "monthly",
         "/d", str(dia),
-        "/m", str(mes).zfill(2),
+        "/m", mes_windows,
         "/st", f"{hora}:{str(minuto).zfill(2)}",
         "/f"
     ]

@@ -376,9 +376,9 @@ def crear_tareas_programadas():
         print(f"\nCreando: {nombre_tarea}")
         
         if parametros:
-            comando = f'cmd /c "cd /d \\"{ruta_proyecto}\\" && \\"{python_exe}\\" \\"{nombre_script}\\" {parametros}"'
+            comando = f'cmd /c "cd /d "{ruta_proyecto}" && "{python_exe}" "{nombre_script}" {parametros}"'
         else:
-            comando = f'cmd /c "cd /d \\"{ruta_proyecto}\\" && \\"{python_exe}\\" \\"{nombre_script}\\""'
+            comando = f'cmd /c "cd /d "{ruta_proyecto}" && "{python_exe}" "{nombre_script}""'
         
         schtasks = [
             "schtasks", "/create", "/tn", nombre_tarea, "/tr", comando,
@@ -413,9 +413,9 @@ def crear_tareas_programadas():
         print(f"\nCreando: {nombre_tarea}")
         
         if parametros:
-            comando = f'cmd /c "cd /d \\"{ruta_proyecto}\\" && \\"{python_exe}\\" \\"{nombre_script}\\" {parametros}"'
+            comando = f'cmd /c "cd /d "{ruta_proyecto}" && "{python_exe}" "{nombre_script}" {parametros}"'
         else:
-            comando = f'cmd /c "cd /d \\"{ruta_proyecto}\\" && \\"{python_exe}\\" \\"{nombre_script}\\""'
+            comando = f'cmd /c "cd /d "{ruta_proyecto}" && "{python_exe}" "{nombre_script}""'
         
         # Usar /d para el día y /m para el mes específico
         # Formatear hora con dos dígitos (HH:MM)
