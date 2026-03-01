@@ -1208,10 +1208,11 @@ Ejemplos de uso:
         
         logger.info(msg_semana)
     
-    if state_manager.verificar_semana_procesada(semana) and not args.semana:
-        logger.warning(f"La semana {semana} ya fue procesada anteriormente.")
-        logger.info("Use --semana para forzar el reprocesamiento.")
-        sys.exit(0)
+    # ============================================================
+    # MODIFICACIÓN: Eliminada la verificación de semana procesada
+    # Ahora el sistema permite regenerar el informe las veces que sea necesario
+    # Siempre se generará el mismo archivo si los datos de entrada son los mismos
+    # ============================================================
     
     exito, archivo, articulos, importe, metricas_correccion, resultado_email, resultado_resumen_gestion = procesar_pedido_semana(
         semana, config, state_manager, 

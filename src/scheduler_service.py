@@ -204,8 +204,11 @@ class SchedulerService:
         """
         Calcula qué semana debe procesarse según la configuración y el estado.
         
+        IMPORTANTE: Este método ahora siempre calcula la semana siguiente a la actual
+        basándose en la fecha del sistema, NO en el estado de ejecuciones anteriores.
+        
         Args:
-            ultima_semana_procesada (Optional[int]): Última semana procesada
+            ultima_semana_procesada (Optional[int]): Última semana procesada (ya no se usa para calcular)
             forzar_semana (Optional[int]): Semana específica a forzar (para pruebas)
         
         Returns:
@@ -215,11 +218,18 @@ class SchedulerService:
         if forzar_semana is not None:
             return forzar_semana, f"Semana forzada: {forzar_semana}"
         
-        # Calcular la semana siguiente a la última procesada
-        if ultima_semana_procesada is None:
-            semana_siguiente = self.obtener_numero_semana_actual()
-        else:
-            semana_siguiente = ultima_semana_procesada + 1
+        # ============================================================
+        # CAMBIO CRÍTICO: Ahora siempre calculamos la semana siguiente
+        # a la actual basándonos en la fecha del sistema, NO en
+        # el estado de ejecuciones anteriores
+        # ============================================================
+        
+        # Obtener la semana siguiente a la actual (basada en fecha del sistema)
+        semana_siguiente = self.obtener_numero_semana_siguiente()
+        
+        logger.info(f"Fecha actual del sistema: {datetime.now().strftime('%Y-%m-%d')}")
+        logger.info(f"Semana actual calculada: {self.obtener_numero_semana_actual()}")
+        logger.info(f"Semana a procesar (siguiente): {semana_siguiente}")
         
         # Verificar límites de semanas
         config = self.config.get('parametros', {})
